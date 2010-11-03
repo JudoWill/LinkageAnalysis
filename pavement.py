@@ -1,4 +1,4 @@
-from paver.easy import *
+from pavement.easy import *
 import os.path, os
 import csv
 import ruffus
