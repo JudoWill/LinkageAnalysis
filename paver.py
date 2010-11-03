@@ -2,6 +2,8 @@ from paver.easy import *
 import os.path, os
 import csv
 import ruffus
+import urllib2, re
+from NCBIUtils import SearchNCBI
 
 options(
     DATA_DIR = 'Data',
@@ -27,6 +29,20 @@ def new_run():
     pass
 
 
-@ruffus.files()
-def top_function(in_files, out_files):
+@ruffus.follows('get_sequence_ids')
+def top_function():
     pass
+
+@ruffus.posttask(ruffus.touch_file(os.path.join(options.DATA_DIR, 'ListFiles', 'search_sentinal')))
+@ruffus.files(os.path.join(options.DATA_DIR, 'ListFiles', 'search_sentinal'),
+              os.path.join(options.DATA_DIR, 'ListFiles', 'known_subtypes.list'))
+def get_sequence_ids(in_file, out_file):
+
+    search_query = '"Human immunodeficiency virus 1"[porgn] AND 100: 15000[SLEN]'
+
+    id_list = SearchNCBI(search_query)
+
+    with open(out_file, 'w') as handle:
+        handle.write('\n'.join(id_list))
+
+
