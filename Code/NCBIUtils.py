@@ -38,7 +38,7 @@ def SearchNCBI(search_sent, recent_date = None, BLOCK_SIZE = 1000000, START = 0,
 
 def GetSeqs(ID_LIST, BLOCK_SIZE = 100, XML = False):
 
-    def extract_sequences(soup):
+    def extract_sequences(soup, XML):
 
         for seq in soup.findAll('gbseq'):
             gi = None
@@ -48,8 +48,11 @@ def GetSeqs(ID_LIST, BLOCK_SIZE = 100, XML = False):
             if gi is None:
                 continue
 
-            nt_seq = seq.find('gbseq_sequence').contents[0]
-            yield nt_seq, gi
+            if XML:
+                yield seq.prettify(), gi
+            else:
+                nt_seq = seq.find('gbseq_sequence').contents[0]
+                yield nt_seq, gi
 
     wsdl_url = 'http://www.ncbi.nlm.nih.gov/entrez/eutils/soap/v2.0/efetch_seq.wsdl'
     client = Client('http://www.ncbi.nlm.nih.gov/entrez/eutils/soap/v2.0/efetch_seq.wsdl',
@@ -61,12 +64,8 @@ def GetSeqs(ID_LIST, BLOCK_SIZE = 100, XML = False):
     while block:
         xml = client.service.run_eFetch(db = 'nucleotide', id = ','.join(block))
         soup = BeautifulStoneSoup(xml)
-        if XML:
-            for sub in soup.findAll('gbseq'):
-                yield sub.prettify()
-        else:
-            for seq, gi in extract_sequences(soup):
-                yield seq, gi
+        for seq, gi in extract_sequences(soup, XML):
+            yield seq, gi
         items_left -= len(block)
         print 'Items left: %i' % items_left
         block = take(BLOCK_SIZE, iter_list)
