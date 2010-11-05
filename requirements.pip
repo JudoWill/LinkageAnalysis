@@ -2,3 +2,4 @@ paver
 ruffus
 nose
 numpy
+argparse
