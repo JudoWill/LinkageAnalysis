@@ -36,10 +36,10 @@ def SearchNCBI(search_sent, recent_date = None, BLOCK_SIZE = 1000000, START = 0,
         return id_list
 
 
-def GetSeqs(ID_LIST, BLOCK_SIZE = 100):
+def GetSeqs(ID_LIST, BLOCK_SIZE = 100, XML = False):
 
-    def extract_sequences(xml):
-        soup = BeautifulStoneSoup(xml)
+    def extract_sequences(soup):
+
         for seq in soup.findAll('gbseq'):
             gi = None
             for id in seq.findAll('gbseqid'):
@@ -60,8 +60,13 @@ def GetSeqs(ID_LIST, BLOCK_SIZE = 100):
     block = take(BLOCK_SIZE, iter_list)
     while block:
         xml = client.service.run_eFetch(db = 'nucleotide', id = ','.join(block))
-        for seq, gi in extract_sequences(xml):
-            yield seq, gi
+        soup = BeautifulStoneSoup(xml)
+        if XML:
+            for sub in soup.findAll('gbseq'):
+                yield sub.prettify()
+        else:
+            for seq, gi in extract_sequences(soup):
+                yield seq, gi
         items_left -= len(block)
         print 'Items left: %i' % items_left
         block = take(BLOCK_SIZE, iter_list)
