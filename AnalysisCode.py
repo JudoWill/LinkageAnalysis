@@ -1,3 +1,4 @@
+from paver.easy import sh
 import csv, os, os.path
 import ruffus
 import urllib2, re
