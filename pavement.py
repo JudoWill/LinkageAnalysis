@@ -1,4 +1,4 @@
-from paver.easy import *
+from paver.easy import sh
 import csv, os, os.path
 import ruffus
 import urllib2, re
@@ -6,37 +6,26 @@ from datetime import datetime
 from itertools import imap, islice
 from suds.client import Client
 from BeautifulSoup import BeautifulStoneSoup
+import argparse
 
-options(
-    DATA_DIR = 'Data',
-    OUT_DIR = 'Results',
-)
+DATA_DIR = 'Data'
+OUT_DIR = 'Results'
 
-@task
+
 def touch_data():
-    for path, _, files in os.walk(options.DATA_DIR):
+    for path, _, files in os.walk(DATA_DIR):
         for f in files:
             f = f.replace(' ', '\ ')
             sh('touch %s' % os.path.join(path, f))
 
-
-@task
-def run():
-
-    ruffus.pipeline_run([top_function])
-
-@task
-@needs('touch_data', 'run')
-def new_run():
-    pass
 
 
 @ruffus.follows('get_sequences')
 def top_function():
     pass
 
-@ruffus.files(os.path.join(options.DATA_DIR, 'ListFiles', 'search_sentinal'),
-              os.path.join(options.DATA_DIR, 'ListFiles', 'sequences.list'))
+@ruffus.files(os.path.join(DATA_DIR, 'ListFiles', 'search_sentinal'),
+              os.path.join(DATA_DIR, 'ListFiles', 'sequences.list'))
 def get_sequence_ids(in_file, out_file):
 
 
@@ -49,12 +38,12 @@ def get_sequence_ids(in_file, out_file):
         handle.write('\n'.join(id_list))
 
 
-@ruffus.files(os.path.join(options.DATA_DIR, 'ListFiles', 'sequences.list'),
-              os.path.join(options.DATA_DIR, 'RawSequences', 'download_sentinal'))
+@ruffus.files(os.path.join(DATA_DIR, 'ListFiles', 'sequences.list'),
+              os.path.join(DATA_DIR, 'RawSequences', 'download_sentinal'))
 @ruffus.follows(get_sequence_ids)
 def get_sequences(in_file, out_file):
 
-    dump_dir = os.path.join(options.DATA_DIR, 'RawSequences')
+    dump_dir = os.path.join(DATA_DIR, 'RawSequences')
     with open(in_file) as handle:
         seq_ids = set([x.strip() for x in handle])
 
@@ -75,21 +64,7 @@ def get_sequences(in_file, out_file):
         print count, len(dl_seqs)
         block = take(block_size, seq_iter)
 
-
-
-
-
-
-
-
-
     sh('touch %s' % out_file)
-
-
-
-
-
-
 
 ######Utility Functions!
 
@@ -139,3 +114,21 @@ def SearchNCBI(search_sent, recent_date = None, BLOCK_SIZE = 100000, START = 0, 
 
 def take(N, iterable):
     return list(islice(iterable, N))
+
+
+if __name__ == '__main__':
+
+
+    parser = argparse.ArgumentParser(description='Linkage Analysis Code')
+    parser.add_argument('--fresh', dest = 'fresh', action = 'store_true',
+                         default = False)
+    args = parser.parse_args()
+
+
+    if args.fresh:
+        touch_data()
+
+    ruffus.pipeline_run([top_function])
+
+
+
