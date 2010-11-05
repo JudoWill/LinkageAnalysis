@@ -3,3 +3,4 @@ ruffus
 nose
 numpy
 argparse
+biopython
