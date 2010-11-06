@@ -10,6 +10,7 @@ from Code.NCBIUtils import *
 
 DATA_DIR = 'Data'
 OUT_DIR = 'Results'
+SEQ_LOC = os.path.join(DATA_DIR, 'ListFiles', 'sequences.list')
 
 def touch(fname, times = None):
     with file(fname, 'a'):
@@ -41,11 +42,14 @@ def get_sequence_ids(in_file, out_file):
         handle.write('\n'.join(id_list))
 
 
-@ruffus.files(os.path.join(DATA_DIR, 'ListFiles', 'sequences.list'),
+@ruffus.files(SEQ_LOC,
               os.path.join(DATA_DIR, 'RawSequences', 'download_sentinal'))
 @ruffus.follows('get_known_genotypes')
 def get_sequences(in_file, out_file):
-
+    
+    if in_file is None:
+        return
+    
     dump_dir = os.path.join(DATA_DIR, 'RawSequences')
     with open(in_file) as handle:
         seq_ids = set([x.strip() for x in handle])
@@ -86,8 +90,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Linkage Analysis Code')
     parser.add_argument('--fresh', dest = 'fresh', action = 'store_true',
                          default = False)
+    parser.add_argument('--no-seq', dest = 'noseqs', action = 'store_true',
+                        default = False)
     args = parser.parse_args()
-
+    
+    if args.noseqs:
+        SEQ_LOC = None
 
     if args.fresh:
         touch_data()
