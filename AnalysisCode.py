@@ -43,7 +43,7 @@ def get_sequence_ids(in_file, out_file):
 
 @ruffus.files(os.path.join(DATA_DIR, 'ListFiles', 'sequences.list'),
               os.path.join(DATA_DIR, 'RawSequences', 'download_sentinal'))
-@ruffus.follows(get_sequence_ids)
+@ruffus.follows('get_known_genotypes')
 def get_sequences(in_file, out_file):
 
     dump_dir = os.path.join(DATA_DIR, 'RawSequences')
@@ -57,6 +57,25 @@ def get_sequences(in_file, out_file):
             handle.write('>%s\n%s\n' % (gi, seq))
 
     sh('touch %s' % out_file)
+
+@ruffus.files(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list'), None)
+@ruffus.follows(get_sequence_ids)
+def get_known_genotypes(in_file, out):
+
+    dump_dir = os.path.join('KnownGenomes')
+    genomes = {}
+    with open(in_file) as handle:
+        for row in csv.DictReader(handle,
+                                  fieldnames = ('ID', 'Subtype')):
+            genomes[row['ID']] = row['Subtype']
+
+    for xml, gi in GetSeqs(genomes.keys(), XML = True):
+        with open(os.path.join(DATA_DIR, 'KnownGenomes', gi+'.xml'), 'w') as handle:
+            handle.write(xml)
+
+
+
+
 
 
 
