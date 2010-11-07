@@ -11,6 +11,7 @@ from Code.NCBIUtils import *
 DATA_DIR = 'Data'
 OUT_DIR = 'Results'
 SEQ_LOC = os.path.join(DATA_DIR, 'ListFiles', 'sequences.list')
+DOWNLOAD_XML = True
 
 def touch(fname, times = None):
     with file(fname, 'a'):
@@ -42,9 +43,36 @@ def get_sequence_ids(in_file, out_file):
         handle.write('\n'.join(id_list))
 
 
-@ruffus.files(SEQ_LOC,
-              os.path.join(DATA_DIR, 'RawSequences', 'download_sentinal'))
+@ruffus.files(os.path.join(DATA_DIR, 'ListFiles', 'sequences.list'),
+              os.path.join(DATA_DIR, 'SequenceXML', 'download_sentinal'))
 @ruffus.follows('get_known_genotypes')
+def get_sequence_xml(in_file, out_file):
+    
+    if not DOWNLOAD_XML:
+        return
+        
+    dump_dir = os.path.join(DATA_DIR, 'SequenceXML')
+    with open(in_file) as handle:
+        seq_ids = set([x.strip() for x in handle])
+
+    present = set([x.split('.')[0] for x in os.listdir(dump_dir)])
+    dl_seqs = seq_ids - present
+    for seq, gi in GetSeqs(dl_seqs, XML = True):
+        with open(os.path.join(dump_dir, gi + '.xml'), 'w') as handle:
+            handle.write('>%s\n%s\n' % (gi, seq))
+
+    touch(out_file)
+
+def seq_gen():
+    load_dir = os.path.join(DATA_DIR, 'SequenceXML')
+    dump_dir = os.path.join(DATA_DIR, 'RawSequences')
+    for f in os.listdir(load_dir):
+        if f.endswith('.xml'):
+            part = f.split('.')[0]
+            yield (os.path.join(load_dir, f), os.path.join(dump_dir, part + 'gi'))
+
+@ruffus.files(seq_gen)
+@ruffus.follows('get_sequence_xml')
 def get_sequences(in_file, out_file):
     
     if in_file is None:
@@ -60,7 +88,7 @@ def get_sequences(in_file, out_file):
         with open(os.path.join(dump_dir, gi + '.gi'), 'w') as handle:
             handle.write('>%s\n%s\n' % (gi, seq))
 
-    sh('touch %s' % out_file)
+    touch(out_file)
 
 @ruffus.files(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list'), None)
 @ruffus.follows(get_sequence_ids)
@@ -95,7 +123,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     if args.noseqs:
-        SEQ_LOC = None
+        DOWNLOAD_XML = False
 
     if args.fresh:
         touch_data()
