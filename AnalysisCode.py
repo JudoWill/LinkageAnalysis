@@ -23,8 +23,6 @@ def touch_data():
             f = f.replace(' ', '\ ')
             touch(os.path.join(path, f))
 
-
-
 @ruffus.follows('get_sequences')
 def top_function():
     pass
@@ -45,7 +43,8 @@ def get_sequence_ids(in_file, out_file):
 
 @ruffus.files(os.path.join(DATA_DIR, 'ListFiles', 'sequences.list'),
               os.path.join(DATA_DIR, 'SequenceXML', 'download_sentinal'))
-@ruffus.follows('get_known_genotypes')
+@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'SequenceXML')), 
+                'get_known_genotypes')
 def get_sequence_xml(in_file, out_file):
     
     if not DOWNLOAD_XML:
@@ -72,23 +71,15 @@ def seq_gen():
             yield (os.path.join(load_dir, f), os.path.join(dump_dir, part + 'gi'))
 
 @ruffus.files(seq_gen)
-@ruffus.follows('get_sequence_xml')
+@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'RawSequences')),'get_sequence_xml')
 def get_sequences(in_file, out_file):
     
-    if in_file is None:
-        return
-    
-    dump_dir = os.path.join(DATA_DIR, 'RawSequences')
     with open(in_file) as handle:
-        seq_ids = set([x.strip() for x in handle])
-
-    present = set([x.split('.')[0] for x in os.listdir(dump_dir)])
-    dl_seqs = seq_ids - present
-    for seq, gi in GetSeqs(dl_seqs):
-        with open(os.path.join(dump_dir, gi + '.gi'), 'w') as handle:
+        soup = BeautifulStoneSoup(handle.read())
+    for seq, gi in extract_sequences(soup):
+        with open(out_file, 'w') as handle:
             handle.write('>%s\n%s\n' % (gi, seq))
 
-    touch(out_file)
 
 @ruffus.files(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list'), None)
 @ruffus.follows(get_sequence_ids)
