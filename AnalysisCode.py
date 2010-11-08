@@ -81,7 +81,8 @@ def get_sequences(in_file, out_file):
             handle.write('>%s\n%s\n' % (gi, seq))
 
 
-@ruffus.files(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list'), None)
+@ruffus.files(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list'), 
+                os.path.join(DATA_DIR, 'KnownGenomes', 'download_sentinal'))
 @ruffus.follows(get_sequence_ids)
 def get_known_genotypes(in_file, out):
 
@@ -95,8 +96,45 @@ def get_known_genotypes(in_file, out):
     for xml, gi in GetSeqs(genomes.keys(), XML = True):
         with open(os.path.join(DATA_DIR, 'KnownGenomes', gi+'.xml'), 'w') as handle:
             handle.write(xml)
+    
+    touch(out)
 
 
+def xml_file_gen():
+    dirs = ('KnownGenomes', 'SequenceXML')
+    files = []
+    for d in dirs:
+        di = os.path.join(DATA_DIR, d)
+        for f in os.listdir(di):
+            if f.endswith('.xml'):
+                yield os.path.join(di, f)
+
+
+@ruffus.merge([os.path.join(DATA_DIR, 'KnownGenomes', 'download_sentinal'), 
+                os.path.join(DATA_DIR, 'SequenceXML', 'download_sentinal')], 
+                os.path.join(DATA_DIR, 'ListFiles', 'mapping.txt'))
+@ruffus.follows('get_known_genotypes', 'get_sequence_xml')
+def make_mappings(in_files, out_file):
+    
+    mapping_dict = {}
+    
+    if os.path.exists(out_file):
+        with open(out_file) as handle:
+            for row in csv.DictReader(handle, delimiter = '\t'):
+                mapping_dict[row['key']] = row['name']
+    count = 0
+    for f in xml_file_gen():
+        count += 1
+        if count % 500 == 0:
+            print 'Mapping: %i' % count
+        for outdict in extract_features(f):
+            if outdict['name'].lower() not in mapping_dict:
+                mapping_dict[outdict['name'].lower()] = None
+    
+    with open(out_file, 'w') as handle:
+        handle.write('%s\t%s\n' % ('key', 'name'))
+        for key, val in sorted(mapping_dict.items(), key = lambda x: x[0]):
+            handle.write('%s\t%s\n' % (key, val))
 
 
 
@@ -111,6 +149,8 @@ if __name__ == '__main__':
                          default = False)
     parser.add_argument('--no-seq', dest = 'noseqs', action = 'store_true',
                         default = False)
+    parser.add_argument('--make-mapping', dest = 'makemapping', action = 'store_true',
+                        default = False)
     args = parser.parse_args()
     
     if args.noseqs:
@@ -118,8 +158,11 @@ if __name__ == '__main__':
 
     if args.fresh:
         touch_data()
-
-    ruffus.pipeline_run([top_function])
+        
+    if args.makemapping:
+        ruffus.pipeline_run([make_mappings])
+    else:
+        ruffus.pipeline_run([top_function])
 
 
 
