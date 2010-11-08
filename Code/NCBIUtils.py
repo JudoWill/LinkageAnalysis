@@ -3,6 +3,7 @@ from datetime import datetime
 from itertools import islice
 from BeautifulSoup import BeautifulStoneSoup
 from suds.client import Client
+import time
 
 
 def take(N, iterable):
@@ -67,9 +68,9 @@ def GetSeqs(ID_LIST, BLOCK_SIZE = 100, XML = False):
     while block:
         try:
             xml = client.service.run_eFetch(db = 'nucleotide', id = ','.join(block))
-        except e:
+        except:
             if BAD_GATEWAY:
-                raise e
+                break
             time.sleep(60)
             BAD_GATEWAY = True
             continue
