@@ -76,7 +76,7 @@ def get_sequences(in_file, out_file):
     
     with open(in_file) as handle:
         soup = BeautifulStoneSoup(handle.read())
-    for seq, gi in extract_sequences(soup):
+    for seq, gi in extract_sequences(soup, XML = False):
         with open(out_file, 'w') as handle:
             handle.write('>%s\n%s\n' % (gi, seq))
 

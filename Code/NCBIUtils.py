@@ -37,7 +37,7 @@ def SearchNCBI(search_sent, recent_date = None, BLOCK_SIZE = 1000000, START = 0,
         return id_list
 
 
-def extract_sequences(soup, XML):
+def extract_sequences(soup, XML = True):
 
     for seq in soup.findAll('gbseq'):
         gi = None
