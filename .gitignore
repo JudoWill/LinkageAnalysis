@@ -3,3 +3,5 @@ Data/*
 ve/*
 Results/*
 installfiles
+*~
+nohup.out
