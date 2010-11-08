@@ -36,38 +36,87 @@ def SearchNCBI(search_sent, recent_date = None, BLOCK_SIZE = 1000000, START = 0,
         return id_list
 
 
+def extract_sequences(soup, XML):
+
+    for seq in soup.findAll('gbseq'):
+        gi = None
+        for id in seq.findAll('gbseqid'):
+            if id.contents[0].startswith('gi'):
+                gi = id.contents[0].split('|')[1]
+        if gi is None:
+            continue
+
+        if XML:
+            yield seq.prettify(), gi
+        else:
+            nt_seq = seq.find('gbseq_sequence').contents[0]
+            yield nt_seq, gi
+
+
 def GetSeqs(ID_LIST, BLOCK_SIZE = 100, XML = False):
 
-    def extract_sequences(soup, XML):
-
-        for seq in soup.findAll('gbseq'):
-            gi = None
-            for id in seq.findAll('gbseqid'):
-                if id.contents[0].startswith('gi'):
-                    gi = id.contents[0].split('|')[1]
-            if gi is None:
-                continue
-
-            if XML:
-                yield seq.prettify(), gi
-            else:
-                nt_seq = seq.find('gbseq_sequence').contents[0]
-                yield nt_seq, gi
+    
 
     wsdl_url = 'http://www.ncbi.nlm.nih.gov/entrez/eutils/soap/v2.0/efetch_seq.wsdl'
     client = Client('http://www.ncbi.nlm.nih.gov/entrez/eutils/soap/v2.0/efetch_seq.wsdl',
                     retxml = True)
-
+    BAD_GATEWAY = False
     items_left = len(ID_LIST)
     iter_list = iter(ID_LIST)
     block = take(BLOCK_SIZE, iter_list)
     while block:
-        xml = client.service.run_eFetch(db = 'nucleotide', id = ','.join(block))
+        try:
+            xml = client.service.run_eFetch(db = 'nucleotide', id = ','.join(block))
+        except e:
+            if BAD_GATEWAY:
+                raise e
+            time.sleep(60)
+            BAD_GATEWAY = True
+            continue
+        BAD_GATEWAY = False
         soup = BeautifulStoneSoup(xml)
         for seq, gi in extract_sequences(soup, XML):
             yield seq, gi
         items_left -= len(block)
         print 'Items left: %i' % items_left
         block = take(BLOCK_SIZE, iter_list)
+
+def extract_features(in_file):
+    
+    def get_interval(feature):
+        locs = []
+        for intervals in feature.findAll('gbfeature_intervals'):
+            
+            for interval in intervals.findAll('gbinterval'):
+                try:
+                    locs.append((int(interval.gbinterval_from.contents[0]),
+                            int(interval.gbinterval_to.contents[0])))
+                except AttributeError:
+                    pass
+        return locs
+        
+        
+    
+    with open(in_file) as handle:
+        soup = BeautifulStoneSoup(handle.read())
+        
+    for feature in soup.findAll('gbfeature'):
+        outdict = {'interval':get_interval(feature)}
+        
+        for qualifier in feature.findAll('gbqualifier'):
+            if qualifier.gbqualifier_name.contents[0].strip() == 'product':
+                outdict['name'] = qualifier.gbqualifier_value.contents[0].strip()
+            elif qualifier.gbqualifier_name.contents[0].strip() == 'translation':
+                outdict['AA'] = qualifier.gbqualifier_value.contents[0].strip()
+        
+        if 'name' in outdict and 'AA' in outdict:
+            yield outdict
+
+
+
+
+
+
+
 
 
