@@ -1,4 +1,4 @@
-from paver.easy import sh
+from paver.easy import sh, pushd
 import csv, os, os.path
 import ruffus
 import urllib2, re
@@ -24,7 +24,7 @@ def touch_data():
             f = f.replace(' ', '\ ')
             touch(os.path.join(path, f))
 
-@ruffus.follows('get_sequences', 'write_protein_sequences')
+@ruffus.follows('make_subtype_blast_db')
 def top_function():
     pass
 
@@ -75,11 +75,12 @@ def seq_gen():
 @ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'RawSequences')),'get_sequence_xml')
 def get_sequences(in_file, out_file):
     
-    with open(in_file) as handle:
-        soup = BeautifulStoneSoup(handle.read())
-    for seq, gi in extract_sequences(soup, XML = False, seq_only = True):
-        with open(out_file, 'w') as handle:
-            handle.write('>%s\n%s\n' % (gi, seq))
+    if not os.path.exists(out_file):
+        with open(in_file) as handle:
+            soup = BeautifulStoneSoup(handle.read())
+        for seq, gi in extract_sequences(soup, XML = False, seq_only = True):
+            with open(out_file, 'w') as handle:
+                handle.write('>%s\n%s\n' % (gi, seq))
 
 
 @ruffus.files(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list'), 
@@ -158,6 +159,25 @@ def write_protein_sequences(in_files, out_files, mapping_dict):
         with open(base + '.' + outdict['name'], 'w') as handle:
             handle.write('>%s\n%s' % (base+'_'+outdict['name'], outdict['AA']))
     
+@ruffus.files_re(os.path.join(DATA_DIR, 'KnownGenomes', '*'), 
+                os.path.join(DATA_DIR, 'SubtypeBLAST', 'knownsubtypes.*'))
+@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'SubtypeBLAST')), 'write_protein_sequences')
+def make_subtype_blast_db(in_files, out_files):
+
+    known = {}
+    with open(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list')) as handle:
+        for row in csv.DictReader(handle, delimiter = ','):
+            known[row['gi']] = row['subtype']
+    
+    with open(os.path.join(DATA_DIR, 'SubtypeBLAST','knownsubtypes.fasta', 'w') as handle:
+        for f in in_files:
+            if f.endswith('.xml'):
+                gi = f.rsplit(os.sep,1)[1].split('.')[0]
+                for seq, _ in extract_sequences(soup, XML = False, seq_only = True):
+                    handle.write('>%s_%s\n%s' % (gi, known[gi], seq))
+    with pushd(os.path.join(DATA_DIR, 'SubtypeBLAST')):
+        sh('formatdb -i knownsubtypes.fasta -p F')
+
 
 if __name__ == '__main__':
 
