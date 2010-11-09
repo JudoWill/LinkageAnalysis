@@ -82,7 +82,7 @@ def GetSeqs(ID_LIST, BLOCK_SIZE = 100, XML = False):
         print 'Items left: %i' % items_left
         block = take(BLOCK_SIZE, iter_list)
 
-def extract_features(in_file):
+def extract_features(in_file, mapping = None):
     
     def get_interval(feature):
         locs = []
@@ -106,7 +106,12 @@ def extract_features(in_file):
         
         for qualifier in feature.findAll('gbqualifier'):
             if qualifier.gbqualifier_name.contents[0].strip() == 'product':
-                outdict['name'] = qualifier.gbqualifier_value.contents[0].strip()
+                name = qualifier.gbqualifier_value.contents[0].strip().lower()
+                if mapping is not None:
+                    name = mapping.get(name, None)
+                if name is None:
+                    break
+                outdict['name'] = name
             elif qualifier.gbqualifier_name.contents[0].strip() == 'translation':
                 outdict['AA'] = qualifier.gbqualifier_value.contents[0].strip()
         
