@@ -169,6 +169,8 @@ if __name__ == '__main__':
                         default = False)
     parser.add_argument('--make-mapping', dest = 'makemapping', action = 'store_true',
                         default = False)
+    parser.add_argument('--workers', dest = 'workers', default = 2,
+                        action = 'store', type = int)
     args = parser.parse_args()
     
     if args.noseqs:
@@ -180,7 +182,7 @@ if __name__ == '__main__':
     if args.makemapping:
         ruffus.pipeline_run([make_mappings])
     else:
-        ruffus.pipeline_run([top_function])
+        ruffus.pipeline_run([top_function], multiprocess = args.workers)
 
 
 
