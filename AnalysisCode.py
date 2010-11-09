@@ -78,9 +78,10 @@ def get_sequences(in_file, out_file):
     if not os.path.exists(out_file):
         with open(in_file) as handle:
             soup = BeautifulStoneSoup(handle.read())
-        for seq, gi in extract_sequences(soup, XML = False, seq_only = True):
+        gi = in_file.rsplit(os.sep,1)[1].split('.')[0]        
+        for seq, _ in extract_sequences(soup, XML = False, seq_only = True):
             with open(out_file, 'w') as handle:
-                handle.write('>%s\n%s\n' % (gi, seq))
+                handle.write('>%s\n%s\n' % (gi, seq.strip().upper()))
 
 
 @ruffus.files(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list'), 
@@ -157,7 +158,7 @@ def write_protein_sequences(in_files, out_files, mapping_dict):
     base = in_files[0].split('.')[0]
     for outdict in extract_features(in_files[0], mapping = mapping_dict):
         with open(base + '.' + outdict['name'], 'w') as handle:
-            handle.write('>%s\n%s' % (base+'_'+outdict['name'], outdict['AA']))
+            handle.write('>%s\n%s' % (base+'_'+outdict['name'], outdict['AA'].strip().upper()))
     
 @ruffus.files_re(os.path.join(DATA_DIR, 'KnownGenomes', '*'), 
                 os.path.join(DATA_DIR, 'SubtypeBLAST', 'knownsubtypes.*'))
@@ -174,7 +175,7 @@ def make_subtype_blast_db(in_files, out_files):
             if f.endswith('.xml'):
                 gi = f.rsplit(os.sep,1)[1].split('.')[0]
                 for seq, _ in extract_sequences(soup, XML = False, seq_only = True):
-                    handle.write('>%s_%s\n%s' % (gi, known[gi], seq))
+                    handle.write('>%s_%s\n%s' % (gi, known[gi], seq.strip().upper()))
     with pushd(os.path.join(DATA_DIR, 'SubtypeBLAST')):
         sh('formatdb -i knownsubtypes.fasta -p F')
 
