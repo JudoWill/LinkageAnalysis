@@ -151,6 +151,7 @@ def seq_gen_fun():
         if count % 500 == 0:
             print 'Extracting:', count        
         base = f.split('.')[0]
+        base = os.path.join(dump_dir, base.rsplit(os.sep,1)[-1])
         yield (f, mapping_file), [base + '.' + ext for ext in valid_ext], mapping_fun
             
 @ruffus.files(seq_gen_fun)
@@ -192,7 +193,7 @@ if __name__ == '__main__':
                         default = False)
     parser.add_argument('--make-mapping', dest = 'makemapping', action = 'store_true',
                         default = False)
-    parser.add_argument('--workers', dest = 'workers', default = 2,
+    parser.add_argument('--workers', dest = 'workers', default = 1,
                         action = 'store', type = int)
     args = parser.parse_args()
     
