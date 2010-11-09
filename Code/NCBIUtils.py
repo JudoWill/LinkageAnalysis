@@ -109,7 +109,7 @@ def extract_features(in_file, mapping = None):
             if qualifier.gbqualifier_name.contents[0].strip() == 'product':
                 name = qualifier.gbqualifier_value.contents[0].strip().lower()
                 if mapping is not None:
-                    name = mapping.get(name, None)
+                    name = mapping(name)
                 if name is None:
                     break
                 outdict['name'] = name

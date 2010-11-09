@@ -12,3 +12,7 @@ def make_mapping_dict(in_file):
             else:
                 mapping_dict[row['key']] = row['name']
     return mapping_dict
+
+
+def mapping_func(mapping_dict, name):
+    return mapping_dict.get(name.lower(), None)

@@ -8,6 +8,7 @@ from BeautifulSoup import BeautifulStoneSoup
 import argparse
 from Code.NCBIUtils import *
 from Code.GeneralUtils import *
+from functools import partial
 
 DATA_DIR = 'Data'
 OUT_DIR = 'Results'
@@ -144,33 +145,34 @@ def seq_gen_fun():
     dump_dir = os.path.join(DATA_DIR, 'AASeqs') 
     mapping_file = os.path.join(DATA_DIR, 'ListFiles', 'mapping.txt')
     mapping_dict = make_mapping_dict(mapping_file)
+    mapping_fun = partial(mapping_func, mapping_dict)
     valid_ext = set(mapping_dict.values()) - set([None])
     for count, f in enumerate(xml_file_gen()):
         if count % 500 == 0:
             print 'Extracting:', count        
         base = f.split('.')[0]
-        yield (f, mapping_file), [base + '.' + ext for ext in valid_ext], mapping_dict
+        yield (f, mapping_file), [base + '.' + ext for ext in valid_ext], mapping_fun
             
 @ruffus.files(seq_gen_fun)
 @ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'AASeqs')), 'get_sequence_xml')
-def write_protein_sequences(in_files, out_files, mapping_dict):
+def write_protein_sequences(in_files, out_files, mapping_fun):
     
     base = in_files[0].split('.')[0]
-    for outdict in extract_features(in_files[0], mapping = mapping_dict):
+    for outdict in extract_features(in_files[0], mapping = mapping_fun):
         with open(base + '.' + outdict['name'], 'w') as handle:
             handle.write('>%s\n%s' % (base+'_'+outdict['name'], outdict['AA'].strip().upper()))
     
 @ruffus.files_re(os.path.join(DATA_DIR, 'KnownGenomes', '*'), 
-                os.path.join(DATA_DIR, 'SubtypeBLAST', 'knownsubtypes.*'))
+                os.path.join(DATA_DIR, 'SubtypeBLAST', 'knownsubtypes.*'), None)
 @ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'SubtypeBLAST')), 'write_protein_sequences')
-def make_subtype_blast_db(in_files, out_files):
+def make_subtype_blast_db(in_files, out_files, extra):
 
     known = {}
     with open(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list')) as handle:
         for row in csv.DictReader(handle, delimiter = ','):
             known[row['gi']] = row['subtype']
     
-    with open(os.path.join(DATA_DIR, 'SubtypeBLAST','knownsubtypes.fasta', 'w') as handle:
+    with open(os.path.join(DATA_DIR, 'SubtypeBLAST','knownsubtypes.fasta'), 'w') as handle:
         for f in in_files:
             if f.endswith('.xml'):
                 gi = f.rsplit(os.sep,1)[1].split('.')[0]
