@@ -24,7 +24,7 @@ def touch_data():
             f = f.replace(' ', '\ ')
             touch(os.path.join(path, f))
 
-@ruffus.follows('get_sequences')
+@ruffus.follows('get_sequences', 'write_protein_sequences')
 def top_function():
     pass
 
@@ -69,7 +69,7 @@ def seq_gen():
     for f in os.listdir(load_dir):
         if f.endswith('.xml'):
             part = f.split('.')[0]
-            yield (os.path.join(load_dir, f), os.path.join(dump_dir, part + 'gi'))
+            yield (os.path.join(load_dir, f), os.path.join(dump_dir, part + '.gi'))
 
 @ruffus.files(seq_gen)
 @ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'RawSequences')),'get_sequence_xml')
@@ -77,7 +77,7 @@ def get_sequences(in_file, out_file):
     
     with open(in_file) as handle:
         soup = BeautifulStoneSoup(handle.read())
-    for seq, gi in extract_sequences(soup, XML = False):
+    for seq, gi in extract_sequences(soup, XML = False, seq_only = True):
         with open(out_file, 'w') as handle:
             handle.write('>%s\n%s\n' % (gi, seq))
 
@@ -120,9 +120,8 @@ def make_mappings(in_files, out_file):
     mapping_dict = {}
     
     if os.path.exists(out_file):
-        with open(out_file) as handle:
-            for row in csv.DictReader(handle, delimiter = '\t'):
-                mapping_dict[row['key']] = row['name']
+        mapping_dict = make_mapping_dict(out_file)        
+
     count = 0
     for f in xml_file_gen():
         count += 1
@@ -137,22 +136,28 @@ def make_mappings(in_files, out_file):
         for key, val in sorted(mapping_dict.items(), key = lambda x: x[0]):
             handle.write('%s\t%s\n' % (key, val))
 
-@ruffus.files([os.path.join(DATA_DIR, 'KnownGenomes', 'known.list'),
-               os.path.join(DATA_DIR, 'ListFiles', 'mapping.txt')], 
-              os.path.join(DATA_DIR, 'BLASTDatabases', 'sentinal'))
-@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'BLASTDatabases')), 
-                 'get_known_genotypes', 'make_mappings')
-def make_blast_dbs(in_files, out_file):
-    
-    known_genotype_file, mapping_file = in_files
-     
-    
-    
-    
-    
-    touch(out_file)
 
-
+def seq_gen_fun():
+    
+    dump_dir = os.path.join(DATA_DIR, 'AASeqs') 
+    mapping_file = os.path.join(DATA_DIR, 'ListFiles', 'mapping.txt')
+    mapping_dict = make_mapping_dict(mapping_file)
+    valid_ext = set(mapping_dict.values()) - set([None])
+    for count, f in enumerate(xml_file_gen()):
+        if count % 500 == 0:
+            print 'Extracting:', count        
+        base = f.split('.')[0]
+        yield (f, mapping_file), [base + '.' + ext for ext in valid_ext], mapping_dict
+            
+@ruffus.files(seq_gen_fun)
+@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'AASeqs')), 'get_sequence_xml')
+def write_protein_sequences(in_files, out_files, mapping_dict):
+    
+    base = in_files[0].split('.')[0]
+    for outdict in extract_features(in_files[0], mapping = mapping_dict):
+        with open(base + '.' + outdict['name'], 'w') as handle:
+            handle.write('>%s\n%s' % (base+'_'+outdict['name'], outdict['AA']))
+    
 
 if __name__ == '__main__':
 
