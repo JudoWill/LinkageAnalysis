@@ -7,6 +7,7 @@ from itertools import imap, islice
 from BeautifulSoup import BeautifulStoneSoup
 import argparse
 from Code.NCBIUtils import *
+from Code.GeneralUtils import *
 
 DATA_DIR = 'Data'
 OUT_DIR = 'Results'
@@ -136,8 +137,20 @@ def make_mappings(in_files, out_file):
         for key, val in sorted(mapping_dict.items(), key = lambda x: x[0]):
             handle.write('%s\t%s\n' % (key, val))
 
-
-
+@ruffus.files([os.path.join(DATA_DIR, 'KnownGenomes', 'known.list'),
+               os.path.join(DATA_DIR, 'ListFiles', 'mapping.txt')], 
+              os.path.join(DATA_DIR, 'BLASTDatabases', 'sentinal'))
+@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'BLASTDatabases')), 
+                 'get_known_genotypes', 'make_mappings')
+def make_blast_dbs(in_files, out_file):
+    
+    known_genotype_file, mapping_file = in_files
+     
+    
+    
+    
+    
+    touch(out_file)
 
 
 
