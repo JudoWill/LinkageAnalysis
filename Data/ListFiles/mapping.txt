@@ -206,7 +206,7 @@ pol polymerase	Pol
 pol polyprotein	Pol
 pol polyprotein (nh2-terminus uncertain)	None
 pol polyprotein (nh2-terminus uncertain; aa at 1963)	None
-pol polyprotein precursor	NPol
+pol polyprotein precursor	Pol
 pol precursor	Pol
 pol protein	Pol
 pol protine	Pol
