@@ -159,8 +159,12 @@ def seq_gen_fun():
 def write_protein_sequences(in_files, out_files, mapping_fun):
     
     base = in_files[0].split('.')[0]
+    gi = base.rsplit(os.sep)[-1]
+    dump_dir = os.path.join(DATA_DIR, 'AASeqs')
     for outdict in extract_features(in_files[0], mapping = mapping_fun):
-        with open(base + '.' + outdict['name'], 'w') as handle:
+        loc = os.path.join(dump_dir, gi + '.' + outdict['name'])        
+        with open(loc, 'w') as handle:
+            print loc
             handle.write('>%s\n%s' % (base+'_'+outdict['name'], outdict['AA'].strip().upper()))
     
 @ruffus.files_re(os.path.join(DATA_DIR, 'KnownGenomes', '*'), 
@@ -206,7 +210,7 @@ if __name__ == '__main__':
     if args.makemapping:
         ruffus.pipeline_run([make_mappings])
     else:
-        ruffus.pipeline_run([top_function], multiprocess = args.workers)
+        ruffus.pipeline_run([top_function])
 
 
 
