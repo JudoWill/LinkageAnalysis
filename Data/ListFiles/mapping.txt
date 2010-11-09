@@ -1,0 +1,317 @@
+key	name
+27k protein	None
+aberrant gag protein	None
+aberrant pol protein	None
+aberrant vpr protein	None
+accessory protein	None
+antisense protein, asp	None
+aso1	None
+beta-lactamase	None
+ca protein	None
+ca, p24	None
+core and na binding protein	None
+core protein	None
+elongated nef protein	Nef
+env	Env
+env (gp160)	Env-gp160
+env 26 peptide (pxy104)	None
+env c2-v3-c2	None
+env c2-v3-c3	None
+env c2-v3_c3	None
+env c2v3 protein	None
+env c3-v3-c3	None
+env glycoprotein	Env
+env polypeptide	Env
+env polypeptide, c2-v3	None
+env polypeptide, c2-v3 gp120	None
+env polypeptide, c2-v3 of gp120	None
+env polypeptide, gp41	Env-gp41
+env polyprotein	Env
+env polyprotein precursor	Env
+env protein	Env
+env protien	Env
+envelop glycoprotein	Env
+envelope	Env
+envelope (gp160)	Env
+envelope gene	Env
+envelope glucoprotein	Env
+envelope glycopprotein	Env
+envelope glycoprotein	Env
+envelope glycoprotein 120	Env-gp120
+envelope glycoprotein 120 v3 region	None
+envelope glycoprotein 120/41	Env
+envelope glycoprotein c2-v3 region	None
+envelope glycoprotein c2v3 region	None
+envelope glycoprotein c2v3-c3 region	None
+envelope glycoprotein c2v5 region	None
+envelope glycoprotein gp12	Env-120
+envelope glycoprotein gp120	Env-gp120
+envelope glycoprotein gp120 c2v3 region	None
+envelope glycoprotein gp120 v3 region	None
+envelope glycoprotein gp120, c2-v3 region	None
+envelope glycoprotein gp160	Env-gp160
+envelope glycoprotein gp160 precursor	Env
+envelope glycoprotein gp41	Env-gp41
+envelope glycoprotein gp41 domain	Env-gp41
+envelope glycoprotein gp41 region	Env-gp41
+envelope glycoprotein immunodominant region	None
+envelope glycoprotein precursor	Env
+envelope glycoprotein precursor gp120	Env-gp120
+envelope glycoprotein precursor gp160	Env
+envelope glycoprotein precursor gp41	Env-gp41
+envelope glycoprotein precursor, gp160	Env
+envelope glycoprotein v1/v2 region	None
+envelope glycoprotein v1v2 region	None
+envelope glycoprotein v2 region	None
+envelope glycoprotein v3	None
+envelope glycoprotein v3 loop region	None
+envelope glycoprotein v3 region	None
+envelope glycoprotein v3-v4 region	None
+envelope glycoprotein v3-v5 loop region	None
+envelope glycoprotein v3-v5 region	None
+envelope glycoprotein v4 region	None
+envelope glycoprotein v4v5 region	None
+envelope glycoprotein v5 region	None
+envelope glycoprotein, c2-c4 region	None
+envelope glycoprotein, c2-v3 region	None
+envelope glycoprotein, c2-v5 region	None
+envelope glycoprotein, c2v3 region	None
+envelope glycoprotein, v1-v2 region	None
+envelope glycoprotein, v1-v3 region	None
+envelope glycoprotein, v1-v5 region	None
+envelope glycoprotein, v1v2 region	None
+envelope glycoprotein, v3 loop region	None
+envelope glycoprotein, v3 region	None
+envelope glycoprotein, v3-v5 loop region	None
+envelope glycoprotein, v3-v5 region	None
+envelope glycoprotein, v3v4v5 region	None
+envelope glycoprotein, v4v5 region	None
+envelope glycoprotien	Env
+envelope glylcoprotein	Env
+envelope gp120	Env-gp120
+envelope gp120 v3 region	None
+envelope gp160 precursor	Env
+envelope gp41 glycoprotein	Env-gp41
+envelope gylcoprotein gp41	Env-gp41
+envelope polyprotein	Env
+envelope polyprotein    Env	None
+envelope polyprotein gp160	Env
+envelope polyprotein precursor	Env
+envelope polyprotein variant	Env
+envelope protein	Env
+envelope protein gp120/gp41	Env
+envelope protein gp160 precursor	Env
+envelope protein v3 and v5 regions	None
+envelope protein v3 domain	None
+envelope protein v3 region	None
+envelope protein v3-v5 region	None
+envelope protein, v3-v5 region	None
+envelope protein; gp120 /gp41	Env
+envelope protein; gp120/gp41	Env
+envelope surface glycoprotein gp160, precursor	Env
+envelope transmembrane glycoprotein	Env
+envelope, c2-v5 region	None
+exterior membrane glycoprotein	Env
+exterior membrane glycoprotein gp120	Env-gp120
+exterior membrane protein gp120	Env-gp120
+extra-membrane envelope glycoprotein	Env
+gag	Gag
+gag capsid protein	Gag-p24
+gag p17	Gag-p17
+gag p17 protein	Gag-p17
+gag polypeptide, p24	Gag-p24
+gag polyprotein	Gag
+gag polyprotein p17 region	Gag-p17
+gag polyprotein precursor	Gag
+gag polyprotein, p24 region	Gag-p24
+gag precursor	Gag
+gag precursor polypeptide	Gag
+gag protein	Gag
+gag protein p24	Gag-p24
+gag-pol	None
+gag-pol fusion	Gag-Pol
+gag-pol fusion polyprotein	Gag-Pol
+gag-pol fusion polyprotein precursor	Gag-Pol
+gag-pol fusion protein	Gag-Pol
+gag-pol polyprotein	Gag-Pol
+gag-pol polyprotein precursor	None
+gag-pol precursor	Gag-Pol
+gag-pol precursor polyprotein	None
+glycoprotein 120	Env-gp120
+glycoprotein gp120	Env-gp120
+gp 120	Env-gp120
+gp10	None
+gp120	Env-gp120
+gp120 and gp41	Env
+gp120 and gp41 proteins	Env
+gp120 c2-v3	None
+gp120 protein	Env-gp120
+gp120 third hypervariable (v3) region	None
+gp120 v3 loop	None
+gp120 v3 region	None
+gp120, c2 /v3 region	None
+gp120, c2/v3 region	None
+gp120, c2/v3/c3 region	None
+gp120, v1 to v5 region	None
+gp160	Env
+gp160 polyprotein	Env
+gp160 protein	Env
+gp41	Env-gp41
+gp41 env	Env-gp41
+gp41 protein	Env-gp41
+hiv-1 consensus nef protein	Nef
+hiv-1 protease	Pol-PR
+hiv-1 tat	Tat
+hypermutated protease	None
+integrase	Pol-IN
+ma-p17	Gag-p17
+matrix protein	Gag-p17
+matrix protein p17	Gag-p17
+matrix, capsid and core proteins	Gag
+mutant nef protein	Nef
+mutant pol protein	Pol
+mutant rev protein	Rev
+mutant rev protein d23	None
+mutant rev protein d46	None
+mutated envelope glycoprotein	Env
+myristylated gag protein p17	Gag-p17
+myristylated protein	None
+nef	Nef
+nef protein	Nef
+nef protein protein	Nef
+negative factor	Nef
+neomycin phosphotransferase	None
+o24	None
+one-exon tat protein	None
+outer envelope glycoprotein gp120	Env-gp120
+p17	Gag-p17
+p17 matrix	Gag-p17
+p17 matrix protein	Gag-p17
+p17 protein	Gag-p17
+p17-gag	Gag-p17
+p24	Gag-p24
+p24 (ca) protein	Gag-p24
+p24 core protein	Gag-p24
+p24 gag	Gag-p24
+p24 protein	Gag-p24
+p24/ncp7	None
+p24/p25/p7	None
+p24gag	Gag-p24
+p25/p24/p7	Gag
+p28-tev	None
+p55 myristylated protein	Gag
+partial gag	None
+pol	Pol
+pol polymerase	Pol
+pol polyprotein	Pol
+pol polyprotein (nh2-terminus uncertain)	None
+pol polyprotein (nh2-terminus uncertain; aa at 1963)	None
+pol polyprotein precursor	NPol
+pol precursor	Pol
+pol protein	Pol
+pol protine	Pol
+polymerase	Pol
+polymerase polyprotein	Pol
+polyprotein	None
+pr55(gag)	Gag
+precursor gp160	Env
+premature product of vif protein	None
+prot	None
+prot rt polyprotein	Pol-RT
+protease	Pol-PR
+protease and reverse transcriptase	None
+protease and reverse transcriptase precursor	None
+protease reverse transcriptase	None
+protease-reverse transcriptase	None
+protease-rt	None
+protease/reverse transcriptase	None
+protease/rt/rnaseh/integrase	None
+regulatory factor	None
+regulatory protein	None
+rep protein	None
+retropepsin	Pol-PR
+retrotranscriptase	Pol-RT
+rev	Rev
+rev protein	Rev
+rev protein (anti-repression transactivator protein)	Rev
+rev proteion	Rev
+rev protien	Rev
+rev, first coding exon	None
+reverse transciptase	Pol-RT
+reverse transcriptase	Pol-RT
+reverse transcriptase/rnaseh	None
+rna-directed dna polymerase	Pol-RT
+rnase h	None
+sor 23k protein	None
+structural capsid protein	Gag-p24
+su c2-v3	None
+surface envelope glycoprotein	Env
+surface glycoprotein gp120	Env-gp120
+tat	Tat
+tat potein	Tat
+tat protein	Tat
+tat protein, first coding exon	None
+tat/rev protein	None
+tm, gp41	None
+trans-membrane envelope glycoprotein	Env
+trans-membrane envelope glycoprotein gp41	Env-gp41
+transactivator of hiv gene expression	Tat
+transmembrane glycoprotein	None
+transmembrane protein gp41	Env-gp41
+trucnated pol protein	None
+truncated env protein	None
+truncated envelope glycoprotein	None
+truncated envelope glycoprotein gp160	None
+truncated envelope glycoprotein precursor	None
+truncated envelope glycoprotein v3 region	None
+truncated envelope gp120 v3 region	None
+truncated envelope protein	None
+truncated gag polyprotein	None
+truncated gag polyprotein precursor	None
+truncated gag protein	None
+truncated gag-pol fusion polyprotein	None
+truncated gag-pol polyprotein	None
+truncated gag-pol protein	None
+truncated gp120 protein	None
+truncated integrase	None
+truncated nef protein	None
+truncated one-exon tat protein	None
+truncated p24 protein	None
+truncated pol polyprotein	None
+truncated pol protein	None
+truncated protease	None
+truncated rev protein	None
+truncated reverse transcriptase	None
+truncated tat	None
+truncated tat protein	None
+truncated vif protein	None
+truncated vpr	None
+truncated vpr protein	None
+truncated vpu	None
+truncated vpu protein	None
+type 1 reverse transcriptase	None
+v-1 protease	None
+v-1 protease protein	None
+v-1 reverse transcriptase	None
+v3 loop	None
+v3-v5 region of envelope	None
+vif	Vif
+vif (viral infectivity factor)	Vif
+vif 23kd protein	Vif
+vif factor	Vif
+vif polyprotein	Vif
+vif protein	Vif
+viral envelope protein	Env
+viral infectivity factor	None
+viral infectivity factor protein	Vif
+viral integrase	Pol-IN
+viral protein r	Vpu
+viral protein u	Vpu
+virus infectivity factor	Vif
+virus infectivity factor protein	Vif
+vpr	Vpr
+vpr polyprotein	Vpr
+vpr protein	Vpr
+vpu	Vpu
+vpu protein	Vpu
+vpu*	Vpu
