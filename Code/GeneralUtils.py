@@ -1,4 +1,5 @@
 import csv
+import os
 
 
 
@@ -16,3 +17,9 @@ def make_mapping_dict(in_file):
 
 def mapping_func(mapping_dict, name):
     return mapping_dict.get(name.lower(), None)
+
+def gi_from_path(path):
+
+    fname = path.split(os.sep)[-1]
+    gi = fname.split('.')[0]
+    return gi
