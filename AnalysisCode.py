@@ -14,6 +14,7 @@ DATA_DIR = 'Data'
 OUT_DIR = 'Results'
 SEQ_LOC = os.path.join(DATA_DIR, 'ListFiles', 'sequences.list')
 DOWNLOAD_XML = True
+FORCE_NEW = False
 
 def touch(fname, times = None):
     with file(fname, 'a'):
@@ -69,21 +70,25 @@ def seq_gen():
     dump_dir = os.path.join(DATA_DIR, 'RawSequences')
     for f in os.listdir(load_dir):
         if f.endswith('.xml'):
-            part = f.split('.')[0]
-            yield (os.path.join(load_dir, f), os.path.join(dump_dir, part + '.gi'))
+            yield os.path.join(load_dir, f)
 
-@ruffus.files(seq_gen)
+@ruffus.files([os.path.join(DATA_DIR, 'KnownGenomes', 'download_sentinal'), 
+                os.path.join(DATA_DIR, 'SequenceXML', 'download_sentinal')], 
+                os.path.join(DATA_DIR, 'RawSequences', 'processing_sentinal'))
 @ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'RawSequences')),'get_sequence_xml')
-def get_sequences(in_file, out_file):
-    
-    if not os.path.exists(out_file):
-        with open(in_file) as handle:
-            soup = BeautifulStoneSoup(handle.read())
-        gi = in_file.rsplit(os.sep,1)[1].split('.')[0]        
-        for seq, _ in extract_sequences(soup, XML = False, seq_only = True):
-            with open(out_file, 'w') as handle:
-                handle.write('>%s\n%s\n' % (gi, seq.strip().upper()))
+def get_sequences(in_files, out_file):
 
+    dump_dir = os.path.join(DATA_DIR, 'RawSequences')    
+    for f in seq_gen():
+        gi = gi_from_path(f)
+        out = os.path.join(dump_dir, gi + '.gi')
+        if not os.path.exists(out) or FORCE_NEW:
+            with open(f) as handle:
+                soup = BeautifulStoneSoup(handle.read())      
+            for seq, _ in extract_sequences(soup, XML = False, seq_only = True):
+                with open(out, 'w') as handle:
+                    handle.write('>%s\n%s\n' % (gi, seq.strip().upper()))
+    touch(out_file)
 
 @ruffus.files(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list'), 
                 os.path.join(DATA_DIR, 'KnownGenomes', 'download_sentinal'))
@@ -138,34 +143,36 @@ def make_mappings(in_files, out_file):
         handle.write('%s\t%s\n' % ('key', 'name'))
         for key, val in sorted(mapping_dict.items(), key = lambda x: x[0]):
             handle.write('%s\t%s\n' % (key, val))
-
-
-def seq_gen_fun():
-    
-    dump_dir = os.path.join(DATA_DIR, 'AASeqs') 
-    mapping_file = os.path.join(DATA_DIR, 'ListFiles', 'mapping.txt')
-    mapping_dict = make_mapping_dict(mapping_file)
-    mapping_fun = partial(mapping_func, mapping_dict)
-    valid_ext = set(mapping_dict.values()) - set([None])
-    for count, f in enumerate(xml_file_gen()):
-        if count % 500 == 0:
-            print 'Extracting:', count        
-        base = f.split('.')[0]
-        base = os.path.join(dump_dir, base.rsplit(os.sep,1)[-1])
-        yield (f, mapping_file), [base + '.' + ext for ext in valid_ext], mapping_fun
             
-@ruffus.files(seq_gen_fun)
+@ruffus.files([os.path.join(DATA_DIR, 'KnownGenomes', 'download_sentinal'), 
+                os.path.join(DATA_DIR, 'SequenceXML', 'download_sentinal'),
+                os.path.join(DATA_DIR, 'ListFiles', 'mapping.txt')],
+                os.path.join(DATA_DIR, 'AASeqs', 'processing_sentinal'))
 @ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'AASeqs')), 'get_sequence_xml')
-def write_protein_sequences(in_files, out_files, mapping_fun):
+def write_protein_sequences(in_files, out_file):
     
-    base = in_files[0].split('.')[0]
-    gi = base.rsplit(os.sep)[-1]
+    mapping_dict = make_mapping_dict(in_files[-1])
+    mapping_fun = partial(mapping_func, mapping_dict)
     dump_dir = os.path.join(DATA_DIR, 'AASeqs')
-    for outdict in extract_features(in_files[0], mapping = mapping_fun):
-        loc = os.path.join(dump_dir, gi + '.' + outdict['name'])        
-        with open(loc, 'w') as handle:
-            print loc
-            handle.write('>%s\n%s' % (base+'_'+outdict['name'], outdict['AA'].strip().upper()))
+    done = set()
+    for f in os.listdir(dump_dir):
+        done.add(gi_from_path(f))
+
+    for count, f in enumerate(xml_file_gen()):
+        gi = gi_from_path(f)
+        if count % 500 == 0:
+            print 'Extracting:', count
+        any_in = False
+        if gi not in done or FORCE_NEW:
+            for outdict in extract_features(f, mapping = mapping_fun):
+                any_in = True                
+                loc = os.path.join(dump_dir, gi + '.' + outdict['name'])        
+                with open(loc, 'w') as handle:
+                    handle.write('>%s\n%s' % (gi+'_'+outdict['name'], outdict['AA'].strip().upper()))
+            if not any_in:
+                touch(os.path.join(dump_dir, gi))
+
+    touch(out_file)
     
 @ruffus.files_re(os.path.join(DATA_DIR, 'KnownGenomes', '*'), 
                 os.path.join(DATA_DIR, 'SubtypeBLAST', 'knownsubtypes.*'), None)
@@ -180,7 +187,7 @@ def make_subtype_blast_db(in_files, out_files, extra):
     with open(os.path.join(DATA_DIR, 'SubtypeBLAST','knownsubtypes.fasta'), 'w') as handle:
         for f in in_files:
             if f.endswith('.xml'):
-                gi = f.rsplit(os.sep,1)[1].split('.')[0]
+                gi = gi_from_path(f)
                 for seq, _ in extract_sequences(soup, XML = False, seq_only = True):
                     handle.write('>%s_%s\n%s' % (gi, known[gi], seq.strip().upper()))
     with pushd(os.path.join(DATA_DIR, 'SubtypeBLAST')):
@@ -197,7 +204,7 @@ if __name__ == '__main__':
                         default = False)
     parser.add_argument('--make-mapping', dest = 'makemapping', action = 'store_true',
                         default = False)
-    parser.add_argument('--workers', dest = 'workers', default = 1,
+    parser.add_argument('--workers', dest = 'workers', default = 3,
                         action = 'store', type = int)
     args = parser.parse_args()
     
@@ -206,6 +213,7 @@ if __name__ == '__main__':
 
     if args.fresh:
         touch_data()
+        FORCE_NEW = True
         
     if args.makemapping:
         ruffus.pipeline_run([make_mappings])
