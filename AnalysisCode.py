@@ -15,6 +15,7 @@ OUT_DIR = 'Results'
 SEQ_LOC = os.path.join(DATA_DIR, 'ListFiles', 'sequences.list')
 DOWNLOAD_XML = True
 FORCE_NEW = False
+POOL_WORKERS = 1
 
 def touch(fname, times = None):
     with file(fname, 'a'):
@@ -174,10 +175,10 @@ def write_protein_sequences(in_files, out_file):
 
     touch(out_file)
     
-@ruffus.files_re(os.path.join(DATA_DIR, 'KnownGenomes', '*'), 
-                os.path.join(DATA_DIR, 'SubtypeBLAST', 'knownsubtypes.*'), None)
+@ruffus.files(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list'), 
+                os.path.join(DATA_DIR, 'SubtypeBLAST', 'knownsubtypes.*'))
 @ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'SubtypeBLAST')), 'write_protein_sequences')
-def make_subtype_blast_db(in_files, out_files, extra):
+def make_subtype_blast_db(in_file, out_files):
 
     known = {}
     with open(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list')) as handle:
@@ -185,13 +186,18 @@ def make_subtype_blast_db(in_files, out_files, extra):
             known[row['gi']] = row['subtype']
     
     with open(os.path.join(DATA_DIR, 'SubtypeBLAST','knownsubtypes.fasta'), 'w') as handle:
-        for f in in_files:
+        for f in os.listdir(os.path.join(DATA_DIR, 'KnownGenomes')):
             if f.endswith('.xml'):
                 gi = gi_from_path(f)
+                with open(os.path.join(DATA_DIR, 'KnownGenomes', f)) as inhandle:
+                    soup = BeautifulStoneSoup(inhandle.read())
                 for seq, _ in extract_sequences(soup, XML = False, seq_only = True):
                     handle.write('>%s_%s\n%s' % (gi, known[gi], seq.strip().upper()))
     with pushd(os.path.join(DATA_DIR, 'SubtypeBLAST')):
-        sh('formatdb -i knownsubtypes.fasta -p F')
+        try:
+            sh('formatdb -i knownsubtypes.fasta -p F')
+        except:
+            sh('makeblastdb -in knownsubtypes.fasta -dbtype nucl')
 
 
 if __name__ == '__main__':
