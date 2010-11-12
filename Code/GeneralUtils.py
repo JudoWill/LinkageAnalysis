@@ -1,7 +1,34 @@
 import csv
 import os
+from collections import deque
+from types import ListType, TupleType
+from itertools import islice
 
-
+def take(N, iterable):
+    return list(islice(iterable, N))
+    
+    
+def OverlappingIterator(iterable, win_size, win_overlap):
+    
+    this_iter = iter(iterable)
+    
+    items = deque([], win_size)
+    items.extend(take(win_size, this_iter))
+    
+    yield items
+    
+    block = take(win_overlap, this_iter)
+    while block:
+        items.extend(block)
+        yield items
+        block = take(win_overlap, this_iter)
+        
+    
+    
+    
+    
+    
+    
 
 def make_mapping_dict(in_file):
     
