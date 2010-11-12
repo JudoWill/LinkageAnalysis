@@ -2,7 +2,7 @@ import csv
 import os
 from collections import deque
 from types import ListType, TupleType
-from itertools import islice
+from itertools import islice, groupby, imap
 
 def take(N, iterable):
     return list(islice(iterable, N))
@@ -25,7 +25,15 @@ def OverlappingIterator(iterable, win_size, win_overlap):
         
     
     
-    
+def fasta_iter(filename):
+    name = None
+    with open(filename) as handle:
+        for header, group in groupby(handle, lambda x: x.startswith('>')):
+            if header:
+                name = group.next().strip()
+            else:
+                seq = ''.join([x.strip() for x in group])
+                yield name, seq
     
     
     
