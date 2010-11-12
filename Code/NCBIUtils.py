@@ -4,7 +4,7 @@ from itertools import islice
 from BeautifulSoup import BeautifulStoneSoup
 from suds.client import Client
 import time
-
+from collections import defaultdict
 
 def take(N, iterable):
     return list(islice(iterable, N))
@@ -120,7 +120,32 @@ def extract_features(in_file, mapping = None):
             yield outdict
 
 
-
+def determine_subtype(in_file):
+    hits = defaultdict(int)
+    with open(in_file) as handle:
+        soup = BeautifulStoneSoup(handle.read())
+    
+    for seq in soup.findAll('iteration'):
+        try:
+            hit = seqs[0].iteration_hits.hit.hit_def.contents[0]
+        except:
+            hit = None
+        if hit:
+            hits[hit.split('_')[1]] += 1
+    
+    count = sum(hits.values())
+    if count < 5:
+        print 'too few'
+        return None
+    elif all([x < count*0.9 for x in hits.values()]):
+        print 'too heterogenus %s' % ','.join([count*0.9] + hits.values())
+        return None
+    else:
+        for key, val in hits.items():
+            if val > count*0.9:
+                return key
+        
+            
 
 
 
