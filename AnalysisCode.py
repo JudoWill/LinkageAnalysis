@@ -30,7 +30,7 @@ def touch_data():
             f = f.replace(' ', '\ ')
             touch(os.path.join(path, f))
 
-@ruffus.follows('make_subtype_reports')
+@ruffus.follows('process_subtype_reports')
 def top_function():
     pass
 
@@ -203,7 +203,7 @@ def make_subtype_blast_db(in_file, out_file):
             sh('makeblastdb -in knownsubtypes.fasta -dbtype nucl')
     touch(out_file)
             
-@ruffus.files([os.path.join(DATA_DIR, 'SubtypeBLAST', 'knownsubtypes.fasta'),
+@ruffus.files([os.path.join(DATA_DIR, 'SubtypeBLAST', 'processing_sentinal'),
                 os.path.join(DATA_DIR, 'RawSequences', 'processing_sentinal')],
                 os.path.join(DATA_DIR, 'SubtypeReports', 'processing_sentinal'))
 @ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'SubtypeReports')), 'make_subtype_blast_db')
@@ -238,7 +238,34 @@ def make_subtype_reports(in_files, out_file):
                 sh(cmd)
     touch(out_file)
 
+@ruffus.files(os.path.join(DATA_DIR, 'SubtypeReports', 'processing_sentinal'),
+                os.path.join(DATA_DIR, 'ListFiles', 'subtype_mapping.txt'))
+@ruffus.follows('make_subtype_reports')
+def process_subtype_reports(in_file, out_file):
     
+    load_dir = os.path.join(DATA_DIR, 'SubtypeReports')
+    done = set()
+    if FORCE_NEW or not os.path.exists(out_file):
+        with open(out_file, 'w') as handle:
+            handle.write('%s\t%s\n' % ('gi', 'Subtype'))
+    
+    with open(out_file) as handle:
+        for row in csv.DictReader(handle, delimiter = '\t'):
+            done.add(row['gi'])
+            
+                
+    with open(out_file, 'a') as handle:
+        writer = csv.DictWriter(handle, ('gi', 'Subtype'), delimiter = '\t')
+        for count, f in enumerate(os.listdir(os.path.join(DATA_DIR, 'SubtypeReports'))):
+            print count
+            if f.endswith('.xml'):
+                gi = gi_from_path(f)
+                if gi not in done:
+                    writer.writerow({
+                        'gi':gi, 
+                        'Subtype': str(determine_subtype(os.path.join(load_dir, f)))
+                        })
+                             
     
 
 
