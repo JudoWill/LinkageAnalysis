@@ -16,6 +16,9 @@ SEQ_LOC = os.path.join(DATA_DIR, 'ListFiles', 'sequences.list')
 DOWNLOAD_XML = True
 FORCE_NEW = False
 POOL_WORKERS = 1
+WIN_SIZE = 50
+WIN_OVERLAP = 25
+
 
 def touch(fname, times = None):
     with file(fname, 'a'):
@@ -27,7 +30,7 @@ def touch_data():
             f = f.replace(' ', '\ ')
             touch(os.path.join(path, f))
 
-@ruffus.follows('make_subtype_blast_db')
+@ruffus.follows('make_subtype_reports')
 def top_function():
     pass
 
@@ -176,9 +179,9 @@ def write_protein_sequences(in_files, out_file):
     touch(out_file)
     
 @ruffus.files(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list'), 
-                os.path.join(DATA_DIR, 'SubtypeBLAST', 'knownsubtypes.*'))
+                os.path.join(DATA_DIR, 'SubtypeBLAST', 'processing_sentinal'))
 @ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'SubtypeBLAST')), 'write_protein_sequences')
-def make_subtype_blast_db(in_file, out_files):
+def make_subtype_blast_db(in_file, out_file):
 
     known = {}
     with open(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list')) as handle:
@@ -192,12 +195,51 @@ def make_subtype_blast_db(in_file, out_files):
                 with open(os.path.join(DATA_DIR, 'KnownGenomes', f)) as inhandle:
                     soup = BeautifulStoneSoup(inhandle.read())
                 for seq, _ in extract_sequences(soup, XML = False, seq_only = True):
-                    handle.write('>%s_%s\n%s' % (gi, known[gi], seq.strip().upper()))
+                    handle.write('>%s_%s\n%s\n\n' % (gi, known[gi], seq.strip().upper()))
     with pushd(os.path.join(DATA_DIR, 'SubtypeBLAST')):
         try:
             sh('formatdb -i knownsubtypes.fasta -p F')
         except:
             sh('makeblastdb -in knownsubtypes.fasta -dbtype nucl')
+    touch(out_file)
+            
+@ruffus.files([os.path.join(DATA_DIR, 'SubtypeBLAST', 'knownsubtypes.fasta'),
+                os.path.join(DATA_DIR, 'RawSequences', 'processing_sentinal')],
+                os.path.join(DATA_DIR, 'SubtypeReports', 'processing_sentinal'))
+@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'SubtypeReports')), 'make_subtype_blast_db')
+def make_subtype_reports(in_files, out_file):
+    
+    dump_dir = os.path.join(DATA_DIR, 'SubtypeReports')
+    load_dir = os.path.join(DATA_DIR, 'RawSequences')
+    done = set()
+    for f in os.listdir(dump_dir):
+        if f.endswith('.xml'):
+            done.add(gi_from_path(f))
+    
+    for ind, f in enumerate(os.listdir(load_dir)):
+        if ind % 500 == 0:
+            print ind
+        
+        if f.endswith('.gi'):
+            gi = gi_from_path(f)
+            if gi not in done or FORCE_NEW:
+                with open(os.path.join(dump_dir, gi + '.fasta'), 'w') as handle:
+                    for _, seq in fasta_iter(os.path.join(load_dir, f)):
+                        count = 1
+                        for block in OverlappingIterator(seq, WIN_SIZE, WIN_OVERLAP):
+                            handle.write('>%s\n%s\n' % (gi + '_' + str(count), ''.join(block)))
+                            count += len(block)
+                cmd = 'blastn -db %(bpath)s -query %(fpath)s -out %(opath)s -outfmt 5' % {
+                'bpath':os.path.join(DATA_DIR, 'SubtypeBLAST', 'knownsubtypes.fasta'),
+                'fpath':os.path.join(dump_dir, gi + '.fasta'),
+                'opath':os.path.join(dump_dir, gi + '.xml')
+                }
+                #print cmd
+                sh(cmd)
+    touch(out_file)
+
+    
+    
 
 
 if __name__ == '__main__':
