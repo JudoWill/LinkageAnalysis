@@ -1,8 +1,28 @@
 import csv
-import os
+import os, os.path
 from collections import deque
 from types import ListType, TupleType
 from itertools import islice, groupby, imap
+
+def filter_gi(load_dir, dump_dir, load_extension = '.xml', 
+                dump_extension = '.xml', force_new = False):
+    
+    done = set()
+    if not force_new:
+        for f in os.listdir(dump_dir):
+            if f.endswith(load_extension):
+                done.add(gi_from_path(f))
+    need = set()
+    for f in os.listdir(load_dir):
+        if f.endswith(load_extension):
+            need.add(gi_from_path(f))
+    
+    items = need-done
+    for count, gi in enumerate(items):
+        if count % 500 == 0:
+            print 'Processing: %i of %i' % (count, len(items))
+        yield gi
+
 
 def take(N, iterable):
     return list(islice(iterable, N))

@@ -127,7 +127,7 @@ def determine_subtype(in_file):
     
     for seq in soup.findAll('iteration'):
         try:
-            hit = seqs[0].iteration_hits.hit.hit_def.contents[0]
+            hit = seq.iteration_hits.hit.hit_def.contents[0]
         except:
             hit = None
         if hit:
@@ -135,14 +135,13 @@ def determine_subtype(in_file):
     
     count = sum(hits.values())
     if count < 5:
-        print 'too few'
         return None
-    elif all([x < count*0.9 for x in hits.values()]):
-        print 'too heterogenus %s' % ','.join([count*0.9] + hits.values())
+    elif all([x < count*0.6 for x in hits.values()]):
+        print 'too heterogenus %s' % ','.join(map(str,hits.items()))
         return None
     else:
         for key, val in hits.items():
-            if val > count*0.9:
+            if val > count*0.6:
                 return key
         
             
