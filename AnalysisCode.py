@@ -235,7 +235,15 @@ def make_subtype_reports(in_files, out_file):
                 'opath':os.path.join(dump_dir, gi + '.xml')
                 }
                 #print cmd
-                sh(cmd)
+                try:
+                    sh(cmd)
+                except:
+                    cmd = 'blastall -p blastn -d %(bpath)s -i %(fpath)s -m 7 -o %(opath)s' % {
+                        'bpath':os.path.join(DATA_DIR, 'SubtypeBLAST', 'knownsubtypes.fasta'),
+                        'fpath':os.path.join(dump_dir, gi + '.fasta'),
+                        'opath':os.path.join(dump_dir, gi + '.xml')
+                        }
+                    sh(cmd)
     touch(out_file)
 
 @ruffus.files(os.path.join(DATA_DIR, 'SubtypeReports', 'processing_sentinal'),
