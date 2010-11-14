@@ -18,6 +18,7 @@ FORCE_NEW = False
 POOL_WORKERS = 1
 WIN_SIZE = 50
 WIN_OVERLAP = 25
+BLAST_TYPE = None
 
 
 def touch(fname, times = None):
@@ -182,7 +183,8 @@ def write_protein_sequences(in_files, out_file):
                 os.path.join(DATA_DIR, 'SubtypeBLAST', 'processing_sentinal'))
 @ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'SubtypeBLAST')), 'write_protein_sequences')
 def make_subtype_blast_db(in_file, out_file):
-
+    if BLAST_TYPE is None:
+        BLAST_TYPE = guess_blast_computer_type()
     known = {}
     with open(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list')) as handle:
         for row in csv.DictReader(handle, delimiter = ','):
@@ -197,10 +199,8 @@ def make_subtype_blast_db(in_file, out_file):
                 for seq, _ in extract_sequences(soup, XML = False, seq_only = True):
                     handle.write('>%s_%s\n%s\n\n' % (gi, known[gi], seq.strip().upper()))
     with pushd(os.path.join(DATA_DIR, 'SubtypeBLAST')):
-        try:
-            sh('formatdb -i knownsubtypes.fasta -p F')
-        except:
-            sh('makeblastdb -in knownsubtypes.fasta -dbtype nucl')
+        sh(make_blast_cmd('formatdb', None, 'knownsubtypes.fasta', None, 
+                            blast_type = BLAST_TYPE, dbtype = 'nuc'))
     touch(out_file)
             
 @ruffus.files([os.path.join(DATA_DIR, 'SubtypeBLAST', 'processing_sentinal'),
