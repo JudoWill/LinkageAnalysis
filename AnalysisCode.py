@@ -18,7 +18,6 @@ FORCE_NEW = False
 POOL_WORKERS = 1
 WIN_SIZE = 50
 WIN_OVERLAP = 25
-BLAST_TYPE = None
 
 
 def touch(fname, times = None):
@@ -183,8 +182,8 @@ def write_protein_sequences(in_files, out_file):
                 os.path.join(DATA_DIR, 'SubtypeBLAST', 'processing_sentinal'))
 @ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'SubtypeBLAST')), 'write_protein_sequences')
 def make_subtype_blast_db(in_file, out_file):
-    if BLAST_TYPE is None:
-        BLAST_TYPE = guess_blast_computer_type()
+    BLAST_TYPE = guess_blast_computer_type()
+    
     known = {}
     with open(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list')) as handle:
         for row in csv.DictReader(handle, delimiter = ','):
@@ -208,8 +207,7 @@ def make_subtype_blast_db(in_file, out_file):
                 os.path.join(DATA_DIR, 'SubtypeReports', 'processing_sentinal'))
 @ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'SubtypeReports')), 'make_subtype_blast_db', 'get_sequences')
 def make_subtype_reports(in_files, out_file):
-    if BLAST_TYPE is None:
-        BLAST_TYPE = guess_blast_computer_type()
+    BLAST_TYPE = guess_blast_computer_type()
         
     dump_dir = os.path.join(DATA_DIR, 'SubtypeReports')
     load_dir = os.path.join(DATA_DIR, 'RawSequences')
