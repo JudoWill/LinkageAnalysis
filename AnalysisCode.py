@@ -206,7 +206,7 @@ def make_subtype_blast_db(in_file, out_file):
 @ruffus.files([os.path.join(DATA_DIR, 'SubtypeBLAST', 'processing_sentinal'),
                 os.path.join(DATA_DIR, 'RawSequences', 'processing_sentinal')],
                 os.path.join(DATA_DIR, 'SubtypeReports', 'processing_sentinal'))
-@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'SubtypeReports')), 'make_subtype_blast_db')
+@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'SubtypeReports')), 'make_subtype_blast_db', 'get_sequences')
 def make_subtype_reports(in_files, out_file):
     
     dump_dir = os.path.join(DATA_DIR, 'SubtypeReports')
