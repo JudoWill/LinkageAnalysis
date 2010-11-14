@@ -83,6 +83,7 @@ class pushd():
     def __init__(self, newpath):
         self.prev_path = os.getcwd()
         self.new_path = newpath        
+
     def __enter__(self):
         os.chdir(self.new_path)
     def __exit__(self, typ, value, tb):
