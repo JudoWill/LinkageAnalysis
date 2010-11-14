@@ -1,4 +1,6 @@
 import re, urllib2
+from paver.easy import sh
+from paver.tasks import BuildFailure
 from datetime import datetime
 from itertools import islice
 from BeautifulSoup import BeautifulStoneSoup
@@ -176,7 +178,7 @@ def make_blast_cmd(program_type, database_path, in_path, out_path, blast_type = 
             'opath':out_path
             }
             return 'blastall -p blastn -d %(dpath)s -i %(ipath)s -m 7 -o %(opath)s' % info
-    else:
+    elif blast_type = 2:
         if program_type == 'formatdb':
             dbtype = get_formatdb_options(options)
             if dbtype.startswith('p'):
@@ -196,3 +198,14 @@ def make_blast_cmd(program_type, database_path, in_path, out_path, blast_type = 
             }
             return 'blastn -db %(dpath)s -query %(ipath)s -out %(opath)s -outfmt 5' % info
 
+def guess_blast_computer_type():
+    
+    progs = ('formatdb', 'makeblastdb')
+    for i, prog in enumerate(progs):
+        try:
+            sh('which ' + prog)
+            return i
+        except BuildFailure:
+            pass
+    assert False, 'Could not find BLAST on this computer!'
+            
