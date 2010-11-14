@@ -230,7 +230,8 @@ def make_subtype_reports(in_files, out_file):
                     for _, seq in fasta_iter(os.path.join(load_dir, f)):
                         count = 1
                         for block in OverlappingIterator(seq, WIN_SIZE, WIN_OVERLAP):
-                            handle.write('>%s\n%s\n' % (gi + '_' + str(count), ''.join(block)))
+                            if not all([x.upper() == 'N' for x in block]):
+                                handle.write('>%s\n%s\n' % (gi + '_' + str(count), ''.join(block)))
                             count += len(block)
                 cmd = make_blast_cmd('blastn', db_path, os.path.join(dump_dir, gi + '.fasta'),
                                         os.path.join(dump_dir, gi + '.xml'))
