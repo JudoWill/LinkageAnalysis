@@ -8,7 +8,7 @@ import argparse
 from Code.NCBIUtils import *
 from Code.GeneralUtils import *
 from functools import partial
-from subprocess import check_call
+from subprocess import call, check_call
 import shlex
 
 
@@ -237,7 +237,10 @@ def make_subtype_reports(in_files, out_file):
                                         os.path.join(dump_dir, gi + '.xml'))
                 args = shlex.split(cmd)                
                                 
-                check_call(args)
+                retcode = call(args)
+                if retcode != 0:
+                    os.remove(os.path.join(dump_dir, gi + '.fasta'))
+                    os.remove(os.path.join(dump_dir, gi + '.xml'))
                 
     touch(out_file)
 
