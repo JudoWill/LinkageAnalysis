@@ -78,3 +78,20 @@ def gi_from_path(path):
     fname = path.split(os.sep)[-1]
     gi = fname.split('.')[0]
     return gi
+
+class pushd():
+    def __init__(self, newpath):
+        self.prev_path = os.getcwd()
+        self.new_path = newpath        
+    def __enter__(self):
+        os.chdir(self.new_path)
+    def __exit__(self, typ, value, tb):
+        os.chdir(self.prev_path)        
+
+
+
+
+
+
+
+
