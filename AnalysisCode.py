@@ -2,7 +2,7 @@ import csv, os, os.path
 import ruffus
 import urllib2, re
 from datetime import datetime
-from itertools import imap, islice
+from itertools import imap, islice, izip
 from BeautifulSoup import BeautifulStoneSoup
 import argparse
 from Code.NCBIUtils import *
@@ -10,6 +10,7 @@ from Code.GeneralUtils import *
 from functools import partial
 from subprocess import call, check_call
 import shlex
+from multiprocessing import Pool
 
 
 DATA_DIR = 'Data'
@@ -17,7 +18,7 @@ OUT_DIR = 'Results'
 SEQ_LOC = os.path.join(DATA_DIR, 'ListFiles', 'sequences.list')
 DOWNLOAD_XML = True
 FORCE_NEW = False
-POOL_WORKERS = 1
+POOL_WORKERS = 3
 WIN_SIZE = 50
 WIN_OVERLAP = 25
 
@@ -249,6 +250,18 @@ def make_subtype_reports(in_files, out_file):
 @ruffus.follows('make_subtype_reports')
 def process_subtype_reports(in_file, out_file):
     
+    def get_subtypes(load_dir, gis, num_workers):
+        if num_workers > 1:
+            pool = Pool(processes = num_workers)
+            fiter = [os.path.join(load_dir, x + '.xml') for x in gis]
+            for f, subtype in izip(fiter, pool.imap(determine_subtype, fiter, chunksize = num_workers*5)):
+                gi = gi_from_path(f)
+                yield gi, subtype
+        else:
+            for gi in gis:
+                yield gi, determine_subtype(os.path.join(load_dir, gi + '.xml'))
+
+    
     load_dir = os.path.join(DATA_DIR, 'SubtypeReports')
     done = set()
     if FORCE_NEW or not os.path.exists(out_file):
@@ -258,19 +271,23 @@ def process_subtype_reports(in_file, out_file):
     with open(out_file) as handle:
         for row in csv.DictReader(handle, delimiter = '\t'):
             done.add(row['gi'])
-            
+    available = set()    
+    for f in os.listdir(load_dir):
+        if f.endswith('.xml'):
+            available.add(gi_from_path(f))
+    
+    need = available - done
                 
     with open(out_file, 'a') as handle:
         writer = csv.DictWriter(handle, ('gi', 'Subtype'), delimiter = '\t')
-        for count, f in enumerate(os.listdir(os.path.join(DATA_DIR, 'SubtypeReports'))):
-            print count
-            if f.endswith('.xml'):
-                gi = gi_from_path(f)
-                if gi not in done:
-                    writer.writerow({
-                        'gi':gi, 
-                        'Subtype': str(determine_subtype(os.path.join(load_dir, f)))
-                        })
+        for gi, subtype in get_subtypes(load_dir, need, POOL_WORKERS):
+            need.discard(gi)
+            writer.writerow({
+                'gi':gi, 
+                'Subtype': str(subtype)
+                })
+            if len(need) % 500 == 0:
+                print 'Reports remaining: ' + len(need)
                              
     
 
