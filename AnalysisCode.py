@@ -208,9 +208,12 @@ def make_subtype_blast_db(in_file, out_file):
                 os.path.join(DATA_DIR, 'SubtypeReports', 'processing_sentinal'))
 @ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'SubtypeReports')), 'make_subtype_blast_db', 'get_sequences')
 def make_subtype_reports(in_files, out_file):
-    
+    if BLAST_TYPE is None:
+        BLAST_TYPE = guess_blast_computer_type()
+        
     dump_dir = os.path.join(DATA_DIR, 'SubtypeReports')
     load_dir = os.path.join(DATA_DIR, 'RawSequences')
+    db_path = os.path.join(DATA_DIR, 'SubtypeBLAST', 'knownsubtypes.fasta')
     done = set()
     for f in os.listdir(dump_dir):
         if f.endswith('.xml'):
@@ -229,21 +232,10 @@ def make_subtype_reports(in_files, out_file):
                         for block in OverlappingIterator(seq, WIN_SIZE, WIN_OVERLAP):
                             handle.write('>%s\n%s\n' % (gi + '_' + str(count), ''.join(block)))
                             count += len(block)
-                cmd = 'blastn -db %(bpath)s -query %(fpath)s -out %(opath)s -outfmt 5' % {
-                'bpath':os.path.join(DATA_DIR, 'SubtypeBLAST', 'knownsubtypes.fasta'),
-                'fpath':os.path.join(dump_dir, gi + '.fasta'),
-                'opath':os.path.join(dump_dir, gi + '.xml')
-                }
-                #print cmd
-                try:
-                    sh(cmd)
-                except:
-                    cmd = 'blastall -p blastn -d %(bpath)s -i %(fpath)s -m 7 -o %(opath)s' % {
-                        'bpath':os.path.join(DATA_DIR, 'SubtypeBLAST', 'knownsubtypes.fasta'),
-                        'fpath':os.path.join(dump_dir, gi + '.fasta'),
-                        'opath':os.path.join(dump_dir, gi + '.xml')
-                        }
-                    sh(cmd)
+                cmd = make_blast_cmd('blastn', db_path, os.path.join(dump_dir, gi + '.fasta'),
+                                        os.path.join(dump_dir, gi + '.xml'))
+                sh(cmd)
+                
     touch(out_file)
 
 @ruffus.files(os.path.join(DATA_DIR, 'SubtypeReports', 'processing_sentinal'),
