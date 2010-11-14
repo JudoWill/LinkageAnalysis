@@ -145,9 +145,54 @@ def determine_subtype(in_file):
                 return key
         
             
-
-
-
-
-
+def make_blast_cmd(program_type, database_path, in_path, out_path, blast_type = 1, **options):
+    
+    def get_formatdb_options(options):
+        assert 'dbtype' in options, \
+                'You must have a "dbtype" option when using formatdb'
+        dbtype = options['dbtype'].lower()
+        assert dbtype.startswith('p') or dbtype.startswith('n'), \
+            'Arguement to dbtype must either be "prot" or "nuc"'
+        return dbtype
+        
+        
+    
+    if blast_type = 1:
+        if program_type == 'formatdb':
+            dbtype = get_formatdb_options(options)
+            if dbtype.startswith('p'):
+                prot = 'T'
+            elif dbtype.startswith('n'):
+                prot = 'F'
+            info = {
+            'ipath':in_path,
+            'prot':prot
+            }
+            return 'formatdb -i %(ipath)s -p %(prot)s' % info
+        elif program_type == 'blastn':
+            info = {
+            'dpath':database_path,
+            'ipath':in_path,
+            'opath':out_path
+            }
+            return 'blastall -p blastn -d %(dpath)s -i %(ipath)s -m 7 -o %(opath)s' % info
+    else:
+        if program_type == 'formatdb':
+            dbtype = get_formatdb_options(options)
+            if dbtype.startswith('p'):
+                prot = 'prot'
+            elif dbtype.startswith('n'):
+                prot = 'nucl'
+            info = {
+            'ipath':in_path,
+            'prot':prot,
+            }
+            return 'makeblastdb -in %(ipath)s -dbtype %(prot)s' % info
+        elif program_type == 'blastn':
+            info = {
+            'dpath':database_path,
+            'ipath':in_path,
+            'opath':out_path
+            }
+            return 'blastn -db %(dpath)s -query %(ipath)s -out %(opath)s -outfmt 5' % info
 
