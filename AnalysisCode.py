@@ -1,4 +1,4 @@
-from paver.easy import sh, pushd
+from paver.easy import sh
 import csv, os, os.path
 import ruffus
 import urllib2, re
@@ -9,6 +9,9 @@ import argparse
 from Code.NCBIUtils import *
 from Code.GeneralUtils import *
 from functools import partial
+from subprocess import check_call
+import shlex
+
 
 DATA_DIR = 'Data'
 OUT_DIR = 'Results'
@@ -198,8 +201,9 @@ def make_subtype_blast_db(in_file, out_file):
                 for seq, _ in extract_sequences(soup, XML = False, seq_only = True):
                     handle.write('>%s_%s\n%s\n\n' % (gi, known[gi], seq.strip().upper()))
     with pushd(os.path.join(DATA_DIR, 'SubtypeBLAST')):
-        sh(make_blast_cmd('formatdb', None, 'knownsubtypes.fasta', None, 
-                            blast_type = BLAST_TYPE, dbtype = 'nuc'))
+        cmd = make_blast_cmd('formatdb', None, 'knownsubtypes.fasta', None, 
+                            blast_type = BLAST_TYPE, dbtype = 'nuc')       
+        check_call(shlex.split(cmd))
     touch(out_file)
             
 @ruffus.files([os.path.join(DATA_DIR, 'SubtypeBLAST', 'processing_sentinal'),
@@ -218,10 +222,9 @@ def make_subtype_reports(in_files, out_file):
             done.add(gi_from_path(f))
     
     for ind, f in enumerate(os.listdir(load_dir)):
-        if ind % 500 == 0:
-            print ind
-        
         if f.endswith('.gi'):
+            if ind % 500 == 0:
+                print ind
             gi = gi_from_path(f)
             if gi not in done or FORCE_NEW:
                 with open(os.path.join(dump_dir, gi + '.fasta'), 'w') as handle:
@@ -232,7 +235,9 @@ def make_subtype_reports(in_files, out_file):
                             count += len(block)
                 cmd = make_blast_cmd('blastn', db_path, os.path.join(dump_dir, gi + '.fasta'),
                                         os.path.join(dump_dir, gi + '.xml'))
-                sh(cmd)
+                args = shlex.split(cmd)                
+                                
+                check_call(args)
                 
     touch(out_file)
 
