@@ -1,12 +1,12 @@
 import re, urllib2
-from paver.easy import sh
-from paver.tasks import BuildFailure
 from datetime import datetime
 from itertools import islice
 from BeautifulSoup import BeautifulStoneSoup
 from suds.client import Client
 import time
 from collections import defaultdict
+from subprocess import call
+import shlex
 
 def take(N, iterable):
     return list(islice(iterable, N))
@@ -169,7 +169,7 @@ def make_blast_cmd(program_type, database_path, in_path, out_path, blast_type = 
             info = {
             'ipath':in_path,
             'prot':prot
-            }
+            } 
             return 'formatdb -i %(ipath)s -p %(prot)s' % info
         elif program_type == 'blastn':
             info = {
@@ -202,10 +202,11 @@ def guess_blast_computer_type():
     
     progs = ('formatdb', 'makeblastdb')
     for i, prog in enumerate(progs):
-        try:
-            sh('which ' + prog)
-            return i
-        except BuildFailure:
-            pass
+        args = shlex.split('which ' + prog)        
+        retcode = call(args)
+        if retcode == 0:
+            return i        
     assert False, 'Could not find BLAST on this computer!'
-            
+
+
+
