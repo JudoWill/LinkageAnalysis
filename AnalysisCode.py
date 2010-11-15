@@ -15,7 +15,7 @@ from multiprocessing import Pool
 
 DATA_DIR = 'Data'
 OUT_DIR = 'Results'
-SEQ_LOC = os.path.join(DATA_DIR, 'ListFiles', 'sequences.list')
+SEQ_LOC = os.path.join('ListFiles', 'sequences.list')
 DOWNLOAD_XML = True
 FORCE_NEW = False
 POOL_WORKERS = 3
@@ -37,8 +37,8 @@ def touch_data():
 def top_function():
     pass
 
-@ruffus.files(os.path.join(DATA_DIR, 'ListFiles', 'search_sentinal'),
-              os.path.join(DATA_DIR, 'ListFiles', 'sequences.list'))
+@ruffus.files(os.path.join('ListFiles', 'search_sentinal'),
+              os.path.join('ListFiles', 'sequences.list'))
 def get_sequence_ids(in_file, out_file):
 
 
@@ -51,7 +51,7 @@ def get_sequence_ids(in_file, out_file):
         handle.write('\n'.join(id_list))
 
 
-@ruffus.files(os.path.join(DATA_DIR, 'ListFiles', 'sequences.list'),
+@ruffus.files(os.path.join('ListFiles', 'sequences.list'),
               os.path.join(DATA_DIR, 'SequenceXML', 'download_sentinal'))
 @ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'SequenceXML')), 
                 'get_known_genotypes')
@@ -128,7 +128,7 @@ def xml_file_gen():
 
 @ruffus.merge([os.path.join(DATA_DIR, 'KnownGenomes', 'download_sentinal'), 
                 os.path.join(DATA_DIR, 'SequenceXML', 'download_sentinal')], 
-                os.path.join(DATA_DIR, 'ListFiles', 'mapping.txt'))
+                os.path.join('ListFiles', 'mapping.txt'))
 @ruffus.follows('get_known_genotypes', 'get_sequence_xml')
 def make_mappings(in_files, out_file):
     
@@ -153,7 +153,7 @@ def make_mappings(in_files, out_file):
             
 @ruffus.files([os.path.join(DATA_DIR, 'KnownGenomes', 'download_sentinal'), 
                 os.path.join(DATA_DIR, 'SequenceXML', 'download_sentinal'),
-                os.path.join(DATA_DIR, 'ListFiles', 'mapping.txt')],
+                os.path.join('ListFiles', 'mapping.txt')],
                 os.path.join(DATA_DIR, 'AASeqs', 'processing_sentinal'))
 @ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'AASeqs')), 'get_sequence_xml')
 def write_protein_sequences(in_files, out_file):
@@ -246,7 +246,7 @@ def make_subtype_reports(in_files, out_file):
     touch(out_file)
 
 @ruffus.files(os.path.join(DATA_DIR, 'SubtypeReports', 'processing_sentinal'),
-                os.path.join(DATA_DIR, 'ListFiles', 'subtype_mapping.txt'))
+                os.path.join('ListFiles', 'subtype_mapping.txt'))
 @ruffus.follows('make_subtype_reports')
 def process_subtype_reports(in_file, out_file):
     
