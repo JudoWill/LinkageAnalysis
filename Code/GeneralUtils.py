@@ -50,7 +50,7 @@ def fasta_iter(filename):
     with open(filename) as handle:
         for header, group in groupby(handle, lambda x: x.startswith('>')):
             if header:
-                name = group.next().strip()
+                name = group.next().strip()[1:]
             else:
                 seq = ''.join([x.strip() for x in group])
                 yield name, seq
