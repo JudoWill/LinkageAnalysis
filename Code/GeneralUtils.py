@@ -55,7 +55,13 @@ def fasta_iter(filename):
                 seq = ''.join([x.strip() for x in group])
                 yield name, seq
     
+def join_fasta(filenames, out_file, mode = 'w'):
     
+    with open(out_file, mode) as ohandle:
+        for f in filenames:
+            for name, seq in fasta_iter(f):
+                ohandle.write('>%s\n%s\n' % (name, seq))
+            
     
 
 def make_mapping_dict(in_file):
