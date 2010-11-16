@@ -5,6 +5,8 @@ from subprocess import call
 import shlex
 from itertools import groupby
 from math import log
+from memorised.decorators import memorise
+from random import shuffle
 
 
 class Alignment():
@@ -39,6 +41,7 @@ class Alignment():
 
         return signal
 
+@memorise
 def calculate_mutual_info(signal1, signal2):
     
     def count2prob(d, num):
@@ -67,7 +70,18 @@ def calculate_mutual_info(signal1, signal2):
         
     return mut_info
 
+@memorise
+def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
+    
+    rmut = calculate_mutual_info(signal1, signal2)
 
+    num_greater = 0
+    
+    for i in xrange(num_reps):
+        if calculate_mutual_info(signal1, shuffle(signal2)) > rmut:
+            num_greater += 1
+
+    return num_greater / num_reps
 
 
 
