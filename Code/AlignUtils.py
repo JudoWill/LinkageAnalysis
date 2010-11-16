@@ -7,6 +7,7 @@ from itertools import groupby
 from math import log
 from memorised.decorators import memorise
 from random import shuffle
+from operator import itemgetter
 
 
 class Alignment():
@@ -15,7 +16,7 @@ class Alignment():
         self.seqs = {}
     
     @staticmethod
-    def alignment_from_file(filename)
+    def alignment_from_file(filename):
         align = Alignment()        
         with open(filename) as handle:
             for line in handle:
@@ -41,7 +42,7 @@ class Alignment():
 
         return signal
 
-@memorise
+@memorise()
 def calculate_mutual_info(signal1, signal2):
     
     def count2prob(d, num):
@@ -70,7 +71,7 @@ def calculate_mutual_info(signal1, signal2):
         
     return mut_info
 
-@memorise
+@memorise()
 def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
     
     rmut = calculate_mutual_info(signal1, signal2)
@@ -83,6 +84,28 @@ def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
 
     return num_greater / num_reps
 
+@memorise()
+def prediction_mapping(signal1, signal2):
+    print signal1
+    counts = defaultdict(int)
+    for s1, s2 in zip(signal1, signal2):
+        counts[(s1, s2)] += 1
+
+    (s1, s2), val = max(counts.items(), key = itemgetter(1))
+    if val == 1:
+        return [(x, y, 1) for (x,y) in counts.keys()]
+    else:
+        mapping = (s1, s2, val)
+        sn1 = tuple()
+        sn2 = tuple()
+        for i1, i2 in zip(signal1, signal2):
+            if i1 != s1:
+                sn1 += (i1,)
+                sn2 += (i2,)
+        if sn1:
+            return [mapping] + prediction_mapping(sn1, sn2)
+        else:
+            return [mapping]
 
 
 def run_clustalw(filenames, out_fasta, out_tree, out_align):
