@@ -287,7 +287,7 @@ def process_subtype_reports(in_file, out_file):
                 'Subtype': str(subtype)
                 })
             if len(need) % 500 == 0:
-                print 'Reports remaining: ' + len(need)
+                print 'Reports remaining: %i' % len(need)
                              
     
 
