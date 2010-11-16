@@ -18,7 +18,7 @@ OUT_DIR = 'Results'
 SEQ_LOC = os.path.join('ListFiles', 'sequences.list')
 DOWNLOAD_XML = True
 FORCE_NEW = False
-POOL_WORKERS = 3
+POOL_WORKERS = 2
 WIN_SIZE = 50
 WIN_OVERLAP = 25
 
@@ -254,12 +254,12 @@ def process_subtype_reports(in_file, out_file):
         if num_workers > 1:
             pool = Pool(processes = num_workers)
             fiter = [os.path.join(load_dir, x + '.xml') for x in gis]
-            for f, subtype in izip(fiter, pool.imap(determine_subtype, fiter, chunksize = num_workers*5)):
+            for f, subtype in izip(fiter, pool.imap(determine_subtype_element, fiter, chunksize = num_workers*5)):
                 gi = gi_from_path(f)
                 yield gi, subtype
         else:
             for gi in gis:
-                yield gi, determine_subtype(os.path.join(load_dir, gi + '.xml'))
+                yield gi, determine_subtype_element(os.path.join(load_dir, gi + '.xml'))
 
     
     load_dir = os.path.join(DATA_DIR, 'SubtypeReports')

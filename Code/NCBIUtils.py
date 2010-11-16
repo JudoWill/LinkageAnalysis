@@ -1,12 +1,14 @@
 import re, urllib2
 from datetime import datetime
 from itertools import islice
-from BeautifulSoup import BeautifulStoneSoup
+from BeautifulSoup import BeautifulStoneSoup, SoupStrainer
 from suds.client import Client
 import time
 from collections import defaultdict
 from subprocess import call
 import shlex
+import re
+from xml.etree.ElementTree import ElementTree
 
 def take(N, iterable):
     return list(islice(iterable, N))
@@ -133,6 +135,52 @@ def determine_subtype(in_file):
         except:
             hit = None
         if hit:
+            hits[hit.split('_')[1]] += 1
+    
+    count = sum(hits.values())
+    if count < 5:
+        return None
+    elif all([x < count*0.6 for x in hits.values()]):
+        #print 'too heterogenus %s' % ','.join(map(str,hits.items()))
+        return None
+    else:
+        for key, val in hits.items():
+            if val > count*0.6:
+                return key
+
+def determine_subtype_short(in_file):
+    hits = defaultdict(int)
+    strainer = SoupStrainer(re.compile('iteration'))
+    with open(in_file) as handle:
+        soup = BeautifulStoneSoup(handle.read(), parseOnlyThese = strainer)
+    
+    for seq in soup.findAll('iteration'):
+        try:
+            hit = seq.iteration_hits.hit.hit_def.contents[0]
+        except:
+            hit = None
+        if hit:
+            hits[hit.split('_')[1]] += 1
+    
+    count = sum(hits.values())
+    if count < 5:
+        return None
+    elif all([x < count*0.6 for x in hits.values()]):
+        print 'too heterogenus %s' % ','.join(map(str,hits.items()))
+        return None
+    else:
+        for key, val in hits.items():
+            if val > count*0.6:
+                return key
+
+def determine_subtype_element(in_file):
+    hits = defaultdict(int)
+    tree = ElementTree(file = in_file)
+
+    for it in tree.getiterator('Iteration'):
+        hit_list = it.getiterator('Hit')
+        if len(hit_list) > 0:
+            hit = hit_list[0].find('Hit_def').text
             hits[hit.split('_')[1]] += 1
     
     count = sum(hits.values())
