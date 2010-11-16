@@ -4,6 +4,42 @@ from subprocess import call
 import shlex
 from itertools import groupby
 
+
+class Alignment():
+    
+    def __init__(self):
+        self.seqs = {}
+    
+    @staticmethod
+    def alignment_from_file(filename)
+        align = Alignment()        
+        with open(filename) as handle:
+            for line in handle:
+                parts = line.strip().split('\t')
+                align.seqs[parts[0]] = align.seqs[parts[1]]
+        return align
+
+    def get_slice(self, start, stop):
+        
+        align = Alignment()
+        for name, seq in self.seqs:
+            align.seqs[name] = seq[start:stop]
+        return align
+
+    def get_signal(self, seq_names):
+        
+        signal = []
+        count = 0
+        seq_dict = {}
+        for name in seq_names:
+            seq = self.seqs[name]
+            signal.append(seq_dict.setdefault(seq, len(seq_dict)+1))
+
+        return signal
+
+
+
+
 def run_clustalw(filenames, out_fasta, out_tree, out_align):
     
     join_fasta(filenames, out_fasta)
@@ -53,3 +89,5 @@ def convert_alignment(clustal_v, modified_v):
     with open(modified_v, 'w') as handle:
         for name, seq in seqs.iteritems():
             handle.write('%s\t%s\n' % (name, seq))
+
+
