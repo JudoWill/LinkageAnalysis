@@ -6,7 +6,7 @@ import shlex
 from itertools import groupby
 from math import log
 from memorised.decorators import memorise
-from random import shuffle
+from random import shuffle, sample
 from operator import itemgetter
 
 
@@ -79,7 +79,10 @@ def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
     num_greater = 0
     
     for i in xrange(num_reps):
-        if calculate_mutual_info(signal1, shuffle(signal2)) > rmut:
+        
+        r = calculate_mutual_info(signal1, sample(signal2, len(signal2)))
+        print r, rmut
+        if r > rmut:
             num_greater += 1
 
     return num_greater / num_reps
