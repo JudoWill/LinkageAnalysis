@@ -1,7 +1,8 @@
-from collections import deque
+from collections import deque, defaultdict
 from GeneralUtils import *
 from subprocess import call
 import shlex
+from itertools import groupby
 
 def run_clustalw(filenames, out_fasta, out_tree, out_align):
     
@@ -32,3 +33,23 @@ def join_alignments(out_align, *aligns):
         args = shlex.split(cmd % info)
         call(args)
         base_align = out_align
+
+def convert_alignment(clustal_v, modified_v):
+    
+    grouper = lambda x: x.startswith(' ') or x.startswith('\n')
+    seqs = defaultdict(str)    
+    
+    with open(clustal_v) as clustalHandle:
+        clustalHandle.next()
+        for key, rows in groupby(clustalHandle, grouper):
+            if not key:
+                for row in rows:
+                    parts = row.split()
+                    seqs[parts[0].strip()] += parts[1].strip()
+
+    num = [len(x) for x in seqs.itervalues()]
+    assert all([num[0] == x for x in num])
+    
+    with open(modified_v, 'w') as handle:
+        for name, seq in seqs.iteritems():
+            handle.write('%s\t%s\n' % (name, seq))
