@@ -1,8 +1,10 @@
+from __future__ import division
 from collections import deque, defaultdict
 from GeneralUtils import *
 from subprocess import call
 import shlex
 from itertools import groupby
+from math import log
 
 
 class Alignment():
@@ -36,6 +38,35 @@ class Alignment():
             signal.append(seq_dict.setdefault(seq, len(seq_dict)+1))
 
         return signal
+
+def calculate_mutual_info(signal1, signal2):
+    
+    def count2prob(d, num):
+        for key, val in d.items():
+            d[key] = val/num
+        return d
+
+
+    overlap = defaultdict(int)
+    num_items = len(signal1)
+    signal1_hist = defaultdict(int)
+    signal2_hist = defaultdict(int)
+
+    for s1, s2 in zip(signal1, signal2):
+        overlap[(s1, s2)] += 1
+        signal1_hist[s1] += 1
+        signal2_hist[s2] += 1
+
+    mut_info = float()
+    overlap_prob = count2prob(overlap, num_items)
+    signal1_prob = count2prob(signal1_hist, num_items)
+    signal2_prob = count2prob(signal2_hist, num_items)
+
+    for (s1, s2), count in overlap.items():
+        mut_info += overlap_prob[(s1, s2)]*log(overlap_prob[(s1, s2)]/(signal1_prob[s1]*signal2_prob[s2]))
+        
+    return mut_info
+
 
 
 
