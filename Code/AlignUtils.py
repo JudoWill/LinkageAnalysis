@@ -86,7 +86,7 @@ def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
 
 @memorise()
 def prediction_mapping(signal1, signal2):
-    print signal1
+
     counts = defaultdict(int)
     for s1, s2 in zip(signal1, signal2):
         counts[(s1, s2)] += 1
