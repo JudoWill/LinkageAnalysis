@@ -2,7 +2,7 @@ import csv, os, os.path
 import ruffus
 import urllib2, re
 from datetime import datetime
-from itertools import imap, islice, izip
+from itertools import imap, islice, izip, count
 from BeautifulSoup import BeautifulStoneSoup
 import argparse
 from Code.NCBIUtils import *
@@ -206,6 +206,38 @@ def make_subtype_blast_db(in_file, out_file):
                             blast_type = BLAST_TYPE, dbtype = 'nuc')       
         check_call(shlex.split(cmd))
     touch(out_file)
+
+@ruffus.files(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list'), 
+                os.path.join(DATA_DIR, 'TranslateBLAST', 'processing_sentinal'))
+@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'TranslateBLAST')), 'write_protein_sequences')
+def make_translate_blast_db(in_file, out_file):
+    BLAST_TYPE = guess_blast_computer_type()
+    mapping_dict = make_mapping_dict(os.path.join('ListFiles', 'mapping.txt'))
+    mapping = partial(mapping_func, mapping_dict)
+    print 'btype', BLAST_TYPE
+    known = {}
+    with open(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list')) as handle:
+        for row in csv.DictReader(handle, delimiter = ','):
+            known[row['gi']] = row['subtype']
+    
+    with open(os.path.join(DATA_DIR, 'TranslateBLAST','knowntranslations.fasta'), 'w') as handle:
+        for f in os.listdir(os.path.join(DATA_DIR, 'KnownGenomes')):
+            if f.endswith('.xml'):
+                gi = gi_from_path(f)
+                for outdict in extract_features(os.path.join(DATA_DIR, 'KnownGenomes', f), 
+                                                mapping = mapping):
+                    seq = outdict['AA']
+                    prot = outdict['name']
+                    handle.write('>%s_%s_%s\n%s\n\n' % (gi, known[gi], prot, seq.strip().upper()))
+    
+    
+    with pushd(os.path.join(DATA_DIR, 'TranslateBLAST')):
+        cmd = make_blast_cmd('formatdb', None, 'knowntranslations.fasta', None, 
+                            blast_type = BLAST_TYPE, dbtype = 'prot')       
+        print cmd
+        check_call(shlex.split(cmd))
+    touch(out_file)
+
             
 @ruffus.files([os.path.join(DATA_DIR, 'SubtypeBLAST', 'processing_sentinal'),
                 os.path.join(DATA_DIR, 'RawSequences', 'processing_sentinal')],
@@ -294,7 +326,7 @@ def process_subtype_reports(in_file, out_file):
 @ruffus.files([os.path.join('ListFiles', 'subtype_mapping.txt'),
                 os.path.join(DATA_DIR, 'AASeqs', 'processing_sentinal')],
                 os.path.join(DATA_DIR, 'AlignmentDir', 'processing_sentinal'))
-@ruffus.follows('make_subtype_reports', 
+@ruffus.follows('make_subtype_reports', 'make_translate_blast_db',
                 ruffus.mkdir(os.path.join(DATA_DIR, 'AlignmentDir')))                             
 def make_alignments(in_files, out_file):
     
@@ -362,6 +394,31 @@ def make_alignments(in_files, out_file):
     touch(out_file)
 
 
+@ruffus.files(os.path.join(DATA_DIR, 'SubtypeReports', 'processing_sentinal'),
+                os.path.join(DATA_DIR, 'SubtypeReports', 'simplfying_sentinal'))
+def sanitize_xml(in_file, out_file):
+    
+    def file_gen(load_dir):
+        for f in os.listdir(load_dir):
+            if f.endswith('.xml'):
+                yield os.path.join(load_dir, f)
+                
+    load_dir = os.path.join(DATA_DIR, 'SubtypeReports')
+    
+    if POOL_WORKERS == 1:
+        for i, f in enumerate(file_gen(load_dir)):
+            simplify_xml(f)
+            if i % 500 == 0:
+                print 'simplified: ', i
+    else:
+        pool = Pool(processes = POOL_WORKERS)
+        for i, v in enumerate(pool.imap(simplify_xml, file_gen(load_dir),
+                                chunksize = 100)):
+            if i % 500 == 0:
+                print 'simplified: ', i
+                
+    touch(out_file)
+
 if __name__ == '__main__':
 
 
@@ -374,6 +431,8 @@ if __name__ == '__main__':
                         default = False)
     parser.add_argument('--workers', dest = 'workers', default = 3,
                         action = 'store', type = int)
+    parser.add_argument('--simplify-xml', dest = 'simplifyxml', default = False,
+                        action = 'store_true')
     args = parser.parse_args()
     
     if args.noseqs:
@@ -382,6 +441,9 @@ if __name__ == '__main__':
     if args.fresh:
         touch_data()
         FORCE_NEW = True
+        
+    if args.simplifyxml:
+        ruffus.pipeline_run([sanitize_xml])
         
     if args.makemapping:
         ruffus.pipeline_run([make_mappings])

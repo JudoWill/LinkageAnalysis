@@ -205,6 +205,22 @@ def determine_subtype_element(in_file, delete_extra = True):
             if val > count*0.6:
                 return key
 
+def simplify_xml(in_file):
+    
+    try:    
+        tree = ElementTree(file = in_file)
+
+        for it in tree.getiterator('Iteration'):
+            hit_list = it.getiterator('Hit')
+            if len(hit_list) > 1:
+                for hit in hit_list[1:]:
+                    hit.clear()
+            elif len(hit_list) == 0:
+                it.clear()
+        tree.write(in_file)
+    except ExpatError:
+        return None
+
 def translate_genome(gi, load_path, db_path, out_report):
     
     if not os.path.exists(out_report):
