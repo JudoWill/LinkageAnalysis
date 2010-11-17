@@ -55,11 +55,14 @@ def fasta_iter(filename):
                 seq = ''.join([x.strip() for x in group])
                 yield name, seq
     
-def join_fasta(filenames, out_file, mode = 'w'):
+def join_fasta(filenames, out_file, mode = 'w', strip = False):
     
     with open(out_file, mode) as ohandle:
         for f in filenames:
             for name, seq in fasta_iter(f):
+                if strip:
+                    name = gi_from_path(name)
+                    name = name.split('_')[0]
                 ohandle.write('>%s\n%s\n' % (name, seq))
             
     
