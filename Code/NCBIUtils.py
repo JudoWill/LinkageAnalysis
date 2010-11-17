@@ -199,7 +199,7 @@ def determine_subtype_element(in_file):
                 return key
         
             
-def make_blast_cmd(program_type, database_path, in_path, out_path, blast_type = 1, **options):
+def make_blast_cmd(program_type, database_path, in_path, out_path, blast_type = 0, **options):
     
     def get_formatdb_options(options):
         assert 'dbtype' in options, \
@@ -211,7 +211,7 @@ def make_blast_cmd(program_type, database_path, in_path, out_path, blast_type = 
         
         
     
-    if blast_type == 1:
+    if blast_type == 0:
         if program_type == 'formatdb':
             dbtype = get_formatdb_options(options)
             if dbtype.startswith('p'):
@@ -230,7 +230,7 @@ def make_blast_cmd(program_type, database_path, in_path, out_path, blast_type = 
             'opath':out_path
             }
             return 'blastall -p blastn -d %(dpath)s -i %(ipath)s -m 7 -o %(opath)s' % info
-    elif blast_type == 2:
+    elif blast_type == 1:
         if program_type == 'formatdb':
             dbtype = get_formatdb_options(options)
             if dbtype.startswith('p'):
@@ -249,11 +249,20 @@ def make_blast_cmd(program_type, database_path, in_path, out_path, blast_type = 
             'opath':out_path
             }
             return 'blastn -db %(dpath)s -query %(ipath)s -out %(opath)s -outfmt 5' % info
+        elif program_type = 'blastx':
+            info = {
+            'dpath':database_path,
+            'ipath':in_path,
+            'opath':out_path
+            }
+            return 'blastx -db %(dpath)s -query %(ipath)s -out %(opath)s -outfmt 5 -best_hit_overhang 0.25' % info
+            
 
 def guess_blast_computer_type():
     
     progs = ('formatdb', 'makeblastdb')
     for i, prog in enumerate(progs):
+        print i
         args = shlex.split('which ' + prog)        
         retcode = call(args)
         if retcode == 0:
