@@ -444,8 +444,7 @@ if __name__ == '__main__':
         
     if args.simplifyxml:
         ruffus.pipeline_run([sanitize_xml])
-        
-    if args.makemapping:
+    elif args.makemapping:
         ruffus.pipeline_run([make_mappings])
     else:
         ruffus.pipeline_run([top_function])
