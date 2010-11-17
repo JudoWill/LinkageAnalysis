@@ -7,9 +7,11 @@ import time
 from collections import defaultdict
 from subprocess import call
 import shlex
-import re
+import re, os, os.path
 from xml.etree.ElementTree import ElementTree
 from xml.parsers.expat import ExpatError
+from operator import itemgetter
+from itertools import groupby
 
 def take(N, iterable):
     return list(islice(iterable, N))
@@ -197,6 +199,79 @@ def determine_subtype_element(in_file):
         for key, val in hits.items():
             if val > count*0.6:
                 return key
+
+def translate_genome(gi, load_path, db_path, out_report):
+    
+    if not os.path.exists(out_report):
+        in_fa = os.path.join(load_path, gi + '.gi')
+        cmd = make_blast_cmd('blastx', db_path, in_fa, out_report)
+        call(shlex.split(cmd))
+    
+        
+    tree = ElementTree(file = out_report)
+    all_hits = []
+    for it in tree.getiterator('Iteration'):
+        try:
+            for hit in it.getiterator('Hit'):
+                hit_name = hit.find('Hit_def').text
+                parts = hit_name.split('_')
+                prot_start = hit.find('Hit_hsps/Hsp/Hsp_hit-from').text
+                prot_end = hit.find('Hit_hsps/Hsp/Hsp_hit-to').text
+                seq = hit.find('Hit_hsps/Hsp/Hsp_qseq').text
+                bitscore = hit.find('Hit_hsps/Hsp/Hsp_bit-score').text
+                e_val = hit.find('Hit_hsps/Hsp/Hsp_evalue').text
+                all_hits.append({
+                'subtype':parts[1],
+                'prot':parts[2],
+                'seq':seq,
+                'start':int(prot_start),
+                'stop':int(prot_end),
+                'gi':parts[0],
+                'len':int(prot_end) - int(prot_start),
+                'bitscore':float(bitscore),
+                'e_val':float(e_val)
+                })
+        except ExpatError:
+            pass
+    
+    #replace the scores
+    scores = {}
+    for hit in all_hits:
+        key = (hit['prot'], hit['gi'])
+        scores[key] = min(hit['e_val'], scores.get(key, 1))
+    for hit in all_hits:
+        key = (hit['prot'], hit['gi'])
+        hit['e_val'] = scores[key]
+        
+    all_hits.sort(key = itemgetter('prot', 'e_val', 'gi', 'start'))
+    prots = defaultdict(str)
+    for (prot, gi), hits in groupby(all_hits, key = itemgetter('prot', 'gi')):
+        
+        istart = 0
+        istop = 0
+        seq = ''
+        for hit in hits:
+            if hit['len'] > 10:
+                if istart == 0:
+                    seq = hit['seq']
+                    seq.replace('-','')
+                    istart = hit['start']
+                    istop = hit['stop']
+                elif hit['start'] >= istop: #past the end
+                    d = hit['start'] - istop
+                    seq += ''.join(['X' for x in range(d)]) + hit['seq']
+                    istop = hit['stop']
+                elif hit['stop'] <= istart:
+                    d = istart - hit['stop']
+                    seq = hit['seq'] + ''.join(['X' for x in range(d)]) + seq
+        seq = seq.replace('-', '')
+        if seq:
+            if len(prots[prot]) < len(seq):
+                prots[prot] = seq
+    for prot, seq in prots.items():
+        yield prot, seq
+            
+            
         
             
 def make_blast_cmd(program_type, database_path, in_path, out_path, blast_type = 0, **options):
@@ -249,7 +324,7 @@ def make_blast_cmd(program_type, database_path, in_path, out_path, blast_type = 
             'opath':out_path
             }
             return 'blastn -db %(dpath)s -query %(ipath)s -out %(opath)s -outfmt 5' % info
-        elif program_type = 'blastx':
+        elif program_type == 'blastx':
             info = {
             'dpath':database_path,
             'ipath':in_path,
