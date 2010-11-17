@@ -309,13 +309,12 @@ def make_alignments(in_files, out_file):
         for row in csv.DictReader(handle, delimiter = '\t'):
             sub_mapping[row['Subtype']].add(row['gi'])
             c+= 1
-            if c > 5000:
-                break
+
     uni_prots = set(prot_mapping.values())
     uni_prots.discard(None)
     
     for sub, gi_list in sub_mapping.items():
-        print sub, gi_list
+        #print sub, gi_list
         safe_mkdir(os.path.join(dump_base, sub))
         for prot in uni_prots:
             
@@ -328,14 +327,34 @@ def make_alignments(in_files, out_file):
                 for gi in gi_list:
                     if os.path.exists(os.path.join(load_dir, gi+'.'+prot)):
                         filenames.append(os.path.join(load_dir, gi+'.'+prot))
-                if len(filenames) == 0:
+                if len(filenames) < 2:
                     continue
                 print sub, prot, len(filenames)
                 run_clustalw(filenames, 
                             base_name + '.fasta', 
                             base_name + '.dnd', 
                             base_name + '.align')
+            else:
+                done_set = set([x for x,y in fasta_iter(base_name + '.fasta')])
                 
+                filenames = []
+                for gi in gi_list - done_set:
+                    #print gi
+                    if os.path.exists(os.path.join(load_dir, gi+'.'+prot)):
+                        filenames.append(os.path.join(load_dir, gi+'.'+prot))
+                print len(done_set), len(gi_list - done_set), len(filenames)
+                if len(filenames) < 2:
+                    continue
+                print 'merging', sub, prot, len(filenames)
+                run_clustalw(filenames, 
+                            base_name + 't.fasta', 
+                            base_name + 't.dnd', 
+                            base_name + 't.align')
+                join_alignments(base_name + '.align', base_name + 't.align')
+                join_fasta(filenames, base_name + '.fasta', strip = True, mode = 'a')
+                os.remove(base_name + 't.fasta')
+                os.remove(base_name + 't.dnd')
+                os.remove(base_name + 't.align')
     
             
     
