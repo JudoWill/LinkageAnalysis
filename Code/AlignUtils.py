@@ -5,10 +5,18 @@ from subprocess import call
 import shlex
 from itertools import groupby
 from math import log
-from memorised.decorators import memorise
 from random import shuffle, sample
 from operator import itemgetter
 
+try:
+    from memorised.decorators import memorise
+except ImportError:
+    class memorise(object):
+        def __init__(self, func):
+            self.func = func
+        def __call__(self, *args, **kwargs):
+            return self.func(*args, **kwargs)
+        
 
 class Alignment():
     
@@ -42,7 +50,7 @@ class Alignment():
 
         return signal
 
-@memorise()
+#@memorise()
 def calculate_mutual_info(signal1, signal2):
     
     def count2prob(d, num):
@@ -71,7 +79,7 @@ def calculate_mutual_info(signal1, signal2):
         
     return mut_info
 
-@memorise()
+#@memorise()
 def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
     
     rmut = calculate_mutual_info(signal1, signal2)
@@ -87,7 +95,7 @@ def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
 
     return num_greater / num_reps
 
-@memorise()
+#@memorise()
 def prediction_mapping(signal1, signal2):
 
     counts = defaultdict(int)
