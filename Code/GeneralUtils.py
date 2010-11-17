@@ -97,7 +97,12 @@ class pushd():
 
 
 
-
+def safe_mkdir(path):
+    
+    try:
+        os.mkdir(path)
+    except OSError:
+        pass
 
 
 
