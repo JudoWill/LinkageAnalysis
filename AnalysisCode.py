@@ -18,7 +18,7 @@ OUT_DIR = 'Results'
 SEQ_LOC = os.path.join('ListFiles', 'sequences.list')
 DOWNLOAD_XML = True
 FORCE_NEW = False
-POOL_WORKERS = 2
+POOL_WORKERS = 3
 WIN_SIZE = 50
 WIN_OVERLAP = 25
 

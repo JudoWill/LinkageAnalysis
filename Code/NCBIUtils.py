@@ -9,6 +9,7 @@ from subprocess import call
 import shlex
 import re
 from xml.etree.ElementTree import ElementTree
+from xml.parsers.expat import ExpatError
 
 def take(N, iterable):
     return list(islice(iterable, N))
@@ -175,13 +176,16 @@ def determine_subtype_short(in_file):
 
 def determine_subtype_element(in_file):
     hits = defaultdict(int)
-    tree = ElementTree(file = in_file)
+    try:    
+        tree = ElementTree(file = in_file)
 
-    for it in tree.getiterator('Iteration'):
-        hit_list = it.getiterator('Hit')
-        if len(hit_list) > 0:
-            hit = hit_list[0].find('Hit_def').text
-            hits[hit.split('_')[1]] += 1
+        for it in tree.getiterator('Iteration'):
+            hit_list = it.getiterator('Hit')
+            if len(hit_list) > 0:
+                hit = hit_list[0].find('Hit_def').text
+                hits[hit.split('_')[1]] += 1
+    except ExpatError:
+        return None
     
     count = sum(hits.values())
     if count < 5:
