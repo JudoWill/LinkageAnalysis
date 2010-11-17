@@ -218,7 +218,7 @@ def simplify_xml(in_file):
             elif len(hit_list) == 0:
                 it.clear()
         tree.write(in_file)
-    except ExpatError:
+    except:
         return None
 
 def translate_genome(gi, load_path, db_path, out_report):
