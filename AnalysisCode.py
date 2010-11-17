@@ -7,6 +7,7 @@ from BeautifulSoup import BeautifulStoneSoup
 import argparse
 from Code.NCBIUtils import *
 from Code.GeneralUtils import *
+from Code.AlignUtils import *
 from functools import partial
 from subprocess import call, check_call
 import shlex
@@ -33,7 +34,7 @@ def touch_data():
             f = f.replace(' ', '\ ')
             touch(os.path.join(path, f))
 
-@ruffus.follows('process_subtype_reports')
+@ruffus.follows('make_alignments')
 def top_function():
     pass
 
@@ -288,8 +289,58 @@ def process_subtype_reports(in_file, out_file):
                 })
             if len(need) % 500 == 0:
                 print 'Reports remaining: %i' % len(need)
-                             
+
+
+@ruffus.files([os.path.join('ListFiles', 'subtype_mapping.txt'),
+                os.path.join(DATA_DIR, 'AASeqs', 'processing_sentinal')],
+                os.path.join(DATA_DIR, 'AlignmentDir', 'processing_sentinal'))
+@ruffus.follows('make_subtype_reports', 
+                ruffus.mkdir(os.path.join(DATA_DIR, 'AlignmentDir')))                             
+def make_alignments(in_files, out_file):
     
+    
+    load_dir = os.path.join(DATA_DIR, 'AASeqs')
+    dump_base = os.path.join(DATA_DIR, 'AlignmentDir')
+    prot_mapping = mapping_dict = make_mapping_dict(os.path.join('ListFiles', 'mapping.txt'))
+    sub_mapping = defaultdict(set)
+    
+    with open(in_files[0]) as handle:
+        c = 0
+        for row in csv.DictReader(handle, delimiter = '\t'):
+            sub_mapping[row['Subtype']].add(row['gi'])
+            c+= 1
+            if c > 5000:
+                break
+    uni_prots = set(prot_mapping.values())
+    uni_prots.discard(None)
+    
+    for sub, gi_list in sub_mapping.items():
+        print sub, gi_list
+        safe_mkdir(os.path.join(dump_base, sub))
+        for prot in uni_prots:
+            
+                
+            dump_dir = os.path.join(dump_base, sub, prot)
+            safe_mkdir(dump_dir)
+            base_name = os.path.join(dump_dir, '%s-%s' % (sub, prot))
+            if not os.path.exists(base_name + '.fasta'):
+                filenames = []
+                for gi in gi_list:
+                    if os.path.exists(os.path.join(load_dir, gi+'.'+prot)):
+                        filenames.append(os.path.join(load_dir, gi+'.'+prot))
+                if len(filenames) == 0:
+                    continue
+                print sub, prot, len(filenames)
+                run_clustalw(filenames, 
+                            base_name + '.fasta', 
+                            base_name + '.dnd', 
+                            base_name + '.align')
+                
+    
+            
+    
+    
+    touch(out_file)
 
 
 if __name__ == '__main__':
