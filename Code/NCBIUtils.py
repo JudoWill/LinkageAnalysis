@@ -176,7 +176,7 @@ def determine_subtype_short(in_file):
             if val > count*0.6:
                 return key
 
-def determine_subtype_element(in_file):
+def determine_subtype_element(in_file, delete_extra = True):
     hits = defaultdict(int)
     try:    
         tree = ElementTree(file = in_file)
@@ -186,6 +186,11 @@ def determine_subtype_element(in_file):
             if len(hit_list) > 0:
                 hit = hit_list[0].find('Hit_def').text
                 hits[hit.split('_')[1]] += 1
+                if delete_extra:
+                    for hit in hit_list[1:]:
+                        hit.clear()
+        if delete_extra:
+            tree.write(in_file)
     except ExpatError:
         return None
     
