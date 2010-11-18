@@ -419,6 +419,29 @@ def sanitize_xml(in_file, out_file):
                 
     touch(out_file)
 
+@ruffus.files([os.path.join(DATA_DIR, 'SubtypeReports', 'processing_sentinal'),
+                os.path.join(DATA_DIR, 'RawSequences', 'processing_sentinal')],
+                os.path.join(DATA_DIR, 'RawSequences', 'location_sentinal'))
+def check_genome_locations(in_files, out_file):
+        
+    subtype_dir = os.path.join(DATA_DIR, 'SubtypeReports')
+    genome_dir = os.path.join(DATA_DIR, 'RawSequences')
+    
+    count = 0
+    for f in os.listdir(subtype_dir):
+        if f.endswith('.xml'):        
+            count += 1
+            if count % 500 == 0:
+                print 'Located:', count
+            gi = gi_from_path(f)
+            gpath = os.path.join(genome_dir, gi + '.gi')
+            spath = os.path.join(subtype_dir, gi + '.xml')
+            if os.path.exists(gpath):
+                guess_location(spath, gpath, write_out = True)
+
+    touch(out_file)
+
+
 if __name__ == '__main__':
 
 
@@ -433,6 +456,8 @@ if __name__ == '__main__':
                         action = 'store', type = int)
     parser.add_argument('--simplify-xml', dest = 'simplifyxml', default = False,
                         action = 'store_true')
+    parser.add_argument('--guess-locations', dest = 'guessloc', action = 'store_true',
+                        default = False)
     args = parser.parse_args()
     
     if args.noseqs:
@@ -446,6 +471,8 @@ if __name__ == '__main__':
         ruffus.pipeline_run([sanitize_xml])
     elif args.makemapping:
         ruffus.pipeline_run([make_mappings])
+    elif args.guessloc:
+        ruffus.pipeline_run([check_genome_locations])
     else:
         ruffus.pipeline_run([top_function])
 
