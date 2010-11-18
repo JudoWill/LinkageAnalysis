@@ -215,14 +215,16 @@ def guess_location(in_xml, in_fasta, write_out = False):
     
     starts = []
     seq_len = len(seq)
-
-    tree = ElementTree(file = in_xml)
-    for it in tree.getiterator('Iteration'):
-        start_elem = it.find('Iteration_hits/Hit/Hit_hsps/Hsp/Hsp_hit-from')
-        name_elem = it.find('Iteration_query-def')
-        if start_elem is not None:
-            tstart = int(name_elem.text.split('_')[1])
-            starts.append(int(start_elem.text)-tstart)
+    try:
+        tree = ElementTree(file = in_xml)
+        for it in tree.getiterator('Iteration'):
+            start_elem = it.find('Iteration_hits/Hit/Hit_hsps/Hsp/Hsp_hit-from')
+            name_elem = it.find('Iteration_query-def')
+            if start_elem is not None:
+                tstart = int(name_elem.text.split('_')[1])
+                starts.append(int(start_elem.text)-tstart)
+    except ExpatError:
+        return None
     if starts:
         start = max(sum(starts)/len(starts), 1)
         if write_out:
