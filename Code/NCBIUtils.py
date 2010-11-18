@@ -12,6 +12,7 @@ from xml.etree.ElementTree import ElementTree
 from xml.parsers.expat import ExpatError
 from operator import itemgetter
 from itertools import groupby
+from GeneralUtils import *
 
 def take(N, iterable):
     return list(islice(iterable, N))
@@ -204,6 +205,32 @@ def determine_subtype_element(in_file, delete_extra = True):
         for key, val in hits.items():
             if val > count*0.6:
                 return key
+
+def guess_location(in_xml, in_fasta, write_out = False):
+    
+    name, seq = fasta_iter(in_fasta).next()
+    parts = name.split('|')
+    if len(parts) == 3:
+        return
+    
+    starts = []
+    seq_len = len(seq)
+
+    tree = ElementTree(file = in_xml)
+    for it in tree.getiterator('Iteration'):
+        start_elem = it.find('Iteration_hits/Hit/Hit_hsps/Hsp/Hsp_hit-from')
+        name_elem = it.find('Iteration_query-def')
+        if start_elem is not None:
+            tstart = int(name_elem.text.split('_')[1])
+            starts.append(int(start_elem.text)-tstart)
+    if starts:
+        start = sum(starts)/len(starts)
+        if write_out:
+            with open(in_fasta, 'w') as handle:
+                handle.write('>%s|%i|%i\n%s\n' % (name, start, start+seq_len, seq))
+        return start     
+
+    
 
 def simplify_xml(in_file):
     
