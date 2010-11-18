@@ -224,7 +224,7 @@ def guess_location(in_xml, in_fasta, write_out = False):
             tstart = int(name_elem.text.split('_')[1])
             starts.append(int(start_elem.text)-tstart)
     if starts:
-        start = sum(starts)/len(starts)
+        start = max(sum(starts)/len(starts), 1)
         if write_out:
             with open(in_fasta, 'w') as handle:
                 handle.write('>%s|%i|%i\n%s\n' % (name, start, start+seq_len, seq))
