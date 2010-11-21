@@ -155,7 +155,10 @@ def convert_alignment(clustal_v, modified_v):
     seqs = defaultdict(str)    
     
     with open(clustal_v) as clustalHandle:
-        clustalHandle.next()
+        try:
+            clustalHandle.next()
+        except StopIteration:
+            return
         for key, rows in groupby(clustalHandle, grouper):
             if not key:
                 for row in rows:
