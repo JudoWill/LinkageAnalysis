@@ -36,7 +36,8 @@ class Alignment():
         
         align = Alignment()
         for name, seq in self.seqs:
-            align.seqs[name] = seq[start:stop]
+            if not all([x == '-' for x in seq[:stop]]):
+                align.seqs[name] = seq[start:stop]
         return align
 
     def get_signal(self, seq_names):
