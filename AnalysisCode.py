@@ -101,7 +101,7 @@ def get_sequences(in_files, out_file):
                     handle.write('>%s\n%s\n' % (gi, seq.strip().upper()))
     touch(out_file)
 
-@ruffus.files(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list'), 
+@ruffus.files(os.path.join('ListFiles', 'known_subtypes.list'), 
                 os.path.join(DATA_DIR, 'KnownGenomes', 'download_sentinal'))
 @ruffus.follows(get_sequence_ids)
 def get_known_genotypes(in_file, out):
@@ -187,14 +187,14 @@ def write_protein_sequences(in_files, out_file):
 
     touch(out_file)
     
-@ruffus.files(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list'), 
+@ruffus.files(os.path.join('ListFiles', 'known_subtypes.list'), 
                 os.path.join(DATA_DIR, 'SubtypeBLAST', 'processing_sentinal'))
 @ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'SubtypeBLAST')), 'write_protein_sequences')
 def make_subtype_blast_db(in_file, out_file):
     BLAST_TYPE = guess_blast_computer_type()
     
     known = {}
-    with open(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list')) as handle:
+    with open(in_file) as handle:
         for row in csv.DictReader(handle, delimiter = ','):
             known[row['gi']] = row['subtype']
     
@@ -213,7 +213,7 @@ def make_subtype_blast_db(in_file, out_file):
         check_call(shlex.split(cmd))
     touch(out_file)
 
-@ruffus.files(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list'), 
+@ruffus.files(os.path.join('ListFiles', 'known_subtypes.list'), 
                 os.path.join(DATA_DIR, 'TranslateBLAST', 'processing_sentinal'))
 @ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'TranslateBLAST')), 'write_protein_sequences')
 def make_translate_blast_db(in_file, out_file):
@@ -222,7 +222,7 @@ def make_translate_blast_db(in_file, out_file):
     mapping = partial(mapping_func, mapping_dict)
 
     known = {}
-    with open(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list')) as handle:
+    with open(in_file) as handle:
         for row in csv.DictReader(handle, delimiter = ','):
             known[row['gi']] = row['subtype']
     
@@ -534,6 +534,8 @@ if __name__ == '__main__':
                         default = False)
     parser.add_argument('--quiet', dest = 'quiet', action = 'store_true', default = False)
     parser.add_argument('--overlap-reports', dest = 'overlapreports', action = 'store_true',
+                        default = False)
+    parser.add_argument('--parse-align', dest = 'parsealign', action = 'store_true',
                         default = False)
     args = parser.parse_args()
     
