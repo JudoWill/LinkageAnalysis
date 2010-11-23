@@ -346,7 +346,7 @@ def make_alignments(in_files, out_file):
     uni_prots.discard(None)
     
     for sub, gi_list in sub_mapping.items():
-        #print sub, gi_list
+        print sub, gi_list
         safe_mkdir(os.path.join(dump_base, sub))
         for prot in uni_prots:
             
