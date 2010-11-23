@@ -3,10 +3,10 @@ from collections import deque, defaultdict
 from GeneralUtils import *
 from subprocess import call
 import shlex
-from itertools import groupby, product
+from itertools import groupby, product, dropwhile
 from math import log
 from random import shuffle, sample
-from operator import itemgetter
+from operator import itemgetter, eq
 
 try:
     from memorised.decorators import memorise
@@ -168,11 +168,21 @@ def convert_alignment(clustal_v, modified_v):
         for name, seq in seqs.iteritems():
             handle.write('%s\t%s\n' % (name, seq))
 
-def crazy_iter(source_lim, target_lim, widths):
+def crazy_iter(source_lim, target_lim, widths, last_items = None):
     
-    for sw, tw, ss, ts in product(widths, widths, 
-                                    range(*source_lim),
-                                    range(*target_lim)):
+    def pred(args):
+        return not all([x == y for x,y in zip(args, last_items)])
+
+    if last_items is not None:
+        swidths = [x for x in widths if x >= last_items[0]]
+    else:
+        swidths = widths
+    
+    it = product(swidths, widths, range(*source_lim), range(*target_lim))
+    if last_items is not None:
+        it = dropwhile(pred, it)
+
+    for sw, tw, ss, ts in it:
         if not(sw+ss > source_lim[-1] or tw+ts > target_lim[-1]):
             yield sw, tw, ss, ts
 
