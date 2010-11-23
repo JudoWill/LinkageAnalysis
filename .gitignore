@@ -8,3 +8,4 @@ installfiles
 nohup.out
 Data
 clustalhelp.txt
+logs/*

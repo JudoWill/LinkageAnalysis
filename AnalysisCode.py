@@ -1,8 +1,9 @@
 import csv, os, os.path
 import ruffus
-import urllib2, re
+from ruffus.proxy_logger import *
+import urllib2, re, logging
 from datetime import datetime
-from itertools import imap, islice, izip, count
+from itertools import *
 from BeautifulSoup import BeautifulStoneSoup
 import argparse
 from Code.NCBIUtils import *
@@ -13,7 +14,6 @@ from subprocess import call, check_call
 import shlex
 from multiprocessing import Pool
 
-
 DATA_DIR = 'Data'
 OUT_DIR = 'Results'
 SEQ_LOC = os.path.join('ListFiles', 'sequences.list')
@@ -22,7 +22,7 @@ FORCE_NEW = False
 POOL_WORKERS = 3
 WIN_SIZE = 50
 WIN_OVERLAP = 25
-
+LOG_BASE = os.path.join('logs', 'pipeline.log')
 
 def touch(fname, times = None):
     with file(fname, 'a'):
@@ -34,7 +34,7 @@ def touch_data():
             f = f.replace(' ', '\ ')
             touch(os.path.join(path, f))
 
-@ruffus.follows('make_alignments')
+@ruffus.follows('convert_alignments')
 def top_function():
     pass
 
@@ -42,12 +42,13 @@ def top_function():
               os.path.join('ListFiles', 'sequences.list'))
 def get_sequence_ids(in_file, out_file):
 
-
+    if not DOWNLOAD_XML:
+        return
 
     search_query = '"Human immunodeficiency virus 1"[porgn] AND 100: 15000[SLEN]'
 
     id_list = SearchNCBI(search_query)
-    print len(id_list)
+    logging.info('Retrieved %i sequences' % len(id_list))
     with open(out_file, 'w') as handle:
         handle.write('\n'.join(id_list))
 
@@ -68,6 +69,7 @@ def get_sequence_xml(in_file, out_file):
     present = set([x.split('.')[0] for x in os.listdir(dump_dir)])
     dl_seqs = seq_ids - present
     for seq, gi in GetSeqs(dl_seqs, XML = True):
+        logging.info('Retrieved %s from NCBI' % gi)
         with open(os.path.join(dump_dir, gi + '.xml'), 'w') as handle:
             handle.write('>%s\n%s\n' % (gi, seq))
 
@@ -94,6 +96,7 @@ def get_sequences(in_files, out_file):
             with open(f) as handle:
                 soup = BeautifulStoneSoup(handle.read())      
             for seq, _ in extract_sequences(soup, XML = False, seq_only = True):
+                logging.info('Extracting sequence from %s' % gi)
                 with open(out, 'w') as handle:
                     handle.write('>%s\n%s\n' % (gi, seq.strip().upper()))
     touch(out_file)
@@ -111,6 +114,7 @@ def get_known_genotypes(in_file, out):
             genomes[row['ID']] = row['Subtype']
 
     for xml, gi in GetSeqs(genomes.keys(), XML = True):
+        logging.info('Retrieved %s from NCBI' % gi)
         with open(os.path.join(DATA_DIR, 'KnownGenomes', gi+'.xml'), 'w') as handle:
             handle.write(xml)
     
@@ -168,8 +172,9 @@ def write_protein_sequences(in_files, out_file):
 
     for count, f in enumerate(xml_file_gen()):
         gi = gi_from_path(f)
+        logging.info('Getting AAseqs from %s' % gi)
         if count % 500 == 0:
-            print 'Extracting:', count
+            logging.debug('Extracted %i' % count)
         any_in = False
         if gi not in done or FORCE_NEW:
             for outdict in extract_features(f, mapping = mapping_fun):
@@ -202,6 +207,7 @@ def make_subtype_blast_db(in_file, out_file):
                 for seq, _ in extract_sequences(soup, XML = False, seq_only = True):
                     handle.write('>%s_%s\n%s\n\n' % (gi, known[gi], seq.strip().upper()))
     with pushd(os.path.join(DATA_DIR, 'SubtypeBLAST')):
+        logging.debug('Creating subtype BLAST database')
         cmd = make_blast_cmd('formatdb', None, 'knownsubtypes.fasta', None, 
                             blast_type = BLAST_TYPE, dbtype = 'nuc')       
         check_call(shlex.split(cmd))
@@ -214,7 +220,7 @@ def make_translate_blast_db(in_file, out_file):
     BLAST_TYPE = guess_blast_computer_type()
     mapping_dict = make_mapping_dict(os.path.join('ListFiles', 'mapping.txt'))
     mapping = partial(mapping_func, mapping_dict)
-    print 'btype', BLAST_TYPE
+
     known = {}
     with open(os.path.join(DATA_DIR, 'KnownGenomes', 'known.list')) as handle:
         for row in csv.DictReader(handle, delimiter = ','):
@@ -232,9 +238,9 @@ def make_translate_blast_db(in_file, out_file):
     
     
     with pushd(os.path.join(DATA_DIR, 'TranslateBLAST')):
+        logging.debug('Creating Translating BLAST database')
         cmd = make_blast_cmd('formatdb', None, 'knowntranslations.fasta', None, 
                             blast_type = BLAST_TYPE, dbtype = 'prot')       
-        print cmd
         check_call(shlex.split(cmd))
     touch(out_file)
 
@@ -257,7 +263,7 @@ def make_subtype_reports(in_files, out_file):
     for ind, f in enumerate(os.listdir(load_dir)):
         if f.endswith('.gi'):
             if ind % 500 == 0:
-                print ind
+                logging.debug('Made %i Subtype Reports' % ind)
             gi = gi_from_path(f)
             if gi not in done or FORCE_NEW:
                 with open(os.path.join(dump_dir, gi + '.fasta'), 'w') as handle:
@@ -270,9 +276,10 @@ def make_subtype_reports(in_files, out_file):
                 cmd = make_blast_cmd('blastn', db_path, os.path.join(dump_dir, gi + '.fasta'),
                                         os.path.join(dump_dir, gi + '.xml'))
                 args = shlex.split(cmd)                
-                                
+                logging.info('Calling BLAST for %s' % gi)
                 retcode = call(args)
                 if retcode != 0:
+                    logging.warning('Got bad error code when calling BLASTn on %s' % gi)
                     os.remove(os.path.join(dump_dir, gi + '.fasta'))
                     os.remove(os.path.join(dump_dir, gi + '.xml'))
                 
@@ -347,14 +354,16 @@ def make_alignments(in_files, out_file):
     
     for sub, gi_list in sub_mapping.items():
         print sub, gi_list
+        logging.debug('Aligning Subtype %s' % sub)
         safe_mkdir(os.path.join(dump_base, sub))
         for prot in uni_prots:
-            
+            logging.debug('Aligning %s of subtype %s' % (prot, sub))
                 
             dump_dir = os.path.join(dump_base, sub, prot)
             safe_mkdir(dump_dir)
             base_name = os.path.join(dump_dir, '%s-%s' % (sub, prot))
             if not os.path.exists(base_name + '.fasta'):
+                logging.debug('Creating a new alignment')
                 filenames = []
                 for gi in gi_list:
                     if os.path.exists(os.path.join(load_dir, gi+'.'+prot)):
@@ -367,6 +376,7 @@ def make_alignments(in_files, out_file):
                             base_name + '.dnd', 
                             base_name + '.align')
             else:
+                logging.debug('Folding in new sequences')
                 done_set = set([x for x,y in fasta_iter(base_name + '.fasta')])
                 
                 filenames = []
@@ -392,6 +402,19 @@ def make_alignments(in_files, out_file):
     
     
     touch(out_file)
+
+def align_gen():
+    for root, dirs, files in os.walk(os.path.join(DATA_DIR, 'AlignmentDir')):
+        for f in files:
+            if f.endswith('.align'):
+                ipath = os.path.join(root, f)
+                opath = os.path.join(root, f.split('.')[0] + '.aln')
+                yield ipath, opath
+
+@ruffus.files(align_gen)
+@ruffus.follows('make_alignments')
+def convert_alignments(in_file, out_file):
+    convert_alignment(in_file, out_file)
 
 
 @ruffus.files(os.path.join(DATA_DIR, 'SubtypeReports', 'processing_sentinal'),
@@ -441,6 +464,57 @@ def check_genome_locations(in_files, out_file):
 
     touch(out_file)
 
+def direct_gen():
+    
+    def grouper(path):
+        parts = path.split(os.sep)
+        return parts[-1].split('-')[0]
+    
+    alignments = []
+    for root, dirs, files in os.walk(os.path.join(DATA_DIR, 'AlignmentDir')):
+        for f in files:
+            if f.endswith('aln'):
+                alignments.append(os.path.join(root, f))
+                
+    for subtype, aligns in groupby(sorted(alignments, key = grouper), key = grouper):
+        yield list(aligns), os.path.join('ListFiles', 'LinkageReports', subtype+'.tdl')
+        
+@ruffus.files(direct_gen)
+@ruffus.follows(ruffus.mkdir(os.path.join('ListFiles', 'LinkageReports')))
+def make_overlap_reports(in_files, out_file):
+    
+    def prot_from_path(path):
+        fname = path.split(os.sep)[-1].split('.')[0]
+        parts = fname.split('-',1)
+        return parts[1]
+        
+    prots = defaultdict(set)
+    overlap = defaultdict(set)
+    for f in in_files:
+        prot = prot_from_path(f)
+        with open(f) as handle:
+            for line in handle:
+                prots[prot].add(line.split('\t')[0])
+    
+    for p1, p2 in product(prots.keys(), repeat = 2):
+        overlap[(p1, p2)] = prots[p1] & prots[p2]
+        
+    with open(out_file, 'w') as handle:
+        fnames = ['Name'] + sorted(prots.keys())
+        handle.write('\t'.join(fnames)+'\n')
+        writer = csv.DictWriter(handle, fieldnames = fnames,
+                                delimiter = '\t')
+        rows = []
+        for p1 in sorted(prots.keys()):
+            rows.append({'Name':p1})
+            for p2 in sorted(prots.keys()):
+                rows[-1][p2] = len(overlap[(p1, p2)])
+        writer.writerows(rows)
+                
+            
+    
+    
+    
 
 if __name__ == '__main__':
 
@@ -458,7 +532,22 @@ if __name__ == '__main__':
                         action = 'store_true')
     parser.add_argument('--guess-locations', dest = 'guessloc', action = 'store_true',
                         default = False)
+    parser.add_argument('--quiet', dest = 'quiet', action = 'store_true', default = False)
+    parser.add_argument('--overlap-reports', dest = 'overlapreports', action = 'store_true',
+                        default = False)
     args = parser.parse_args()
+    
+    
+    my_ruffus_logger = logging.getLogger('My_Ruffus_logger')
+    my_ruffus_logger.setLevel(logging.INFO)
+    
+    fhandler = logging.handlers.RotatingFileHandler(LOG_BASE)
+    my_ruffus_logger.addHandler(fhandler)
+    
+    if not args.quiet:
+        shandler = logging.StreamHandler()
+        my_ruffus_logger.addHandler(shandler)
+    
     
     if args.noseqs:
         DOWNLOAD_XML = False
@@ -468,13 +557,15 @@ if __name__ == '__main__':
         FORCE_NEW = True
         
     if args.simplifyxml:
-        ruffus.pipeline_run([sanitize_xml])
+        ruffus.pipeline_run([sanitize_xml], logger = my_ruffus_logger)
     elif args.makemapping:
-        ruffus.pipeline_run([make_mappings])
+        ruffus.pipeline_run([make_mappings], logger = my_ruffus_logger)
     elif args.guessloc:
-        ruffus.pipeline_run([check_genome_locations])
+        ruffus.pipeline_run([check_genome_locations], logger = my_ruffus_logger)
+    elif args.overlapreports:
+        ruffus.pipeline_run([make_overlap_reports], logger = my_ruffus_logger)
     else:
-        ruffus.pipeline_run([top_function])
+        ruffus.pipeline_run([top_function], logger = my_ruffus_logger)
 
 
 
