@@ -3,7 +3,7 @@ from collections import deque, defaultdict
 from GeneralUtils import *
 from subprocess import call
 import shlex
-from itertools import groupby
+from itertools import groupby, product
 from math import log
 from random import shuffle, sample
 from operator import itemgetter
@@ -167,5 +167,27 @@ def convert_alignment(clustal_v, modified_v):
     with open(modified_v, 'w') as handle:
         for name, seq in seqs.iteritems():
             handle.write('%s\t%s\n' % (name, seq))
+
+def crazy_iter(source_lim, target_lim, widths):
+    
+    for sw, tw, ss, ts in product(widths, widths, 
+                                    range(*source_lim),
+                                    range(*target_lim)):
+        if not(sw+ss > source_lim[-1] or tw+ts > target_lim[-1]):
+            yield sw, tw, ss, ts
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
