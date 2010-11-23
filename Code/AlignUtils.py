@@ -50,7 +50,7 @@ class Alignment():
 
         return signal
 
-#@memorise()
+@memorise()
 def calculate_mutual_info(signal1, signal2):
     
     def count2prob(d, num):
@@ -79,7 +79,7 @@ def calculate_mutual_info(signal1, signal2):
         
     return mut_info
 
-#@memorise()
+@memorise()
 def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
     
     rmut = calculate_mutual_info(signal1, signal2)
@@ -95,7 +95,7 @@ def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
 
     return num_greater / num_reps
 
-#@memorise()
+@memorise()
 def prediction_mapping(signal1, signal2):
 
     counts = defaultdict(int)
