@@ -197,6 +197,11 @@ def crazy_iter(source_lim, target_lim, widths, last_items = None):
 
 def getOverlap(a, b):
     return max(0, min(a[1], b[1]) - max(a[0], b[0]))
+    
+def get_last(iterable):
+    l = deque(iterable, maxlen = 1)
+    return l.pop()
+    
 
 def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False):
 
