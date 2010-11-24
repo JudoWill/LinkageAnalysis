@@ -436,7 +436,7 @@ def align_pairs():
             yield a1, a2, d
 
 @ruffus.files(align_gen)
-@ruffus.follows('convert_alignments')
+@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'LinkageResults')), 'convert_alignments')
 def calculate_linkages(in_files, out_file):
     PredictionAnalysis(in_files[0], in_files[1], out_file)
     
