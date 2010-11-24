@@ -600,7 +600,7 @@ if __name__ == '__main__':
     elif args.overlapreports:
         ruffus.pipeline_run([make_overlap_reports], logger = my_ruffus_logger)
     else:
-        ruffus.pipeline_run([top_function], logger = my_ruffus_logger, multiprocess = 3)
+        ruffus.pipeline_run([top_function], logger = my_ruffus_logger, multiprocess = args.workers)
 
 
 
