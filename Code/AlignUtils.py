@@ -9,6 +9,7 @@ from random import shuffle, sample
 from operator import itemgetter, ne, eq
 import csv
 from functools import partial
+import os.path
 
 try:
     from memorised.decorators import memorise
@@ -250,7 +251,7 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
     source_skip = set()
     target_skip = set()
     
-    if mode == 'a':
+    if mode == 'a' and os.path.exists(outfile):
         with open(outfile) as handle:
             last = get_last(csv.DictReader(handle, delimiter = '\t'))
     else:
