@@ -104,7 +104,6 @@ def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
 
 @memorise()
 def prediction_mapping(signal1, signal2):
-    print 'calculating!'
     counts = defaultdict(int)
     for s1, s2 in zip(signal1, signal2):
         counts[(s1, s2)] += 1
@@ -248,7 +247,7 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5)):
                             'Correct-Num':'too few',
                             'Total-Num':'too few',
                             'This-Score': 0})
-                print 'few %(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i' % loc
+                #print 'few %(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i' % loc
                 writer.writerow(loc)
                 continue
                           
@@ -270,20 +269,20 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5)):
                                 'Total-Num':'too conserved',
                                 'This-Score': 0})
                 writer.writerow(loc)
-                print 'conserved %(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i' % loc
+                #print 'conserved %(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i' % loc
                 if any([x/len(s1) > 0.8 for x in c1.values()]):
                     source_skip.add((loc['Source-Start'], loc['Source-End']))
                 if any([x/len(s2) > 0.8 for x in c2.values()]):
                     target_skip.add((loc['Target-Start'], loc['Target-End']))
-                print len(s1),c1.values()
-                print len(s2),c2.values() 
+                #print len(s1),c1.values()
+                #print len(s2),c2.values() 
                 continue
 
             
             mappings = prediction_mapping(tuple(s1), tuple(s2))
             score = sum([z for _, _, z in mappings])/len(s1)
             loc['Total-Score'] = score
-            print '%(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i, %(Total-Score)f' % loc
+            #print '%(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i, %(Total-Score)f' % loc
             for mapping in mappings:
                 loc.update({'Source-Seq':rm1[mapping[0]],
                                 'Target-Seq':rm2[mapping[1]],
