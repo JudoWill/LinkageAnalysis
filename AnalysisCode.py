@@ -443,7 +443,7 @@ def align_pairs():
 def calculate_linkages(in_files, out_file):
     
     PredictionAnalysis(in_files[0], in_files[1], out_file, 
-                        same = in_files[0] == in_final[1])
+                        same = in_files[0] == in_files[1])
     
 
 
