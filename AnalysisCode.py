@@ -13,6 +13,7 @@ from functools import partial
 from subprocess import call, check_call
 import shlex
 from multiprocessing import Pool
+from operator import itemgetter
 
 DATA_DIR = 'Data'
 OUT_DIR = 'Results'
@@ -415,6 +416,32 @@ def align_gen():
 @ruffus.follows('make_alignments')
 def convert_alignments(in_file, out_file):
     convert_alignment(in_file, out_file)
+
+def align_pairs():
+    load_dir = os.path.join(DATA_DIR, 'AlignmentDir')
+    dump_dir = os.path.join(DATA_DIR, 'LinkageResults')
+    aligns_present = []
+    for root, _, files in os.walk(load_dir):
+        for f in files:
+            if f.endswith('.aln'):
+                parts = f.split('.')[0].split('-')
+                aligns_present.append((parts[0], parts[1])
+
+    for subtype, prots in groupby(sorted(aligns_present), itemgetter(0)):
+        needed = list(prots)
+        for p1, p2 in product(needed, repeat = 2):
+            a1 = os.path.join(load_dir, subtype, subtype+'-'+p1+'.aln')
+            a2 = os.path.join(load_dir, subtype, subtype+'-'+p2+'.aln')
+            d = os.path.join(dump_dir, subtype+'-'+p1+'-'+p2+'.res')
+            yield a1, a2, d
+
+@ruffus.files(align_gen)
+@ruffus.follows('convert_alignments')
+def calculate_linkages(in_files, out_file):
+    PredictionAnalysis(in_files[0], in_files[1], out_file)
+    
+
+
 
 
 @ruffus.files(os.path.join(DATA_DIR, 'SubtypeReports', 'processing_sentinal'),
