@@ -435,16 +435,17 @@ def align_pairs():
             a2 = os.path.join(load_dir, subtype, p2, subtype+'-'+p2+'.aln')
             
             d = os.path.join(dump_dir, subtype+'-'+p1+'-'+p2+'.res')
+            s = os.path.join(dump_dir, subtype+'-'+p1+'-'+p2+'.sen')
             
-            yield (a1, a2), d
+            yield (a1, a2), (d, s)
 
 @ruffus.files(align_pairs)
 @ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'LinkageResults')), 'convert_alignments')
-def calculate_linkages(in_files, out_file):
+def calculate_linkages(in_files, out_files):
     
-    PredictionAnalysis(in_files[0], in_files[1], out_file, 
+    PredictionAnalysis(in_files[0], in_files[1], out_files[0], 
                         same = in_files[0] == in_files[1])
-    
+    touch(out_files[1])
 
 
 
@@ -599,7 +600,7 @@ if __name__ == '__main__':
     elif args.overlapreports:
         ruffus.pipeline_run([make_overlap_reports], logger = my_ruffus_logger)
     else:
-        ruffus.pipeline_run([top_function], logger = my_ruffus_logger)
+        ruffus.pipeline_run([top_function], logger = my_ruffus_logger, multiprocess = 3)
 
 
 
