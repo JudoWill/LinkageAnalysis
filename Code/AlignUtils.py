@@ -200,14 +200,20 @@ def getOverlap(a, b):
     
 def get_last(iterable):
     l = deque(iterable, maxlen = 1)
-    return l.pop()
+    row = l.pop()
+    ss = int(row['Source-Start'])
+    ts = int(row['Target-Start'])
+    sw = int(row['Source-End'])-ss
+    tw = int(row['Target-End'])-ts
+    
+    return (sw, tw, ss, ts)
     
 
-def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False):
+def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False, mode = 'a'):
 
     
-    def get_signals(align1, align2, widths, same):
-        for sw, tw, ss, ts in crazy_iter([0, align1.width], [0, align2.width], widths):
+    def get_signals(align1, align2, widths, same, last):
+        for sw, tw, ss, ts in crazy_iter([0, align1.width], [0, align2.width], widths, last_items = last):
             if same and getOverlap((ss, ss+sw), (ts, ts+tw)) > 0:
                 continue
             if (ss, ss+sw) not in source_skip and (ts, ts+tw) not in target_skip:
@@ -243,12 +249,18 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
                 'This-Score', 'Total-Score')
     source_skip = set()
     target_skip = set()
+    
+    if mode == 'a':
+        with open(outfile) as handle:
+            last = get_last(csv.DictReader(handle, delimiter = '\t'))
+    else:
+        last = None
 
-    with open(outfile, 'w') as handle:
+    with open(outfile, mode) as handle:
         handle.write('\t'.join(fields)+'\n')
         writer = csv.DictWriter(handle, fieldnames = fields, 
                                 delimiter = '\t')
-        for slice1, slice2, seqs, loc in get_signals(a1, a2, widths, same):
+        for slice1, slice2, seqs, loc in get_signals(a1, a2, widths, same, last):
             if slice1 is None:
                 loc.update({'Source-Seq':None,
                             'Target-Seq':None,
