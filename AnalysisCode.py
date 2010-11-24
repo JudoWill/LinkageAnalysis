@@ -35,7 +35,7 @@ def touch_data():
             f = f.replace(' ', '\ ')
             touch(os.path.join(path, f))
 
-@ruffus.follows('convert_alignments')
+@ruffus.follows('calculate_linkages')
 def top_function():
     pass
 
@@ -424,21 +424,26 @@ def align_pairs():
     for root, _, files in os.walk(load_dir):
         for f in files:
             if f.endswith('.aln'):
-                parts = f.split('.')[0].split('-')
-                aligns_present.append((parts[0], parts[1])
-
+                parts = f.split('.')[0].split('-',1)
+                aligns_present.append((parts[0], parts[1]))
+    
     for subtype, prots in groupby(sorted(aligns_present), itemgetter(0)):
-        needed = list(prots)
+        needed = list([y for x, y in prots])
         for p1, p2 in product(needed, repeat = 2):
-            a1 = os.path.join(load_dir, subtype, subtype+'-'+p1+'.aln')
-            a2 = os.path.join(load_dir, subtype, subtype+'-'+p2+'.aln')
+            print p1, p2, subtype            
+            a1 = os.path.join(load_dir, subtype, p1, subtype+'-'+p1+'.aln')
+            a2 = os.path.join(load_dir, subtype, p2, subtype+'-'+p2+'.aln')
+            
             d = os.path.join(dump_dir, subtype+'-'+p1+'-'+p2+'.res')
-            yield a1, a2, d
+            
+            yield (a1, a2), d
 
-@ruffus.files(align_gen)
+@ruffus.files(align_pairs)
 @ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'LinkageResults')), 'convert_alignments')
 def calculate_linkages(in_files, out_file):
-    PredictionAnalysis(in_files[0], in_files[1], out_file)
+    
+    PredictionAnalysis(in_files[0], in_files[1], out_file, 
+                        same = in_files[0] == in_final[1])
     
 
 

@@ -195,13 +195,16 @@ def crazy_iter(source_lim, target_lim, widths, last_items = None):
         if not(sw+ss > source_lim[-1] or tw+ts > target_lim[-1]):
             yield sw, tw, ss, ts
 
+def getOverlap(a, b):
+    return max(0, min(a[1], b[1]) - max(a[0], b[0]))
 
-
-def PredictionAnalysis(align1, align2, outfile, widths = range(1,5)):
+def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False):
 
     
-    def get_signals(align1, align2, widths):
+    def get_signals(align1, align2, widths, same):
         for sw, tw, ss, ts in crazy_iter([0, align1.width], [0, align2.width], widths):
+            if same and getOverlap((ss, ss+sw), (ts, ts+tw)) > 0:
+                continue
             if (ss, ss+sw) not in source_skip and (ts, ts+tw) not in target_skip:
                 a1 = align1.get_slice(ss, ss+sw)
                 a2 = align2.get_slice(ts, ts+tw)
@@ -240,7 +243,7 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5)):
         handle.write('\t'.join(fields)+'\n')
         writer = csv.DictWriter(handle, fieldnames = fields, 
                                 delimiter = '\t')
-        for slice1, slice2, seqs, loc in get_signals(a1, a2, widths):
+        for slice1, slice2, seqs, loc in get_signals(a1, a2, widths, same):
             if slice1 is None:
                 loc.update({'Source-Seq':None,
                             'Target-Seq':None,
