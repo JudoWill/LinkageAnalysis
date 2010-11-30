@@ -11,7 +11,7 @@ from Code.GeneralUtils import *
 from Code.AlignUtils import *
 from functools import partial
 from subprocess import call, check_call
-import shlex
+import shlex, tempfile, shutil
 from multiprocessing import Pool
 from operator import itemgetter
 
@@ -550,6 +550,30 @@ def make_overlap_reports(in_files, out_file):
         writer.writerows(rows)
                 
             
+
+
+def lanl_align_gen():
+    load_dir = os.path.join('OtherData', 'LANLSequences', 'Sequences')
+    dump_dir = os.path.join('OtherData', 'LANLSequences', 'Alignments')
+
+    for f in os.listdir(load_dir):
+        if f.endswith('.fasta'):
+            name = f.split('.')[0]
+            yield os.path.join(load_dir, f), os.path.join(dump_dir, name+'.aln'), name
+
+@ruffus.files(lanl_align_gen)
+def make_lanl_alignments(in_file, out_file, name):
+    
+    tempdir = tempfile.mkdtemp(dir = os.path.join('OtherData'))
+    
+    base_name = os.path.join(tempdir, name)
+    run_clustalw([in_file], 
+                 base_name + '.fasta', 
+                 base_name + '.dnd', 
+                 base_name + '.align')
+    convert_alignment(base_name + '.align', out_file)
+
+    shutil.rmtree(tempdir)
     
     
     
@@ -579,6 +603,7 @@ if __name__ == '__main__':
                         default = False)
     parser.add_argument('--subtype', dest = 'subtype', action = 'store', type = str,
                         default = None)
+    parser.add_argument('--lanl', dest = 'lanl', action = 'store_true', default = False)
     args = parser.parse_args()
     
     
@@ -612,6 +637,8 @@ if __name__ == '__main__':
         ruffus.pipeline_run([check_genome_locations], logger = my_ruffus_logger)
     elif args.overlapreports:
         ruffus.pipeline_run([make_overlap_reports], logger = my_ruffus_logger)
+    elif args.lanl:
+        ruffus.pipeline_run([make_lanl_alignments], logger = my_ruffus_logger, multiprocess = args.workers)
     else:
         ruffus.pipeline_run([top_function], logger = my_ruffus_logger, multiprocess = args.workers)
 
