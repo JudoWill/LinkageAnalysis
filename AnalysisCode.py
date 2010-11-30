@@ -24,6 +24,8 @@ POOL_WORKERS = 3
 WIN_SIZE = 50
 WIN_OVERLAP = 25
 LOG_BASE = os.path.join('logs', 'pipeline.log')
+WIDTHS = range(1,5)
+SUBTYPE = None
 
 def touch(fname, times = None):
     with file(fname, 'a'):
@@ -419,7 +421,7 @@ def convert_alignments(in_file, out_file):
 
 def align_pairs():
     load_dir = os.path.join(DATA_DIR, 'AlignmentDir')
-    dump_dir = os.path.join(DATA_DIR, 'LinkageResults')
+    dump_dir = os.path.join('Results', 'LinkageResults')
     aligns_present = []
     for root, _, files in os.walk(load_dir):
         for f in files:
@@ -428,23 +430,26 @@ def align_pairs():
                 aligns_present.append((parts[0], parts[1]))
     
     for subtype, prots in groupby(sorted(aligns_present), itemgetter(0)):
-        needed = list([y for x, y in prots])
-        for p1, p2 in product(needed, repeat = 2):
-            print p1, p2, subtype            
-            a1 = os.path.join(load_dir, subtype, p1, subtype+'-'+p1+'.aln')
-            a2 = os.path.join(load_dir, subtype, p2, subtype+'-'+p2+'.aln')
-            
-            d = os.path.join(dump_dir, subtype+'-'+p1+'-'+p2+'.res')
-            s = os.path.join(dump_dir, subtype+'-'+p1+'-'+p2+'.sen')
-            
-            yield (a1, a2), (d, s)
+        if SUBTYPE is not None and SUBTYPE == subtype:        
+            needed = list([y for x, y in prots])
+#        for p1, p2 in product(needed, repeat = 2):
+            for p1, p2 in zip(needed, needed):
+                print p1, p2, subtype            
+                a1 = os.path.join(load_dir, subtype, p1, subtype+'-'+p1+'.aln')
+                a2 = os.path.join(load_dir, subtype, p2, subtype+'-'+p2+'.aln')
+                
+                d = os.path.join(dump_dir, subtype+'-'+p1+'-'+p2+'.res')
+                s = os.path.join(dump_dir, subtype+'-'+p1+'-'+p2+'.sen')
+                
+                yield (a1, a2), (d, s)
 
 @ruffus.files(align_pairs)
-@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'LinkageResults')), 'convert_alignments')
+@ruffus.follows(ruffus.mkdir(os.path.join('Results', 'LinkageResults')), 'convert_alignments')
 def calculate_linkages(in_files, out_files):
-    
+    print WIDTHS
     PredictionAnalysis(in_files[0], in_files[1], out_files[0], 
-                        same = in_files[0] == in_files[1])
+                        same = in_files[0] == in_files[1],
+                        widths = WIDTHS)
     touch(out_files[1])
 
 
@@ -561,6 +566,8 @@ if __name__ == '__main__':
                         default = False)
     parser.add_argument('--workers', dest = 'workers', default = 3,
                         action = 'store', type = int)
+    parser.add_argument('--max-width', dest = 'maxwidth', default = 5, action = 'store',
+                        type = int)
     parser.add_argument('--simplify-xml', dest = 'simplifyxml', default = False,
                         action = 'store_true')
     parser.add_argument('--guess-locations', dest = 'guessloc', action = 'store_true',
@@ -570,6 +577,8 @@ if __name__ == '__main__':
                         default = False)
     parser.add_argument('--parse-align', dest = 'parsealign', action = 'store_true',
                         default = False)
+    parser.add_argument('--subtype', dest = 'subtype', action = 'store', type = str,
+                        default = None)
     args = parser.parse_args()
     
     
@@ -590,7 +599,11 @@ if __name__ == '__main__':
     if args.fresh:
         touch_data()
         FORCE_NEW = True
-        
+    WIDTHS = range(1, args.maxwidth+1)
+    print WIDTHS
+    SUBTYPE = args.subtype
+
+
     if args.simplifyxml:
         ruffus.pipeline_run([sanitize_xml], logger = my_ruffus_logger)
     elif args.makemapping:
