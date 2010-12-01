@@ -7,7 +7,7 @@ from itertools import groupby, product, dropwhile, imap
 from math import log
 from random import shuffle, sample
 from operator import itemgetter, ne, eq
-import csv
+import csv, tempfile, shutil
 from functools import partial
 import os.path
 
@@ -126,21 +126,52 @@ def prediction_mapping(signal1, signal2):
             return [mapping]
 
 
-def run_clustalw(filenames, out_fasta, out_tree, out_align):
+def run_clustalw(filenames, out_fasta, out_tree, out_align, SCRATCH_DIR = '',
+                SCRATCH_FASTA = 'seqs.fasta', SCRATCH_TREE = 'tree.dnd', 
+                SCRATCH_ALIGN = 'seqs.align'):
     
-    join_fasta(filenames, out_fasta, strip = True)
-    info = {   
-            'ifile':out_fasta,
-            'tree':out_tree,
-            'ofile':out_align
-            }
-    cmd = 'clustalw -INFILE=%(ifile)s -QUICKTREE -NEWTREE=%(tree)s -OUTFILE=%(ofile)s -ENDGAPS -QUIET'
-    args = shlex.split(cmd % info)
-    call(args)
-    
-    cmd = 'clustalw -INFILE=%(ifile)s -QUICKTREE -USETREE=%(tree)s -OUTFILE=%(ofile)s -ENDGAPS -QUIET'
-    args = shlex.split(cmd % info)
-    call(args)
+    tdir = tempfile.mkdtemp(dir = SCRATCH_DIR)
+    tfasta = os.path.join(tdir, SCRATCH_FASTA)
+    ttree = os.path.join(tdir, SCRATCH_TREE)
+    talign = os.path.join(tdir, SCRATCH_ALIGN)
+
+    join_fasta(filenames, tfasta, strip = True)
+    fnames = split_fasta(tfasta)
+    if fnames is not None:
+        for fname in fnames:
+            run_clustalw([fname], None, None, fname+'.align', SCRATCH_DIR = tdir)
+        align_names = [x+'.align' for x in fnames]        
+        join_alignments(*align_names)
+        if out_fasta is not None:
+            shutil.copy(tfasta, out_fasta)
+        if out_align is not None:
+            shutil.copy(align_names[0], out_align)
+
+    else:
+        info = {   
+                'ifile':tfasta,
+                'tree':ttree,
+                'ofile':talign
+                }
+        cmd = 'clustalw -INFILE=%(ifile)s -QUICKTREE -NEWTREE=%(tree)s -OUTFILE=%(ofile)s -ENDGAPS -QUIET'
+        args = shlex.split(cmd % info)
+        call(args)
+        
+        cmd = 'clustalw -INFILE=%(ifile)s -QUICKTREE -USETREE=%(tree)s -OUTFILE=%(ofile)s -ENDGAPS -QUIET'
+        args = shlex.split(cmd % info)
+        call(args)
+
+        if out_fasta is not None:
+            shutil.copy(tfasta, out_fasta)
+        if out_tree is not None:
+            shutil.copy(ttree, out_tree)
+        if out_align is not None:
+            shutil.copy(talign, out_align)
+
+    shutil.rmtree(tdir)
+        
+
+
 
 def join_alignments(*aligns):
     
@@ -221,15 +252,15 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
                 a1 = align1.get_slice(ss, ss+sw)
                 a2 = align2.get_slice(ts, ts+tw)
                 over = set(a1.seqs.keys()) & set(a2.seqs.keys())
-                if len(over) > 300:
+                if len(over) > 50:
                     yield a1, a2, sorted(over), {'Source-Start':ss, 'Source-End':ss+sw,
                                                     'Target-Start':ts, 'Target-End':ts+tw}
                 else:
                     yield None, None, None, {'Source-Start':ss, 'Source-End':ss+sw,
                                                     'Target-Start':ts, 'Target-End':ts+tw}
-                if len(a1.seqs) < 300:
+                if len(a1.seqs) < 50:
                     source_skip.add((ss, ss+sw))
-                if len(a2.seqs) < 300:
+                if len(a2.seqs) < 50:
                     target_skip.add((ts, ts+tw))
                     
                     
