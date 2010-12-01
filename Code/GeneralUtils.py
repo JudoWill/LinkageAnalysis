@@ -65,7 +65,29 @@ def join_fasta(filenames, out_file, mode = 'w', strip = False):
                     name = name.split('_')[0]
                 ohandle.write('>%s\n%s\n' % (name, seq))
             
+def split_fasta(filename, out_template, max_num = 10000):
     
+
+    it = fasta_iter(filename)
+    total_num = sum(imap(bool, it))
+    if total_num < max_num:
+        return None
+    
+    out_files = []
+    it = fasta_iter(filename)
+    num = 0
+    nseqs = max_num
+    while nseqs >= max_num:
+        num += 1
+        fname = out_template+str(num)
+        out_files.append(fname)
+        with open(fname, 'w') as handle:
+            for nseqs, (name, seq) in enumerate(islice(it, max_num)):
+                handle.write('>%s\n%s\n' % (name, seq))
+            
+    return out_files
+
+
 
 def make_mapping_dict(in_file):
     
