@@ -65,26 +65,27 @@ def join_fasta(filenames, out_file, mode = 'w', strip = False):
                     name = name.split('_')[0]
                 ohandle.write('>%s\n%s\n' % (name, seq))
             
-def split_fasta(filename, max_num = 40000):
+def split_fasta(filename, max_num = 20000):
     
 
     it = fasta_iter(filename)
     total_num = sum(imap(bool, it))
+    print total_num
     if total_num < max_num:
         return None
     
     out_files = []
     it = fasta_iter(filename)
     num = 0
-    nseqs = max_num
-    while nseqs >= max_num:
+    nseqs = max_num-2
+    while nseqs+2 >= max_num:
         num += 1
         fname = filename+str(num)
         out_files.append(fname)
         with open(fname, 'w') as handle:
-            for nseqs, (name, seq) in enumerate(islice(it, max_num)):
+            for nseqs, (name, seq) in enumerate(islice(it, max_num-1)):
                 handle.write('>%s\n%s\n' % (name, seq))
-            
+
     return out_files
 
 

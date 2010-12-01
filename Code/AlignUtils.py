@@ -126,11 +126,12 @@ def prediction_mapping(signal1, signal2):
             return [mapping]
 
 
-def run_clustalw(filenames, out_fasta, out_tree, out_align, SCRATCH_DIR = '',
+def run_clustalw(filenames, out_fasta, out_tree, out_align, SCRATCH_DIR = '/tmp/',
                 SCRATCH_FASTA = 'seqs.fasta', SCRATCH_TREE = 'tree.dnd', 
                 SCRATCH_ALIGN = 'seqs.align'):
     
     tdir = tempfile.mkdtemp(dir = SCRATCH_DIR)
+    print     
     tfasta = os.path.join(tdir, SCRATCH_FASTA)
     ttree = os.path.join(tdir, SCRATCH_TREE)
     talign = os.path.join(tdir, SCRATCH_ALIGN)
