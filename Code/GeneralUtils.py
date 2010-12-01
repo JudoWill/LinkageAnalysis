@@ -65,7 +65,7 @@ def join_fasta(filenames, out_file, mode = 'w', strip = False):
                     name = name.split('_')[0]
                 ohandle.write('>%s\n%s\n' % (name, seq))
             
-def split_fasta(filename, max_num = 10000):
+def split_fasta(filename, max_num = 40000):
     
 
     it = fasta_iter(filename)
