@@ -575,7 +575,33 @@ def make_lanl_alignments(in_file, out_file, name):
 
     shutil.rmtree(tempdir)
     
+
+def lanl_align_pairs():
+    load_dir = os.path.join('OtherData', 'Alignments')
+    dump_dir = os.path.join('OtherData', 'LinkageResults')
+    aligns_present = [x.split('.')[0] for x in os.listdir(load_dir) if x.endswith('.aln')]
     
+    for p1, p2 in zip(sorted(aligns_present), sorted(aligns_present)):
+#   for p1, p2 in product(sorted(aligns_present), repeat = 2):
+
+        a1 = os.path.join(load_dir, p1+'.aln')
+        a2 = os.path.join(load_dir, p2+'.aln')
+        
+        d = os.path.join(dump_dir, p1+'--'+p2+'.res')
+        s = os.path.join(dump_dir, p1+'--'+p2+'.sen')
+        
+        yield (a1, a2), (d, s)
+
+
+@ruffus.files(lanl_align_pairs)
+@ruffus.follows(ruffus.mkdir(os.path.join('OtherData', 'LinkageResults'), 'make_lanl_alignments')
+def calculate_lanl_linkages(in_files, out_files):
+    print WIDTHS
+    PredictionAnalysis(in_files[0], in_files[1], out_files[0], 
+                        same = in_files[0] == in_files[1],
+                        widths = WIDTHS)
+    touch(out_files[1])
+
     
 
 if __name__ == '__main__':
@@ -638,7 +664,7 @@ if __name__ == '__main__':
     elif args.overlapreports:
         ruffus.pipeline_run([make_overlap_reports], logger = my_ruffus_logger)
     elif args.lanl:
-        ruffus.pipeline_run([make_lanl_alignments], logger = my_ruffus_logger, multiprocess = args.workers)
+        ruffus.pipeline_run([calculate_lanl_linkages], logger = my_ruffus_logger, multiprocess = args.workers)
     else:
         ruffus.pipeline_run([top_function], logger = my_ruffus_logger, multiprocess = args.workers)
 
