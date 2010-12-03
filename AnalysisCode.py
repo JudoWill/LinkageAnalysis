@@ -14,6 +14,7 @@ from subprocess import call, check_call
 import shlex, tempfile, shutil
 from multiprocessing import Pool
 from operator import itemgetter
+from collections import defaultdict
 
 DATA_DIR = 'Data'
 OUT_DIR = 'Results'
@@ -549,7 +550,36 @@ def make_overlap_reports(in_files, out_file):
                 rows[-1][p2] = len(overlap[(p1, p2)])
         writer.writerows(rows)
                 
-            
+def fasta_gen():
+    load_dir = os.path.join('OtherData', 'LANLSequences', 'Sequences')
+    flist = []
+    for f in os.listdir(load_dir):
+        if f.endswith('.fasta'):
+            flist.append(os.path.join(load_dir, f))
+    yield flist, None
+
+@ruffus.files(fasta_gen)
+def filter_alignmets(in_files, out_file):
+
+    
+    seq_count = defaultdict(int)    
+    for f in in_files:
+        for name, _ in fasta_iter(f):
+            seq_count[name] += 1
+    for f in in_files:
+        print 'checking', f
+        if f.endswith('.fasta') and count_fasta(f) > 19990:
+            print 'shortening', f
+            tdir = tempfile.mkdtemp(dir = '/tmp/')            
+            tname = os.path.join(tdir, 'temp.fasta')
+            seqlist = list(fasta_iter(f))
+            seqlist.sort(key = lambda x: seq_count[x[0]], reverse = True)
+            with open(tname, 'w') as handle:
+                for name, seq in islice(seqlist, 19989):
+                    handle.write('>%s\n%s\n' % (name, seq))
+            shutil.move(tname, f)
+            shutil.rmtree(tdir)
+
 
 
 def lanl_align_gen():
@@ -563,7 +593,10 @@ def lanl_align_gen():
 
 @ruffus.files(lanl_align_gen)
 def make_lanl_alignments(in_file, out_file, name):
-    
+
+    if os.path.exists(out_file):
+        return
+    print out_file
     tempdir = tempfile.mkdtemp(dir = os.path.join('OtherData'))
     
     base_name = os.path.join(tempdir, name)
@@ -577,12 +610,13 @@ def make_lanl_alignments(in_file, out_file, name):
     
 
 def lanl_align_pairs():
-    load_dir = os.path.join('OtherData', 'Alignments')
+    load_dir = os.path.join('OtherData', 'LANLSequences', 'Alignments')
     dump_dir = os.path.join('OtherData', 'LinkageResults')
     aligns_present = [x.split('.')[0] for x in os.listdir(load_dir) if x.endswith('.aln')]
     
-    for p1, p2 in zip(sorted(aligns_present), sorted(aligns_present)):
 #   for p1, p2 in product(sorted(aligns_present), repeat = 2):
+    for p1, p2 in zip(sorted(aligns_present), sorted(aligns_present)):
+
 
         a1 = os.path.join(load_dir, p1+'.aln')
         a2 = os.path.join(load_dir, p2+'.aln')
@@ -594,7 +628,7 @@ def lanl_align_pairs():
 
 
 @ruffus.files(lanl_align_pairs)
-@ruffus.follows(ruffus.mkdir(os.path.join('OtherData', 'LinkageResults'), 'make_lanl_alignments')
+@ruffus.follows(ruffus.mkdir(os.path.join('OtherData', 'LinkageResults')))
 def calculate_lanl_linkages(in_files, out_files):
     print WIDTHS
     PredictionAnalysis(in_files[0], in_files[1], out_files[0], 
@@ -630,6 +664,8 @@ if __name__ == '__main__':
     parser.add_argument('--subtype', dest = 'subtype', action = 'store', type = str,
                         default = None)
     parser.add_argument('--lanl', dest = 'lanl', action = 'store_true', default = False)
+    parser.add_argument('--filter-lanl', dest = 'filterlanl', action = 'store_true', default = False)
+    parser.add_argument('--align-lanl', dest = 'lanlalignments', action = 'store_true', default = False)
     args = parser.parse_args()
     
     
@@ -663,6 +699,10 @@ if __name__ == '__main__':
         ruffus.pipeline_run([check_genome_locations], logger = my_ruffus_logger)
     elif args.overlapreports:
         ruffus.pipeline_run([make_overlap_reports], logger = my_ruffus_logger)
+    elif args.filterlanl:
+        ruffus.pipeline_run([filter_alignmets], logger = my_ruffus_logger)
+    elif args.lanlalignments:
+        ruffus.pipeline_run([make_lanl_alignments], logger = my_ruffus_logger)        
     elif args.lanl:
         ruffus.pipeline_run([calculate_lanl_linkages], logger = my_ruffus_logger, multiprocess = args.workers)
     else:
