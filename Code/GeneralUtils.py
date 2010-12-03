@@ -54,6 +54,9 @@ def fasta_iter(filename):
             else:
                 seq = ''.join([x.strip() for x in group])
                 yield name, seq
+
+def count_fasta(filename):
+    return sum(imap(bool, fasta_iter(filename)))
     
 def join_fasta(filenames, out_file, mode = 'w', strip = False):
     
