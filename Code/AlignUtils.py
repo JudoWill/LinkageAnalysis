@@ -58,6 +58,19 @@ class Alignment():
 
         return signal, seq_dict
 
+    def get_consensus(self):
+        seqs = []
+        for col in range(self.width):
+            cdict = defaultdict(int)            
+            for s in self.seqs.values():
+                cdict[s[col]] += 1
+            cdict.pop('-')
+            m_item = max(cdict.items(), key = itemgetter(1))
+            if m_item[1] > 0.6*sum(cdict.values()) and sum(cdict.values()) > 0.6*len(self.seqs):
+                seqs.append(m_item[0])
+        return ''.join(seqs)
+    
+
 @memorise()
 def calculate_mutual_info(signal1, signal2):
     
