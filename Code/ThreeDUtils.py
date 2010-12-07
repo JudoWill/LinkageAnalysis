@@ -6,6 +6,15 @@ from math import sqrt
 
 
 
+conv_dict = {'ala':'A', 'arg':'R', 'asn':'N',
+                'asp':'D', 'cys':'C', 'glu':'E',
+                'gly':'G', 'his':'H', 'ile':'I',
+                'leu':'L', 'lys':'K', 'met':'M',
+                'phe':'F', 'pro':'P', 'ser':'S',
+                'thr':'T', 'trp':'W', 'tyr':'Y',
+                'val':'V', 'gln':'Q'}
+
+
 def euc_dist(v1, v2):
     return sqrt(sum([(x-y)**2 for x, y in zip(v1, v2)]))
 
@@ -13,9 +22,12 @@ def euc_dist(v1, v2):
 class Structure():
     
     def __init__(self, chain):
-        self.chain = chain            
+        self.chain = chain
+        seq = list()
+        for num, lines in groupby(chain, itemgetter('resnum')):
+            seq.append(conv_dict[lines.next()['residue'].lower()])
+        self.seq = seq
         self.pairwise = None
-
 
     @staticmethod
     def from_file(filename, chain):
