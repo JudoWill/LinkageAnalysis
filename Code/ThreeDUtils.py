@@ -26,7 +26,7 @@ class Structure():
         seq = list()
         for num, lines in groupby(chain, itemgetter('resnum')):
             seq.append(conv_dict[lines.next()['residue'].lower()])
-        self.seq = seq
+        self.seq = ''.join(seq)
         self.pairwise = None
 
     @staticmethod
