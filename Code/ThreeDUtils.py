@@ -3,6 +3,7 @@ from copy import deepcopy
 from itertools import groupby, product, combinations
 from operator import itemgetter
 from math import sqrt
+from nwalign import global_align
 
 
 
@@ -71,5 +72,27 @@ class Structure():
             pairwise[(it1[0], it2[0])] = d
             pairwise[(it2[0], it1[0])] = d
         self.pairwise = pairwise
+
+
+    def pairwise_from_seq(self, in_seq, matrix = 'BLOSUM62'):
+        
+        s_seq, i_seq = global_align(self.seq, in_seq, matrix = matrix)
+        scount = -1
+        mcount = -1
+        i_inds = []
+        for s, i in zip(s_seq, i_seq):
+            if s != '-':
+                scount += 1
+            if i != '-':
+                mcount += 1
+                i_inds.append((mcount, count))
+
+        pdict = {}
+        for s1, s2 in product(i_inds, repeat = 2):
+            pdict[(s1[0], s2[0])] = self.pairwise[(s1[1], s2[1])]
+        return pdict
+
+
+
 
         
