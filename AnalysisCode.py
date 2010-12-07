@@ -636,7 +636,44 @@ def calculate_lanl_linkages(in_files, out_files):
                         widths = WIDTHS)
     touch(out_files[1])
 
+def scatter_files():
+    struct_dir = os.path.join('OtherData', 'ProteinStrutures')
+    linkage_dir = os.path.join('OtherData', 'LinkageResults')
+    odir = os.path.join('OtherData', 'ScatterResults')
+    in_files = []
+    out_files = []
+
+    in_files.append(os.path.join(struct_dir, 'mapping.txt'))
+    for f in os.listdir(struct_dir):
+        if f.endswith('.pdb'):
+            in_files.append(os.path.join(struct_dir, f))
+
+    with open(os.path.join(struct_dir, 'mapping.txt')) as handle:
+        for row in csv.DictReader(handle, delimiter = '\t'):
+            in_files.append(os.path.join(struct_dir, row['Structure'] + '.pdb'))
+            in_files.append(os.path.join(linkage_dir, row['Protein']+'--'+row['Protein'] + '.res'))
+            out_files.append(os.path.join(odir, row['Protein']+'--' + row['Structure'] + '.res'))
+        
+    yield in_files, out_files
+
+
+
+@ruffus.files(os.path.join('OtherData', 'ProteinStructures', '.*'), None)
+def generate_scatter(in_files, out_files):
     
+    struct_dir = os.path.join('OtherData', 'ProteinStrutures')
+    linkage_dir = os.path.join('OtherData', 'LinkageResults')
+    odir = os.path.join('OtherData', 'ScatterResults')
+    
+    mfile = os.path.join(struct_dir, 'mapping.txt')
+    with open(mfile) as handle:
+        for row in csv.DictReader(handle, delimiter = '\t'):
+            struct_file = os.path.join(struct_dir, row['Structure'] + '.pdb')
+            link_file = os.path.join(linkage_dir, row['Protein']+'--'+row['Protein'] + '.res')
+            ofile = os.path.join(odir, row['Protein']+'--' + row['Structure'] + '.res')           
+            
+        
+
 
 if __name__ == '__main__':
 
