@@ -614,8 +614,8 @@ def lanl_align_pairs():
     dump_dir = os.path.join('OtherData', 'LinkageResults')
     aligns_present = [x.split('.')[0] for x in os.listdir(load_dir) if x.endswith('.aln')]
     
-#   for p1, p2 in product(sorted(aligns_present), repeat = 2):
-    for p1, p2 in zip(sorted(aligns_present), sorted(aligns_present)):
+    for p1, p2 in product(sorted(aligns_present), repeat = 2):
+    #for p1, p2 in zip(sorted(aligns_present), sorted(aligns_present)):
 
 
         a1 = os.path.join(load_dir, p1+'.aln')
