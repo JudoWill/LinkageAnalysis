@@ -638,22 +638,20 @@ def calculate_lanl_linkages(in_files, out_files):
     touch(out_files[1])
 
 def scatter_files():
-    struct_dir = os.path.join('OtherData', 'ProteinStrutures')
+    struct_dir = os.path.join('OtherData', 'ProteinStructures')
     linkage_dir = os.path.join('OtherData', 'LinkageResults')
     align_dir = os.path.join('OtherData', 'LANLSequences', 'Alignments')
     odir = os.path.join('OtherData', 'ScatterResults')
-    
-    
-    in_files.append(os.path.join(struct_dir, 'mapping.txt'))
-    for f in os.listdir(struct_dir):
-        if f.endswith('.pdb'):
-            in_files.append(os.path.join(struct_dir, f))
 
     with open(os.path.join(struct_dir, 'mapping.txt')) as handle:
         for row in csv.DictReader(handle, delimiter = '\t'):
+            print row.items()
             struct_file = os.path.join(struct_dir, row['Structure'] + '.pdb')
             link_file = os.path.join(linkage_dir, row['Protein']+'--'+row['Protein'] + '.res')
             align_file = os.path.join(align_dir, row['Protein']+'.aln')
+            if not os.path.exists(link_file) or not os.path.exists(align_file) \
+                or not os.path.exists(struct_file):
+                continue
             
             out_file = os.path.join(odir, row['Protein']+'--' + row['Structure'] + '.res')
             
@@ -662,8 +660,7 @@ def scatter_files():
 
 
 @ruffus.files(scatter_files)
-@ruffus.follows(ruffus.mkdir(os.path.join('OtherData', 'ScatterResults')), 
-                'calculate_lanl_linkages')
+@ruffus.follows(ruffus.mkdir(os.path.join('OtherData', 'ScatterResults')))
 def generate_scatter(in_files, out_files, chain):
     args = in_files+out_files+[chain]
     create_scatter(*args)
