@@ -640,6 +640,7 @@ def calculate_lanl_linkages(in_files, out_files):
 def scatter_files():
     struct_dir = os.path.join('OtherData', 'ProteinStrutures')
     linkage_dir = os.path.join('OtherData', 'LinkageResults')
+    align_dir = os.path.join('OtherData', 'LANLSequences', 'Alignments')
     odir = os.path.join('OtherData', 'ScatterResults')
     
     
@@ -652,9 +653,11 @@ def scatter_files():
         for row in csv.DictReader(handle, delimiter = '\t'):
             struct_file = os.path.join(struct_dir, row['Structure'] + '.pdb')
             link_file = os.path.join(linkage_dir, row['Protein']+'--'+row['Protein'] + '.res')
+            align_file = os.path.join(align_dir, row['Protein']+'.aln')
+            
             out_file = os.path.join(odir, row['Protein']+'--' + row['Structure'] + '.res')
-        
-            yield [struct_file, link_file], [out_file], row['Chain']
+            
+            yield [struct_file, link_file, align_file], [out_file], row['Chain']
 
 
 
