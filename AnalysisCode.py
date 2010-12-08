@@ -665,7 +665,8 @@ def scatter_files():
 @ruffus.follows(ruffus.mkdir(os.path.join('OtherData', 'ScatterResults')), 
                 'calculate_lanl_linkages')
 def generate_scatter(in_files, out_files, chain):
-    create_scatter(*in_files, *out_files, chain)
+    args = in_files+out_files+[chain]
+    create_scatter(*args)
     
         
 
@@ -698,6 +699,7 @@ if __name__ == '__main__':
     parser.add_argument('--lanl', dest = 'lanl', action = 'store_true', default = False)
     parser.add_argument('--filter-lanl', dest = 'filterlanl', action = 'store_true', default = False)
     parser.add_argument('--align-lanl', dest = 'lanlalignments', action = 'store_true', default = False)
+    parser.add_argument('--scatter-lanl', dest = 'lanlscatter', action = 'store_true', default = False)
     args = parser.parse_args()
     
     
@@ -731,6 +733,8 @@ if __name__ == '__main__':
         ruffus.pipeline_run([check_genome_locations], logger = my_ruffus_logger)
     elif args.overlapreports:
         ruffus.pipeline_run([make_overlap_reports], logger = my_ruffus_logger)
+    elif args.lanlscatter:
+        ruffus.pipeline_run([generate_scatter], logger = my_ruffus_logger)
     elif args.filterlanl:
         ruffus.pipeline_run([filter_alignmets], logger = my_ruffus_logger)
     elif args.lanlalignments:
