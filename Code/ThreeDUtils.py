@@ -61,23 +61,27 @@ class Structure():
         
         pairwise = {}
         chains = list()
+        rnum = 0
         for resnum, residues in groupby(self.chain, itemgetter('resnum')):
             reslist = list(residues)
             X = sum([x['X'] for x in reslist])/len(reslist)
             Y = sum([x['Y'] for x in reslist])/len(reslist)
             Z = sum([x['Z'] for x in reslist])/len(reslist)
-            chains.append((resnum, X, Y, Z))
+            chains.append((rnum, X, Y, Z))
+            rnum += 1
 
         for it1, it2 in combinations(chains, 2):
             d = euc_dist(it1[1:], it2[1:])            
             pairwise[(it1[0], it2[0])] = d
             pairwise[(it2[0], it1[0])] = d
+            #print it1[0], it2[0]
         self.pairwise = pairwise
 
 
-    def pairwise_from_seq(self, in_seq, matrix = 'BLOSUM62'):
-        
-        s_seq, i_seq = global_align(self.seq, in_seq, matrix = matrix)
+    def pairwise_from_seq(self, in_seq):
+        if self.pairwise is None:
+            self.calculate_pairwise()
+        s_seq, i_seq = global_align(self.seq, in_seq)
         scount = -1
         mcount = -1
         i_inds = []
@@ -86,20 +90,24 @@ class Structure():
                 scount += 1
             if i != '-':
                 mcount += 1
-                i_inds.append((mcount, count))
+                if scount != -1 and mcount != -1:
+                    i_inds.append((mcount, scount))
 
         pdict = {}
         for s1, s2 in product(i_inds, repeat = 2):
-            pdict[(s1[0], s2[0])] = self.pairwise[(s1[1], s2[1])]
+            if s1[1] != s2[1]:
+                print s1, s2
+                pdict[(s1[0], s2[0])] = self.pairwise[(s1[1], s2[1])]
         return pdict
 
-def create_scatter(link_file, pdb_file, align_file, out_file, chain):
+def create_scatter(pdb_file, link_file, align_file, out_file, chain):
     
     ref = 'A04321'
     alignment = Alignment.alignment_from_file(align_file)
     structure = Structure.from_file(pdb_file, chain)
     
     hxb2_seq = alignment.seqs[ref].replace('-', '')
+    print 'hxb2', hxb2_seq
     pdict = structure.pairwise_from_seq(hxb2_seq)
     
     ref_nums, align_nums = alignment.convert_numbering(ref)
@@ -107,11 +115,11 @@ def create_scatter(link_file, pdb_file, align_file, out_file, chain):
     linkage_dict = {}
     with open(link_file) as handle:
         for row in csv.DictReader(handle, delimiter = '\t'):
-            if int(row['Source-Stop']) - int(row['Source-Start']) == 1 \
-                and int(row['Target-Stop']) - int(row['Target-Start']) == 1 \
-                not row['Correct-num'].startswith('too'):
+            if int(row['Source-End']) - int(row['Source-Start']) == 1 \
+                and int(row['Target-End']) - int(row['Target-Start']) == 1 \
+                and not row['Correct-Num'].startswith('too'):
                 linkage_dict[(int(row['Source-Start']), 
-                                int('Target-Start'))] = float(row['Total-Score'])
+                                int(row['Target-Start']))] = float(row['Total-Score'])
                 
     
     fields = ('HXB2Pos1', 'HXB2Pos2', '3dDist', 'Linkage')

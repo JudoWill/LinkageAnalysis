@@ -645,7 +645,6 @@ def scatter_files():
 
     with open(os.path.join(struct_dir, 'mapping.txt')) as handle:
         for row in csv.DictReader(handle, delimiter = '\t'):
-            print row.items()
             struct_file = os.path.join(struct_dir, row['Structure'] + '.pdb')
             link_file = os.path.join(linkage_dir, row['Protein']+'--'+row['Protein'] + '.res')
             align_file = os.path.join(align_dir, row['Protein']+'.aln')
