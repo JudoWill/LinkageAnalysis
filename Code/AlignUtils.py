@@ -70,6 +70,20 @@ class Alignment():
                 seqs.append(m_item[0])
         return ''.join(seqs)
     
+    def convert_numbering(self, dest_key):
+        
+        seq_count = -1
+        dest_nums = [] #same length as sequence and tells which column the reference belongs too
+        align_nums = [] #same length as alignment and tells the position in the reference
+        for num, let in enumerate(self.seqs[dest_key]):
+            if let != '-':
+                seq_count += 1
+                dest_nums.append(num-1)
+            align_nums.append(seq_count)
+            
+        return dest_nums, align_nums
+    
+    
 
 @memorise()
 def calculate_mutual_info(signal1, signal2):
