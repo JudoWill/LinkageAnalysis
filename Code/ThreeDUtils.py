@@ -4,7 +4,8 @@ from itertools import groupby, product, combinations
 from operator import itemgetter
 from math import sqrt
 from nwalign import global_align
-
+from Code.AlignUtils import *
+from collections import defaultdict
 
 
 conv_dict = {'ala':'A', 'arg':'R', 'asn':'N',
@@ -93,6 +94,41 @@ class Structure():
         return pdict
 
 def create_scatter(link_file, pdb_file, align_file, out_file, chain):
-    pass
+    
+    ref = 'A04321'
+    alignment = Alignment.alignment_from_file(align_file)
+    structure = Structure.from_file(pdb_file, chain)
+    
+    hxb2_seq = alignment.seqs[ref].replace('-', '')
+    pdict = structure.pairwise_from_seq(hxb2_seq)
+    
+    ref_nums, align_nums = alignment.convert_numbering(ref)
+    
+    linkage_dict = {}
+    with open(link_file) as handle:
+        for row in csv.DictReader(handle, delimiter = '\t'):
+            if int(row['Source-Stop']) - int(row['Source-Start']) == 1 \
+                and int(row['Target-Stop']) - int(row['Target-Start']) == 1 \
+                not row['Correct-num'].startswith('too'):
+                linkage_dict[(int(row['Source-Start']), 
+                                int('Target-Start'))] = float(row['Total-Score'])
+                
+    
+    fields = ('HXB2Pos1', 'HXB2Pos2', '3dDist', 'Linkage')
+    with open(out_file, 'w') as handle:
+        handle.write('\t'.join(fields)+'\n')
+        writer = csv.DictWriter(handle, fieldnames = fields,
+                                delimiter = '\t')
+        for (p1, p2) in pdict.keys():
+            np1 = ref_nums[p1]
+            np2 = ref_nums[p2]
+            if (np1, np2) in linkage_dict:
+                
+                writer.writerow({
+                'HXB2Pos1':p1,
+                'HXB2Pos2':p2,
+                '3dDist':pdict[(p1, p2)],
+                'Linkage':linkage_dict[(np1, np2)]
+                })
 
         
