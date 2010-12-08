@@ -9,6 +9,7 @@ import argparse
 from Code.NCBIUtils import *
 from Code.GeneralUtils import *
 from Code.AlignUtils import *
+from Code.ThreeDUtils import *
 from functools import partial
 from subprocess import call, check_call
 import shlex, tempfile, shutil
@@ -640,9 +641,8 @@ def scatter_files():
     struct_dir = os.path.join('OtherData', 'ProteinStrutures')
     linkage_dir = os.path.join('OtherData', 'LinkageResults')
     odir = os.path.join('OtherData', 'ScatterResults')
-    in_files = []
-    out_files = []
-
+    
+    
     in_files.append(os.path.join(struct_dir, 'mapping.txt'))
     for f in os.listdir(struct_dir):
         if f.endswith('.pdb'):
@@ -650,28 +650,20 @@ def scatter_files():
 
     with open(os.path.join(struct_dir, 'mapping.txt')) as handle:
         for row in csv.DictReader(handle, delimiter = '\t'):
-            in_files.append(os.path.join(struct_dir, row['Structure'] + '.pdb'))
-            in_files.append(os.path.join(linkage_dir, row['Protein']+'--'+row['Protein'] + '.res'))
-            out_files.append(os.path.join(odir, row['Protein']+'--' + row['Structure'] + '.res'))
-        
-    yield in_files, out_files
-
-
-
-@ruffus.files(os.path.join('OtherData', 'ProteinStructures', '.*'), None)
-def generate_scatter(in_files, out_files):
-    
-    struct_dir = os.path.join('OtherData', 'ProteinStrutures')
-    linkage_dir = os.path.join('OtherData', 'LinkageResults')
-    odir = os.path.join('OtherData', 'ScatterResults')
-    
-    mfile = os.path.join(struct_dir, 'mapping.txt')
-    with open(mfile) as handle:
-        for row in csv.DictReader(handle, delimiter = '\t'):
             struct_file = os.path.join(struct_dir, row['Structure'] + '.pdb')
             link_file = os.path.join(linkage_dir, row['Protein']+'--'+row['Protein'] + '.res')
-            ofile = os.path.join(odir, row['Protein']+'--' + row['Structure'] + '.res')           
-            
+            out_file = os.path.join(odir, row['Protein']+'--' + row['Structure'] + '.res')
+        
+            yield [struct_file, link_file], [out_file], row['Chain']
+
+
+
+@ruffus.files(scatter_files)
+@ruffus.follows(ruffus.mkdir(os.path.join('OtherData', 'ScatterResults')), 
+                'calculate_lanl_linkages')
+def generate_scatter(in_files, out_files, chain):
+    create_scatter(*in_files, *out_files, chain)
+    
         
 
 

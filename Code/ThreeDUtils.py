@@ -92,7 +92,7 @@ class Structure():
             pdict[(s1[0], s2[0])] = self.pairwise[(s1[1], s2[1])]
         return pdict
 
-
-
+def create_scatter(link_file, pdb_file, out_file, chain):
+    pass
 
         
