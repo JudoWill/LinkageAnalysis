@@ -26,6 +26,8 @@ def guessing_figures(load_dir):
     for row in rows:
         row['Linkage'] = float(row['Linkage'])
         row['3dDist'] = float(row['3dDist'])
+        row['dDistL'] = row['3dDist']
+        row['dDistU'] = row['3dDist']
     
     mdict = dict()
     for key, srows in groupby(rows, itemgetter('Structure')):
@@ -34,18 +36,21 @@ def guessing_figures(load_dir):
     for row in rows:
         row['3dNorm'] = float(row['3dDist']/mdict[row['Structure']])
         
-    dist_cuts = [None] + range(2,60,2)
+    up_cuts = [None] + range(2,60,2)
+    low_cuts = [None] + range(2,60,2)
     link_cuts = [None] + [x/10 for x in range(11)]
     proteins.add(None)
     structures.add(None)
-    order = ('3dDist', 'Linkage', 'Protein', 'Structure', 'Normed')
-    funs = (lt, gt, eq, eq)
+    order = ('dDistU', 'dDistL','Linkage', 'Protein', 'Structure', 'Normed')
+    funs = (lt, gt, gt, eq, eq)
     fields = order + ('FigNum','Corr')
     handle = csv.DictWriter(open(os.path.join(load_dir, 'figures', 'key.txt'), 'w'),
                             fieldnames = fields, delimiter = '\t')
+    ghandle = csv.DictWriter(open(os.path.join(load_dir, 'figures', 'gkey.txt'), 'w'),
+                            fieldnames = fields, delimiter = '\t')
     count = 1
-    for args in product(dist_cuts, link_cuts, proteins, structures, [True, False]):
-        trows = deepcopy(rows)
+    for args in product(up_cuts, low_cuts, link_cuts, proteins, structures, [True, False]):
+        trows = rows
         for arg, key, test in zip(args[:-1], order, funs):
             if arg is not None:
                 trows = [x for x in trows if test(x[key], arg)]
@@ -54,6 +59,9 @@ def guessing_figures(load_dir):
             odict = dict(zip(order, args))
             odict['FigNum'] = count
             odict['Normed'] = args[-1]
+            for key, val in odict.items():
+                if val is None:
+                    odict[key] = 'All'
             
             if odict['Normed']:
                 X = [x['3dNorm'] for x in trows]
@@ -62,14 +70,26 @@ def guessing_figures(load_dir):
             Y = [x['Linkage'] for x in trows]
             cor = numpy.corrcoef(numpy.array([X,Y]))[1,0]
             odict['Corr'] = cor
-            if cor > 0.7:
+            if abs(cor) > 0.6:
                 fig, ax = pyplot.subplots(1)
                 ax.scatter(X, Y)
+                for key, val in odict.items():
+                    odict[key] = str(val)
+                
+                tstr = '%(dDistL)s < 3d '
+                tstr += '< %(dDistU)s ; '
+                tstr += 'Link > %(Linkage)s ; '
+                tstr += 'Protien: %(Protein)s ; '
+                tstr += 'Structure: %(Structure)s ; '
+                tstr += 'Cor: %(Corr)s'
+                tstr = tstr % odict
+                ax.set_title(tstr)
                 fig.savefig(os.path.join(load_dir, 'figures','Figure%i.png' % count))
                 del(fig)
-            
+                ghandle.writerow(odict)
                 print odict.items()
-                handle.writerow(odict)
                 count += 1
             else:
-                print 'Not', odict.items()
+                odict['FigNum'] = 0
+                
+            handle.writerow(odict)
