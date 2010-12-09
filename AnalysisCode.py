@@ -666,7 +666,8 @@ def generate_scatter(in_files, out_files, chain):
     create_scatter(*args)
     
     
-@ruffus.follows('generate_scatter')
+@ruffus.follows(ruffus.mkdir(os.path.join('OtherData', 'ScatterResults', 'figures')),
+                'generate_scatter')
 def slice_scatters():
     
     guessing_figures(os.path.join('OtherData', 'ScatterResults'))
