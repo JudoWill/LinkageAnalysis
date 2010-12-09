@@ -5,6 +5,7 @@ from operator import itemgetter
 from math import sqrt
 from nwalign import global_align
 from Code.AlignUtils import *
+from Code.GeneralUtils import *
 from collections import defaultdict
 
 
@@ -75,6 +76,7 @@ class Structure():
             pairwise[(it1[0], it2[0])] = d
             pairwise[(it2[0], it1[0])] = d
             #print it1[0], it2[0]
+
         self.pairwise = pairwise
 
 
@@ -96,13 +98,15 @@ class Structure():
         pdict = {}
         for s1, s2 in product(i_inds, repeat = 2):
             if s1[1] != s2[1]:
-                print s1, s2
                 pdict[(s1[0], s2[0])] = self.pairwise[(s1[1], s2[1])]
         return pdict
 
 def create_scatter(pdb_file, link_file, align_file, out_file, chain):
     
     ref = 'A04321'
+    struct_name = gi_from_path(pdb_file)
+    prot_name = gi_from_path(align_file)
+    
     alignment = Alignment.alignment_from_file(align_file)
     structure = Structure.from_file(pdb_file, chain)
     
@@ -122,7 +126,8 @@ def create_scatter(pdb_file, link_file, align_file, out_file, chain):
                                 int(row['Target-Start']))] = float(row['Total-Score'])
                 
     
-    fields = ('HXB2Pos1', 'HXB2Pos2', '3dDist', 'Linkage')
+    fields = ('HXB2Pos1', 'HXB2Pos2', '3dDist', 'Linkage', 
+                'Protein', 'Structure')
     with open(out_file, 'w') as handle:
         handle.write('\t'.join(fields)+'\n')
         writer = csv.DictWriter(handle, fieldnames = fields,
@@ -136,7 +141,9 @@ def create_scatter(pdb_file, link_file, align_file, out_file, chain):
                 'HXB2Pos1':p1,
                 'HXB2Pos2':p2,
                 '3dDist':pdict[(p1, p2)],
-                'Linkage':linkage_dict[(np1, np2)]
+                'Linkage':linkage_dict[(np1, np2)],
+                'Protein':prot_name,
+                'Structure':struct_name
                 })
 
         
