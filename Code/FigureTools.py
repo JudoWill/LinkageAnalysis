@@ -87,7 +87,7 @@ def guessing_figures(load_dir):
                 fig.savefig(os.path.join(load_dir, 'figures','Figure%i.png' % count))
                 del(fig)
                 ghandle.writerow(odict)
-                print odict.items()
+                print tstr
                 count += 1
             else:
                 odict['FigNum'] = 0
