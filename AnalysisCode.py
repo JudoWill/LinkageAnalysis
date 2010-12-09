@@ -10,6 +10,7 @@ from Code.NCBIUtils import *
 from Code.GeneralUtils import *
 from Code.AlignUtils import *
 from Code.ThreeDUtils import *
+from Code.FigureTools import *
 from functools import partial
 from subprocess import call, check_call
 import shlex, tempfile, shutil
@@ -664,8 +665,12 @@ def generate_scatter(in_files, out_files, chain):
     args = in_files+out_files+[chain]
     create_scatter(*args)
     
-        
-
+    
+@ruffus.follows('generate_scatter')
+def slice_scatters():
+    
+    guessing_figures(os.path.join('OtherData', 'ScatterResults'))
+  
 
 if __name__ == '__main__':
 
@@ -730,7 +735,7 @@ if __name__ == '__main__':
     elif args.overlapreports:
         ruffus.pipeline_run([make_overlap_reports], logger = my_ruffus_logger)
     elif args.lanlscatter:
-        ruffus.pipeline_run([generate_scatter], logger = my_ruffus_logger)
+        ruffus.pipeline_run([slice_scatters], logger = my_ruffus_logger)
     elif args.filterlanl:
         ruffus.pipeline_run([filter_alignmets], logger = my_ruffus_logger)
     elif args.lanlalignments:
