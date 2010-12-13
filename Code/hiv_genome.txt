@@ -1,0 +1,10 @@
+chr - Env Env 0 859 green
+chr - Gag Gag 0 500 red
+chr - LTR LTR 0 634 vlred
+chr - Nef Nef 0 88 blue
+chr - Pol Pol 0 1003 purple
+chr - Rev Rev 0 116 yellow
+chr - Tat Tat 0 101 black
+chr - Vif Vif 0 192 orange
+chr - Vpr Vpr 0 96 dorange
+chr - Vpu Vpu 0 81 dpurple

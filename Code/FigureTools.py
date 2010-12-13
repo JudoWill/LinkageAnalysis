@@ -2,16 +2,87 @@ from __future__ import division
 import matplotlib
 matplotlib.use('Agg')
 
-import csv, os.path, os
+import csv, os.path, os, tempfile
 from itertools import product, groupby
 from matplotlib import axes, pyplot
 from copy import deepcopy
 from operator import eq, lt, gt, itemgetter
 import numpy
 
+
+
+class CircosGraphs():
+    
+    def __init__(self):
+        self.genome = list()
+        self.links = list()
+
+    def add_links(self, iterable):
+        
+        if self.links is None:
+            self.links = tuple(iterable)
+        else:
+            self.links += tuple(iterable)
+
+    def add_gene(self, name, length, color = None):
+        self.genome.append({'name':name, 'color':color, 
+                            'length':length})
+
+    def genes_from_file(self, fname = 'Code/genome_template.tmp'):
+        genomes = 
+        with open(fname) as handle:
+            for line in handle:
+                if line.startswith('chr - '):
+                    parts = line.strip().split()
+                    self.add_gene(parts[1]. parts[4], color = parts[-1])
+                    
+
+
+    def make_figure(self, image_path, info_dict, link_filter = None, SCRATH = '/tmp/'):
+        
+        image_path = os.path.abspath(image_path)
+        image_direc = image_path.rsplit(os.sep)[0]
+        image_name = image_path.rsplit(os.sep)[1]
+        defaults = {'kayrotype':'kayrotype.txt',
+                    'outdir':image_direc,
+                    'outfile':image_name,
+                    'infile':'links.txt',
+                    'radius':5000,
+                    }
+
+        circos_template = 'Code/circos.tem'
+        source_ktype = 'Code/hiv_genome.txt'
+        tmp_loc = tempfile.mkdtemp(dir = SCRATCH)
+        link_file = os.path.join(tmp_loc, 'links.txt')
+        circos_file = os.path.join(tmp_loc, 'circos.conf')
+        ktype_file = os.path.join(tmp_loc, 'kayrotype.txt')
+
+        with open(link_file, 'w') as handle:
+            for i, link in enumerate(self.links):
+                tdict = dict(**link)
+                tdict['lnum'] = i
+                handle.write('hivlink%(lnum)i %(chrom)s %(start)i %(stop)i\n' % tdict)
+                handle.write('hivlink%(lnum)i %(chrom)s %(start)i %(stop)i\n' % tdict)
+
+        with open(circos_template) as handle:
+            ctemp = handle.read()
+
+
+        with open(circos_file, 'w') as handle:
+            handle.write(ctemp % defaults)
+        
+        shutil.copy(source_ktype, ktype_file)
+        
+        
+        
+        
+
+
+
+
 def guessing_figures(load_dir):
     
-    min_rows = 20
+    min_rows = 50
     rows = []
     proteins = set()
     structures = set()
@@ -70,7 +141,7 @@ def guessing_figures(load_dir):
             Y = [x['Linkage'] for x in trows]
             cor = numpy.corrcoef(numpy.array([X,Y]))[1,0]
             odict['Corr'] = cor
-            if abs(cor) > 0.6:
+            if abs(cor) > 0.65:
                 fig, ax = pyplot.subplots(1)
                 ax.scatter(X, Y)
                 for key, val in odict.items():

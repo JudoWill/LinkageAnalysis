@@ -1,0 +1,147 @@
+
+<colors>
+<<include etc/colors.conf>>
+</colors>
+
+<fonts>
+<<include etc/fonts.conf>>
+</fonts>
+
+<<include ideogram.conf>>
+<<include ticks.conf>>
+
+karyotype   = simple_hiv_genome.txt
+
+<image>
+dir = /Users/will/hivcircos/newpredfiles/images
+file  = %(outfile)s
+# radius of inscribed circle in image
+radius         = %(radius)d p
+background     = white
+# by default angle=0 is at 3 o'clock position
+angle_offset   = -150
+24bit             = yes
+auto_alpha_colors = yes
+auto_alpha_steps  = 5
+</image>
+
+
+chromosomes_display_default = yes
+chromosomes = Gag;Nef;Pol;Rev;Tat;Vif;Vpr;Vpu;
+chromosomes_radius = Gag:0.6r;Pol:1.0r;Vif:0.6r;Vpr:1.0r;Tat:0.8r;Vpu:0.8r;Rev:0.8r;Nef:0.6r;5LTR:0.6r;3LTR:0.8r;Env:1.0r
+#chromosomes_radius = 
+chromosomes_order = space,5LTR,Gag,Pol,Vif,Vpr,Tat,Vpu,Env,Rev,Nef,3LTR
+
+# Links (bezier curves or straight lines) are defined in <links> blocks.
+# Each link data set is defined within a <link>.
+# As with highlights, parameters defined
+# in the root of <links> affect all data sets and are considered
+# global settings. Individual parameters value can be refined by
+# values defined within <link> blocks, or additionally on each
+# data line within the input file.
+
+<links>
+
+z      = 0
+radius = 0.95r
+bezier_radius = 0.2r
+
+<link segdup>
+show         = yes
+color        = dgrey_a5
+thickness    = 3
+ribbon = yes
+flat = yes
+file         = %(linkfile)s
+record_limit = %(rec)d
+<rules>
+
+
+
+
+<rule>
+condition = _CHR2_ eq "Env"
+color = turquoise
+#show = no
+#color = 51,204,94
+</rule>
+
+<rule>
+condition = _CHR2_ eq "Gag"
+color = skyblue
+#show = no
+#color = 247,42,66
+</rule>
+
+<rule>
+condition = _CHR2_ eq "Nef"
+color = blue
+#show = no
+#color = 54,116,217
+</rule>
+
+<rule>
+condition = _CHR2_ eq "Pol"
+color = plum
+#show = no
+#color = 189,51,204
+</rule>
+
+<rule>
+condition = _CHR2_ eq "Rev"
+color = deepred
+#show = no
+#color = 255,255,0
+</rule>
+
+<rule>
+condition = _CHR2_ eq "Tat"
+color = black
+#show = no
+#color = 0,0,0
+</rule>
+
+<rule>
+condition = _CHR2_ eq "Vif"
+color = warmgrey
+#show = no
+#color = 255,136,0
+</rule>
+
+<rule>
+condition = _CHR2_ eq "Vpr"
+color = truegreen
+#show = no
+#color = 221,143,55
+</rule>
+
+<rule>
+condition = _CHR2_ eq "Vpu"
+color = limee
+#show = no
+#color = 118,32,128
+</rule>
+
+<rule>
+condition = _CHR2_ eq "LTR"
+color = vlred
+#show = no
+#color = 221,143,55
+</rule>
+
+
+</rules>
+</link>
+</links>
+
+anglestep       = 0.5
+minslicestep    = 10
+beziersamples   = 40
+debug           = no
+warnings        = no
+imagemap        = no
+
+# don't touch!
+units_ok        = bupr
+units_nounit    = n
+
