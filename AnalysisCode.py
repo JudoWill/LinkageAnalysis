@@ -616,8 +616,8 @@ def lanl_align_pairs():
     dump_dir = os.path.join('OtherData', 'LinkageResults')
     aligns_present = [x.split('.')[0] for x in os.listdir(load_dir) if x.endswith('.aln')]
     
-    for p1, p2 in product(sorted(aligns_present), repeat = 2):
-    #for p1, p2 in zip(sorted(aligns_present), sorted(aligns_present)):
+    #for p1, p2 in product(sorted(aligns_present), repeat = 2):
+    for p1, p2 in zip(sorted(aligns_present), sorted(aligns_present)):
 
 
         a1 = os.path.join(load_dir, p1+'.aln')
@@ -660,7 +660,8 @@ def scatter_files():
 
 
 @ruffus.files(scatter_files)
-@ruffus.follows(ruffus.mkdir(os.path.join('OtherData', 'ScatterResults')))
+@ruffus.follows(ruffus.mkdir(os.path.join('OtherData', 'ScatterResults')),
+                'calculate_lanl_linkages')
 def generate_scatter(in_files, out_files, chain):
     args = in_files+out_files+[chain]
     create_scatter(*args)
@@ -685,7 +686,7 @@ if __name__ == '__main__':
                         default = False)
     parser.add_argument('--workers', dest = 'workers', default = 3,
                         action = 'store', type = int)
-    parser.add_argument('--max-width', dest = 'maxwidth', default = 5, action = 'store',
+    parser.add_argument('--max-width', dest = 'maxwidth', default = 1, action = 'store',
                         type = int)
     parser.add_argument('--simplify-xml', dest = 'simplifyxml', default = False,
                         action = 'store_true')
@@ -736,7 +737,7 @@ if __name__ == '__main__':
     elif args.overlapreports:
         ruffus.pipeline_run([make_overlap_reports], logger = my_ruffus_logger)
     elif args.lanlscatter:
-        ruffus.pipeline_run([slice_scatters], logger = my_ruffus_logger)
+        ruffus.pipeline_run([slice_scatters], logger = my_ruffus_logger, multiprocess = args.workers)
     elif args.filterlanl:
         ruffus.pipeline_run([filter_alignmets], logger = my_ruffus_logger)
     elif args.lanlalignments:
