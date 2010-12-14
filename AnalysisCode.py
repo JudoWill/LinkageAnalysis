@@ -675,12 +675,13 @@ def slice_scatters():
 
 
 @ruffus.follows(ruffus.mkdir(os.path.join('OtherData', 'CircosFigs')))
-@ruffus.files(None, None)
+@ruffus.files(None, '')
 def circos_figs(ifile, ofile):
     dump_path = os.path.join('OtherData', 'CircosFigs')
     load_path = os.path.join('OtherData', 'LinkageResults')
+    align_dir = os.path.join('OtherData', 'LANLSequences', 'Alignments')
     
-    CircosGraph(load_path, dump_path)
+    CircosGraph.load_from_dir(load_path, align_dir)
         
 
   
@@ -751,7 +752,7 @@ if __name__ == '__main__':
     elif args.lanlscatter:
         ruffus.pipeline_run([slice_scatters], logger = my_ruffus_logger, multiprocess = args.workers)
     elif args.lanlcircos:
-        ruffus.pipeline_run([slice_scatters], logger = my_ruffus_logger)        
+        ruffus.pipeline_run([circos_figs], logger = my_ruffus_logger)        
     elif args.filterlanl:
         ruffus.pipeline_run([filter_alignmets], logger = my_ruffus_logger)
     elif args.lanlalignments:

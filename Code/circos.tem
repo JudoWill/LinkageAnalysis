@@ -51,78 +51,7 @@ thickness    = 3
 file         = %(infile)s
 <rules>
 
-
-
-<rule>
-condition = _CHR2_ eq "Env"
-color = turquoise
-#show = no
-#color = 51,204,94
-</rule>
-
-<rule>
-condition = _CHR2_ eq "Gag"
-color = skyblue
-#show = no
-#color = 247,42,66
-</rule>
-
-<rule>
-condition = _CHR2_ eq "Nef"
-color = blue
-#show = no
-#color = 54,116,217
-</rule>
-
-<rule>
-condition = _CHR2_ eq "Pol"
-color = plum
-#show = no
-#color = 189,51,204
-</rule>
-
-<rule>
-condition = _CHR2_ eq "Rev"
-color = deepred
-#show = no
-#color = 255,255,0
-</rule>
-
-<rule>
-condition = _CHR2_ eq "Tat"
-color = black
-#show = no
-#color = 0,0,0
-</rule>
-
-<rule>
-condition = _CHR2_ eq "Vif"
-color = warmgrey
-#show = no
-#color = 255,136,0
-</rule>
-
-<rule>
-condition = _CHR2_ eq "Vpr"
-color = truegreen
-#show = no
-#color = 221,143,55
-</rule>
-
-<rule>
-condition = _CHR2_ eq "Vpu"
-color = limee
-#show = no
-#color = 118,32,128
-</rule>
-
-<rule>
-condition = _CHR2_ eq "LTR"
-color = vlred
-#show = no
-#color = 221,143,55
-</rule>
-
+%(rules)s
 
 </rules>
 </link>
