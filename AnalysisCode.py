@@ -672,6 +672,17 @@ def generate_scatter(in_files, out_files, chain):
 def slice_scatters():
     
     guessing_figures(os.path.join('OtherData', 'ScatterResults'))
+
+
+@ruffus.follows(ruffus.mkdir(os.path.join('OtherData', 'CircosFigs')))
+@ruffus.files(None, None)
+def circos_figs(ifile, ofile):
+    dump_path = os.path.join('OtherData', 'CircosFigs')
+    load_path = os.path.join('OtherData', 'LinkageResults')
+    
+    CircosGraph(load_path, dump_path)
+        
+
   
 
 if __name__ == '__main__':
@@ -703,6 +714,7 @@ if __name__ == '__main__':
     parser.add_argument('--filter-lanl', dest = 'filterlanl', action = 'store_true', default = False)
     parser.add_argument('--align-lanl', dest = 'lanlalignments', action = 'store_true', default = False)
     parser.add_argument('--scatter-lanl', dest = 'lanlscatter', action = 'store_true', default = False)
+    parser.add_argument('--circos-lanl', dest = 'lanlcircos', action = 'store_true', default = False)
     args = parser.parse_args()
     
     
@@ -738,6 +750,8 @@ if __name__ == '__main__':
         ruffus.pipeline_run([make_overlap_reports], logger = my_ruffus_logger)
     elif args.lanlscatter:
         ruffus.pipeline_run([slice_scatters], logger = my_ruffus_logger, multiprocess = args.workers)
+    elif args.lanlcircos:
+        ruffus.pipeline_run([slice_scatters], logger = my_ruffus_logger)        
     elif args.filterlanl:
         ruffus.pipeline_run([filter_alignmets], logger = my_ruffus_logger)
     elif args.lanlalignments:
