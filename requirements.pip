@@ -6,3 +6,4 @@ argparse
 biopython
 memorised
 python-memcached
+mpmath
