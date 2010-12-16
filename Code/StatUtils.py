@@ -1,9 +1,10 @@
 import time
 from math import log, exp
 from mpmath import loggamma
-
+from memorised.decorators import memorise
 
 PVAL_CUT = 0.05
+@memorise()
 def logchoose(ni, ki):
     #n = max(ni, ki)
     #k = min(ni, ki)
@@ -18,6 +19,7 @@ def logchoose(ni, ki):
 
     return lgn1 - (lgnk1 + lgk1)
 
+@memorise()
 def gauss_hypergeom(X, n, m, N):
     """Returns the probability of drawing X successes of m marked items
      in n draws from a bin of N total items."""
@@ -37,6 +39,7 @@ def gauss_hypergeom(X, n, m, N):
 
     return exp(r1 + r2 - r3)
 
+@memorise()
 def hypergeo_cdf(X, n, m, N):
 
     assert N >= m, 'Number of items %i must be larger than the number of marked items %i' % (N, m)
