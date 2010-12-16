@@ -616,8 +616,8 @@ def lanl_align_pairs():
     dump_dir = os.path.join('OtherData', 'LinkageResults')
     aligns_present = [x.split('.')[0] for x in os.listdir(load_dir) if x.endswith('.aln')]
     
-    #for p1, p2 in product(sorted(aligns_present), repeat = 2):
-    for p1, p2 in zip(sorted(aligns_present), sorted(aligns_present)):
+    for p1, p2 in product(sorted(aligns_present), repeat = 2):
+    #for p1, p2 in zip(sorted(aligns_present), sorted(aligns_present)):
 
 
         a1 = os.path.join(load_dir, p1+'.aln')
@@ -673,15 +673,46 @@ def slice_scatters():
     
     guessing_figures(os.path.join('OtherData', 'ScatterResults'))
 
+def circos_files():
+    link_path = os.path.join('OtherData', 'LinkageResults')
+    align_path = os.path.join('OtherData', 'LANLSequences', 'Alignments')
+
+    ifiles = []
+    for f in os.listdir(link_path):
+        if f.endswith('.res'):
+            ifiles.append(os.path.join(link_path, f))
+    for f in os.listdir(align_path):
+        if f.endswith('.aln'):
+            ifiles.append(os.path.join(align_path, f))
+    yield ifiles, None
+
 
 @ruffus.follows(ruffus.mkdir(os.path.join('OtherData', 'CircosFigs')))
-@ruffus.files(None, '')
+@ruffus.files(circos_files)
 def circos_figs(ifile, ofile):
     dump_path = os.path.join('OtherData', 'CircosFigs')
     load_path = os.path.join('OtherData', 'LinkageResults')
-    align_dir = os.path.join('OtherData', 'LANLSequences', 'Alignments')
+    align_path = os.path.join('OtherData', 'LANLSequences', 'Alignments')
+    prots = set()
+    for f in os.listdir(align_path):
+        if f.endswith(f):
+            prots.add(f)
+    prots.add('All')
+
+    lcuts = [0.5,0.6,0.7,0.8,0.9]
+    graph = CircosGraph.load_from_dir(load_path, align_path)
+    sort_fun = lambda x: x['Score']
+    for lcut, prot in product(lcuts, prots):
+        if prot == 'All':
+            filter_fun = lambda x: x['Score'] >= lcut
+        else:
+            filter_fun = lambda x: x['Score'] >= lcut and x['Source-Prot'] == prot            
+        path = os.path.join(dump_path, prot + '-%i.png' % (10*lcut,))
+        print path
+        graph.make_figure(path, link_key = sort_fun, link_filter = filter_fun)
     
-    CircosGraph.load_from_dir(load_path, align_dir)
+    
+    
         
 
   
@@ -711,7 +742,7 @@ if __name__ == '__main__':
                         default = False)
     parser.add_argument('--subtype', dest = 'subtype', action = 'store', type = str,
                         default = None)
-    parser.add_argument('--lanl', dest = 'lanl', action = 'store_true', default = False)
+    parser.add_argument('--link-lanl', dest = 'lanl', action = 'store_true', default = False)
     parser.add_argument('--filter-lanl', dest = 'filterlanl', action = 'store_true', default = False)
     parser.add_argument('--align-lanl', dest = 'lanlalignments', action = 'store_true', default = False)
     parser.add_argument('--scatter-lanl', dest = 'lanlscatter', action = 'store_true', default = False)

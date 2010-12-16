@@ -136,8 +136,8 @@ class CircosGraph():
         link_file = os.path.join(tmp_loc, 'links.txt')
 
         with open(link_file, 'w') as handle:
-            link_iter = islice(ifilter(sorted(self.links, key = link_key, reverse = True), 
-                                key = link_filter), link_max)
+            link_iter = islice(ifilter(link_filter, sorted(self.links, key = link_key, reverse = True), 
+                                ), link_max)
             
             for i, link in enumerate(link_iter):
                 tdict = dict(**link)
@@ -164,7 +164,6 @@ class CircosGraph():
             args = shlex.split(cmd)
             call(args)
         shutil.rmtree(tmp_loc)
-
 
 
 def guessing_figures(load_dir):

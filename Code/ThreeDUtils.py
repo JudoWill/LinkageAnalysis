@@ -103,7 +103,7 @@ class Structure():
 
 def create_scatter(pdb_file, link_file, align_file, out_file, chain):
     
-    ref = 'A04321'
+    ref = 'K03455'
     struct_name = gi_from_path(pdb_file)
     prot_name = gi_from_path(align_file)
     
