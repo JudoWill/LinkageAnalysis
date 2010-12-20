@@ -4,6 +4,7 @@ matplotlib.use('Agg')
 
 from Code.GeneralUtils import *
 from Code.AlignUtils import *
+from Code.StatUtils import *
 import csv, os.path, os, tempfile, shutil
 from itertools import product, groupby, islice, ifilter
 from matplotlib import axes, pyplot
@@ -183,71 +184,47 @@ def guessing_figures(load_dir):
     for row in rows:
         row['Linkage'] = float(row['Linkage'])
         row['3dDist'] = float(row['3dDist'])
-        row['dDistL'] = row['3dDist']
-        row['dDistU'] = row['3dDist']
-    
-    mdict = dict()
-    for key, srows in groupby(rows, itemgetter('Structure')):
-        mdict[key] = max([x['3dDist'] for x in srows])
         
-    for row in rows:
-        row['3dNorm'] = float(row['3dDist']/mdict[row['Structure']])
-        
-    up_cuts = [None] #+ range(2,60,2)
-    low_cuts = [None] #+ range(2,60,2)
-    link_cuts = [None] #+ [x/10 for x in range(11)]
+    dist_cuts = numpy.arange(0, 60, 0.5)    
+    link_cuts = numpy.arange(0.5, 1, 0.1)
     proteins.add(None)
-    structures.add(None)
-    order = ('dDistU', 'dDistL','Linkage', 'Protein', 'Structure', 'Normed')
-    funs = (lt, gt, gt, eq, eq)
-    fields = order + ('FigNum','Corr')
-    handle = csv.DictWriter(open(os.path.join(load_dir, 'figures', 'key.txt'), 'w'),
-                            fieldnames = fields, delimiter = '\t')
-    ghandle = csv.DictWriter(open(os.path.join(load_dir, 'figures', 'gkey.txt'), 'w'),
-                            fieldnames = fields, delimiter = '\t')
-    count = 1
-    for args in product(up_cuts, low_cuts, link_cuts, proteins, structures, [True, False]):
-        trows = rows
-        for arg, key, test in zip(args[:-1], order, funs):
-            if arg is not None:
-                trows = [x for x in trows if test(x[key], arg)]
+    proteins = list(proteins) #so the order is consistent
+    pnums = dict(zip(proteins, range(len(proteins))))
+    vals = numpy.zeros((len(rows), 3))
+    for i, row in enumerate(rows):
+        vals[i-1,0] = pnums[row['Protein']]
+        vals[i-1,1] = row['Linkage']
+        vals[i-1,2] = row['3dDist']
+    print vals
+
+    for lval in link_cuts:
         
-        if len(trows) > min_rows:
-            
-            odict = dict(zip(order, args))
-            odict['FigNum'] = count
-            odict['Normed'] = args[-1]
-            for key, val in odict.items():
-                if val is None:
-                    odict[key] = 'All'
-            
-            if odict['Normed']:
-                X = [x['3dNorm'] for x in trows]
+
+        fig, ax = pyplot.subplots(1)        
+        for i, prot in enumerate(proteins):
+            pvals = numpy.zeros_like(dist_cuts)
+            if prot is None:
+                tvals = vals
+                prot = 'All'
             else:
-                X = [x['3dDist'] for x in trows]
-            Y = [x['Linkage'] for x in trows]
-            cor = numpy.corrcoef(numpy.array([X,Y]))[1,0]
-            odict['Corr'] = cor
-            if abs(cor) > 0:
-                fig, ax = pyplot.subplots(1)
-                ax.scatter(X, Y)
-                for key, val in odict.items():
-                    odict[key] = str(val)
-                
-                tstr = '%(dDistL)s < 3d '
-                tstr += '< %(dDistU)s ; '
-                tstr += 'Link > %(Linkage)s ; '
-                tstr += 'Protien: %(Protein)s ; '
-                tstr += 'Structure: %(Structure)s ; '
-                tstr += 'Cor: %(Corr)s'
-                tstr = tstr % odict
-                ax.set_title(tstr)
-                fig.savefig(os.path.join(load_dir, 'figures','Figure%i.png' % count))
-                del(fig)
-                ghandle.writerow(odict)
-                print tstr
-                count += 1
-            else:
-                odict['FigNum'] = 0
-                
-            handle.writerow(odict)
+                tvals = vals[vals[:,0] == (i-1), :]
+            print tvals, tvals.size
+            N_items = tvals.size
+            for ind, dcut in enumerate(dist_cuts):
+                X_successes = sum((tvals[:, 1] >= lval)*(tvals[:,2] <= dcut))
+                n_draws = sum(tvals[:,2] <= dcut)                
+                m_marked = sum(tvals[:, 1] >= lval)
+                prob = hypergeo_cdf(X_successes, n_draws, m_marked, N_items)
+            
+                try:
+                    pvals[ind-1] = -log(1-prob, 10)
+                except:
+                    print prob, ind, X_successes, n_draws, m_marked, N_items
+                    #raise KeyError
+                    pvals[ind-1] = numpy.nan
+            ax.plot(dist_cuts[numpy.invert(numpy.isnan(pvals))], 
+                    pvals[numpy.invert(numpy.isnan(pvals))], label = prot)
+        pyplot.legend()
+        fig.savefig(os.path.join(load_dir, 'figures', 'DvsLink-%i.png' % (10*lval,)))
+
+
