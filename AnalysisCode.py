@@ -169,7 +169,7 @@ def circos_files():
     yield ifiles, None
 
 
-@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR', 'CircosFigs')))
+@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'CircosFigs')))
 @ruffus.files(circos_files)
 def circos_figs(ifile, ofile):
     dump_path = os.path.join(DATA_DIR, 'CircosFigs')
