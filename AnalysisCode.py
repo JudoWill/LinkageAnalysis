@@ -20,8 +20,6 @@ from collections import defaultdict
 
 DATA_DIR = 'Data'
 OUT_DIR = 'Results'
-SEQ_LOC = os.path.join('ListFiles', 'sequences.list')
-DOWNLOAD_XML = True
 FORCE_NEW = False
 POOL_WORKERS = 3
 WIN_SIZE = 50
@@ -37,7 +35,7 @@ def touch(fname, times = None):
 
               
 def fasta_gen():
-    load_dir = os.path.join('OtherData', 'LANLSequences', 'Sequences')
+    load_dir = os.path.join(DATA_DIR, 'LANLSequences', 'Sequences')
     flist = []
     for f in os.listdir(load_dir):
         if f.endswith('.fasta'):
@@ -69,8 +67,8 @@ def filter_alignmets(in_files, out_file):
 
 
 def lanl_align_gen():
-    load_dir = os.path.join('OtherData', 'LANLSequences', 'Sequences')
-    dump_dir = os.path.join('OtherData', 'LANLSequences', 'Alignments')
+    load_dir = os.path.join(DATA_DIR, 'LANLSequences', 'Sequences')
+    dump_dir = os.path.join(DATA_DIR, 'LANLSequences', 'Alignments')
 
     for f in os.listdir(load_dir):
         if f.endswith('.fasta'):
@@ -83,7 +81,7 @@ def make_lanl_alignments(in_file, out_file, name):
     if os.path.exists(out_file):
         return
     print out_file
-    tempdir = tempfile.mkdtemp(dir = os.path.join('OtherData'))
+    tempdir = tempfile.mkdtemp(dir = os.path.join(DATA_DIR))
     
     base_name = os.path.join(tempdir, name)
     run_clustalw([in_file], 
@@ -96,8 +94,8 @@ def make_lanl_alignments(in_file, out_file, name):
     
 
 def lanl_align_pairs():
-    load_dir = os.path.join('OtherData', 'LANLSequences', 'Alignments')
-    dump_dir = os.path.join('OtherData', 'LinkageResults')
+    load_dir = os.path.join(DATA_DIR, 'LANLSequences', 'Alignments')
+    dump_dir = os.path.join(DATA_DIR, 'LinkageResults')
     aligns_present = [x.split('.')[0] for x in os.listdir(load_dir) if x.endswith('.aln')]
     
     for p1, p2 in product(sorted(aligns_present), repeat = 2):
@@ -114,7 +112,7 @@ def lanl_align_pairs():
 
 
 @ruffus.files(lanl_align_pairs)
-@ruffus.follows(ruffus.mkdir(os.path.join('OtherData', 'LinkageResults')))
+@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'LinkageResults')))
 def calculate_lanl_linkages(in_files, out_files):
     print WIDTHS
     PredictionAnalysis(in_files[0], in_files[1], out_files[0], 
@@ -123,10 +121,10 @@ def calculate_lanl_linkages(in_files, out_files):
     touch(out_files[1])
 
 def scatter_files():
-    struct_dir = os.path.join('OtherData', 'ProteinStructures')
-    linkage_dir = os.path.join('OtherData', 'LinkageResults')
-    align_dir = os.path.join('OtherData', 'LANLSequences', 'Alignments')
-    odir = os.path.join('OtherData', 'ScatterResults')
+    struct_dir = os.path.join(DATA_DIR, 'ProteinStructures')
+    linkage_dir = os.path.join(DATA_DIR, 'LinkageResults')
+    align_dir = os.path.join(DATA_DIR, 'LANLSequences', 'Alignments')
+    odir = os.path.join(DATA_DIR, 'ScatterResults')
 
     with open(os.path.join(struct_dir, 'mapping.txt')) as handle:
         for row in csv.DictReader(handle, delimiter = '\t'):
@@ -144,22 +142,22 @@ def scatter_files():
 
 
 @ruffus.files(scatter_files)
-@ruffus.follows(ruffus.mkdir(os.path.join('OtherData', 'ScatterResults')),
+@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'ScatterResults')),
                 'calculate_lanl_linkages')
 def generate_scatter(in_files, out_files, chain):
     args = in_files+out_files+[chain]
     create_scatter(*args)
     
     
-@ruffus.follows(ruffus.mkdir(os.path.join('OtherData', 'ScatterResults', 'figures')),
+@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'ScatterResults', 'figures')),
                 'generate_scatter')
 def slice_scatters():
     
-    guessing_figures(os.path.join('OtherData', 'ScatterResults'))
+    guessing_figures(os.path.join(DATA_DIR, 'ScatterResults'))
 
 def circos_files():
-    link_path = os.path.join('OtherData', 'LinkageResults')
-    align_path = os.path.join('OtherData', 'LANLSequences', 'Alignments')
+    link_path = os.path.join(DATA_DIR, 'LinkageResults')
+    align_path = os.path.join(DATA_DIR, 'LANLSequences', 'Alignments')
 
     ifiles = []
     for f in os.listdir(link_path):
@@ -171,12 +169,12 @@ def circos_files():
     yield ifiles, None
 
 
-@ruffus.follows(ruffus.mkdir(os.path.join('OtherData', 'CircosFigs')))
+@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR', 'CircosFigs')))
 @ruffus.files(circos_files)
 def circos_figs(ifile, ofile):
-    dump_path = os.path.join('OtherData', 'CircosFigs')
-    load_path = os.path.join('OtherData', 'LinkageResults')
-    align_path = os.path.join('OtherData', 'LANLSequences', 'Alignments')
+    dump_path = os.path.join(DATA_DIR, 'CircosFigs')
+    load_path = os.path.join(DATA_DIR, 'LinkageResults')
+    align_path = os.path.join(DATA_DIR, 'LANLSequences', 'Alignments')
     prots = set()
     for f in os.listdir(align_path):
         if f.endswith(f):
@@ -213,6 +211,8 @@ if __name__ == '__main__':
                         action = 'store', type = int)
     parser.add_argument('--max-width', dest = 'maxwidth', default = 1, action = 'store',
                         type = int)
+    parser.add_argument('--data-dir', dest = 'datadir', default = 'OtherData', action = 'store',
+                        type = 'string')
     parser.add_argument('--quiet', dest = 'quiet', action = 'store_true', default = False)
     parser.add_argument('--parse-align', dest = 'parsealign', action = 'store_true',
                         default = False)
@@ -235,7 +235,7 @@ if __name__ == '__main__':
         my_ruffus_logger.addHandler(shandler)
     
     
-
+    DATA_DIR = args.datadir
 
     if args.fresh:
         touch_data()
