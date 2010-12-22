@@ -112,7 +112,7 @@ def lanl_align_pairs():
 
 
 @ruffus.files(lanl_align_pairs)
-@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'LinkageResults')))
+@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'LinkageResults')), 'make_lanl_alignments')
 def calculate_lanl_linkages(in_files, out_files):
     print WIDTHS
     PredictionAnalysis(in_files[0], in_files[1], out_files[0], 
@@ -211,8 +211,7 @@ if __name__ == '__main__':
                         action = 'store', type = int)
     parser.add_argument('--max-width', dest = 'maxwidth', default = 1, action = 'store',
                         type = int)
-    parser.add_argument('--data-dir', dest = 'datadir', default = 'OtherData', action = 'store',
-                        type = 'string')
+    parser.add_argument('--data-dir', dest = 'datadir', default = 'OtherData', action = 'store')
     parser.add_argument('--quiet', dest = 'quiet', action = 'store_true', default = False)
     parser.add_argument('--parse-align', dest = 'parsealign', action = 'store_true',
                         default = False)
@@ -242,8 +241,6 @@ if __name__ == '__main__':
         FORCE_NEW = True
     WIDTHS = range(1, args.maxwidth+1)
     print WIDTHS
-    SUBTYPE = args.subtype
-
 
     if args.lanlscatter:
         ruffus.pipeline_run([slice_scatters], logger = my_ruffus_logger, multiprocess = args.workers)
