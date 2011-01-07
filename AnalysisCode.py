@@ -27,6 +27,8 @@ WIN_OVERLAP = 25
 LOG_BASE = os.path.join('logs', 'pipeline.log')
 WIDTHS = range(1,5)
 SUBTYPE = None
+MIN_SEQS = 20
+MIN_OVERLAP = 20
 
 def touch(fname, times = None):
     with file(fname, 'a'):
@@ -97,18 +99,27 @@ def lanl_align_pairs():
     load_dir = os.path.join(DATA_DIR, 'LANLSequences', 'Alignments')
     dump_dir = os.path.join(DATA_DIR, 'LinkageResults')
     aligns_present = [x.split('.')[0] for x in os.listdir(load_dir) if x.endswith('.aln')]
+    ids_present = defaultdict(set)    
+    for p1 in aligns_present:
+        a1 = os.path.join(load_dir, p1+'.aln')
+        aln = Alignment.alignment_from_file(a1)
+        ids_present[p1] = set(aln.seqs.keys())
+        if len(set(aln.seqs.values())) == 1:
+            ids_present[p1] = set()
+    aligns_present = [x for x in aligns_present if len(ids_present[x]) >= MIN_SEQS]
     
+
     for p1, p2 in product(sorted(aligns_present), repeat = 2):
     #for p1, p2 in zip(sorted(aligns_present), sorted(aligns_present)):
+        if len(ids_present[p1] & ids_present[p2]) >= MIN_OVERLAP:
 
-
-        a1 = os.path.join(load_dir, p1+'.aln')
-        a2 = os.path.join(load_dir, p2+'.aln')
-        
-        d = os.path.join(dump_dir, p1+'--'+p2+'.res')
-        s = os.path.join(dump_dir, p1+'--'+p2+'.sen')
-        
-        yield (a1, a2), (d, s)
+            a1 = os.path.join(load_dir, p1+'.aln')
+            a2 = os.path.join(load_dir, p2+'.aln')
+            
+            d = os.path.join(dump_dir, p1+'--'+p2+'.res')
+            s = os.path.join(dump_dir, p1+'--'+p2+'.sen')
+            
+            yield (a1, a2), (d, s)
 
 
 @ruffus.files(lanl_align_pairs)
@@ -249,7 +260,7 @@ if __name__ == '__main__':
     elif args.filterlanl:
         ruffus.pipeline_run([filter_alignmets], logger = my_ruffus_logger)
     elif args.lanlalignments:
-        ruffus.pipeline_run([make_lanl_alignments], logger = my_ruffus_logger)        
+        ruffus.pipeline_run([make_lanl_alignments], logger = my_ruffus_logger, multiprocess = args.workers)        
     elif args.lanl:
         ruffus.pipeline_run([calculate_lanl_linkages], logger = my_ruffus_logger, multiprocess = args.workers)
     else:
