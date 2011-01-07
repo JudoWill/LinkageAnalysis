@@ -28,6 +28,7 @@ class Alignment():
     def __init__(self):
         self.seqs = {}
         self.width = None
+        self.seq_nums = []
     
     @staticmethod
     def alignment_from_file(filename):
@@ -37,17 +38,27 @@ class Alignment():
                 parts = line.strip().split('\t')
                 align.seqs[parts[0]] = parts[1]
                 align.width = len(parts[1])
+        align._process_seq_nums()
         return align
 
-    def get_slice(self, start, stop):
+    def _process_seq_nums(self):
         
-        ngapfun = partial(ne, '-')
-        gapfun = partial(eq, '-')
-        align = Alignment()
-        for name, seq in self.seqs.items():
-            if any(imap(ngapfun, seq[:stop])) and not all(imap(gapfun, seq[start:stop])):
-                align.seqs[name] = seq[start:stop]
-        return align
+        self.seq_nums = []
+        for group in zip(*self.seqs.values()):
+            self.seq_nums.append(len(set(group)))
+
+    def get_slice(self, start, stop, MIN_NUM = 2):
+        
+        if any([x >= MIN_NUM for x in self.seq_nums[start:stop]]):
+            ngapfun = partial(ne, '-')
+            gapfun = partial(eq, '-')
+            align = Alignment()
+            for name, seq in self.seqs.items():
+                if any(imap(ngapfun, seq[:stop])) and not all(imap(gapfun, seq[start:stop])):
+                    align.seqs[name] = seq[start:stop]
+            return align
+        else:
+            return None
 
     def get_signal(self, seq_names):
         
@@ -84,10 +95,10 @@ class Alignment():
             align_nums.append(seq_count)
             
         return dest_nums, align_nums
-    
+
     
 
-#@memorise()
+@memorise()
 def calculate_mutual_info(signal1, signal2):
     
     def count2prob(d, num):
@@ -116,7 +127,7 @@ def calculate_mutual_info(signal1, signal2):
         
     return mut_info
 
-#@memorise()
+@memorise()
 def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
     
     rmut = calculate_mutual_info(signal1, signal2)
@@ -132,7 +143,7 @@ def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
 
     return num_greater / num_reps
 
-#@memorise()
+@memorise()
 def prediction_mapping(signal1, signal2):
     counts = defaultdict(int)
     for s1, s2 in zip(signal1, signal2):
@@ -165,7 +176,7 @@ def run_clustalw(filenames, out_fasta, out_tree, out_align, SCRATCH_DIR = '/tmp/
     ttree = os.path.join(tdir, SCRATCH_TREE)
     talign = os.path.join(tdir, SCRATCH_ALIGN)
 
-    join_fasta(filenames, tfasta, strip = True)
+    join_fasta(filenames, tfasta, strip = False)
     fnames = split_fasta(tfasta)
     if fnames is not None:
         for fname in fnames:
@@ -281,16 +292,23 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
             if (ss, ss+sw) not in source_skip and (ts, ts+tw) not in target_skip:
                 a1 = align1.get_slice(ss, ss+sw)
                 a2 = align2.get_slice(ts, ts+tw)
+                if a1 is None:
+                    source_skip.add((ss, ss+sw))
+                if a2 is None:
+                    target_skip.add((ts, ts+tw))
+                if a1 is None or a2 is None:
+                    continue
+                    
                 over = set(a1.seqs.keys()) & set(a2.seqs.keys())
-                if len(over) > 50:
+                if len(over) > 5:
                     yield a1, a2, sorted(over), {'Source-Start':ss, 'Source-End':ss+sw,
                                                     'Target-Start':ts, 'Target-End':ts+tw}
                 else:
                     yield None, None, None, {'Source-Start':ss, 'Source-End':ss+sw,
                                                     'Target-Start':ts, 'Target-End':ts+tw}
-                if len(a1.seqs) < 50:
+                if len(a1.seqs) < 10:
                     source_skip.add((ss, ss+sw))
-                if len(a2.seqs) < 50:
+                if len(a2.seqs) < 10:
                     target_skip.add((ts, ts+tw))
                     
                     
