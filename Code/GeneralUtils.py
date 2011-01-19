@@ -2,7 +2,12 @@ import csv
 import os, os.path
 from collections import deque
 from types import ListType, TupleType
-from itertools import islice, groupby, imap
+from itertools import islice, groupby, imap, starmap, repeat
+
+def repeatfunc(func, times , *args):
+    if times is None:
+        return starmap(func, repeat(args))
+    return starmap(func, repeat(args, times))
 
 def filter_gi(load_dir, dump_dir, load_extension = '.xml', 
                 dump_extension = '.xml', force_new = False):
