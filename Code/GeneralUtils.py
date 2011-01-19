@@ -3,6 +3,10 @@ import os, os.path
 from collections import deque
 from types import ListType, TupleType
 from itertools import islice, groupby, imap, starmap, repeat
+from operator import itemgetter
+
+def unique_justseen(iterable, key = None):
+    return imap(next, imap(itemgetter(1), groupby(iterable, key)))
 
 def repeatfunc(func, times , *args):
     if times is None:
@@ -118,7 +122,13 @@ def gi_from_path(path):
     fname = path.split(os.sep)[-1]
     gi = fname.split('.')[0]
     return gi
-
+    
+def prots_from_path(path):
+    
+    fname = path.split(os.sep)[-1]
+    p1, p2 = fname.split('.')[0].split('--')
+    return p1,p2
+    
 class pushd():
     def __init__(self, newpath):
         self.prev_path = os.getcwd()
