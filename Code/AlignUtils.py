@@ -15,12 +15,23 @@ try:
     from memorised.decorators import memorise
 except ImportError:
     class memorise(object):
-        pass
-        #def __init__(self, func=None):
-        #    self.func = func
+        def __init__(self, func):
+            self.func = func
+            self.cache = {}
         def __call__(self, *args, **kwargs):
-            pass
-            #return self.func(*args, **kwargs)
+            try:
+                return self.cache[args]
+            except KeyError:
+                v = self.func(*args, **kwargs)
+                self.cache[args] = v
+                return v
+            except TypeError:
+                print 'unhash-able'
+                return self.func(*args, **kwargs)
+        def __repr__(self):
+            return self.func.__doc__
+        def __get__(self, obj, objtype):
+            return partial(self.__call__, obj)
         
 
 class Alignment():
@@ -98,6 +109,7 @@ class Alignment():
 
     
 
+
 @memorise()
 def calculate_mutual_info(signal1, signal2):
     
@@ -127,6 +139,7 @@ def calculate_mutual_info(signal1, signal2):
         
     return mut_info
 
+
 @memorise()
 def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
     
@@ -142,6 +155,7 @@ def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
             num_greater += 1
 
     return num_greater / num_reps
+
 
 @memorise()
 def prediction_mapping(signal1, signal2):
