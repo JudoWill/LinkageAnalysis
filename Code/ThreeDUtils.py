@@ -1,4 +1,5 @@
 from __future__ import division
+import re
 from copy import deepcopy
 from itertools import groupby, product, combinations
 from operator import itemgetter
@@ -7,6 +8,7 @@ from nwalign import global_align
 from Code.AlignUtils import *
 from Code.GeneralUtils import *
 from collections import defaultdict
+from BeautifulSoup import BeautifulStoneSoup
 
 
 conv_dict = {'ala':'A', 'arg':'R', 'asn':'N',
@@ -57,6 +59,57 @@ class Structure():
                         chain_list.append(deepcopy(ndict))
 
         return Structure(chain_list)
+    
+    @staticmethod    
+    def from_xml(filename, chain):
+        
+        def get_item(obj, item, conv = str):
+            try:
+                tmp = obj.find('pdbx:'+item).string
+            except AttributeError:
+                return None
+            try:
+                return conv(tmp)
+            except TypeError:
+                return None
+        
+        soup = BeautifulStoneSoup(open(filename))
+        chain_list = list()
+        
+        edges = (('pdbx:length_a', 'X'),
+                    ('pdbx:length_b', 'Y'),
+                    ('pdbx:length_c', 'Z'))
+                    
+        scales = {}
+        for name, edge in edges:
+            scales[edge] = float(soup.find(name).contents[0])
+        
+        for atom in soup.findAll('pdbx:atom_site'):
+            if get_item(atom, 'group_pdb') == 'ATOM' and \
+                get_item(atom, 'pdbx_PDB_model_num') == '1':
+                ndict = {}
+                ndict['atom'] = get_item(atom, 'auth_atom_id', conv = int)
+                ndict['residue'] = get_item(atom, 'pdbx:auth_comp_id')
+                ndict['id'] = int(atom['id'])
+                try:
+                    ndict['X'] = get_item(atom, 'Cartn_x', conv = float)*scales['X']
+                    ndict['Y'] = get_item(atom, 'Cartn_y', conv = float)*scales['Y']
+                    ndict['Z'] = get_item(atom, 'Cartn_z', conv = float)*scales['Z']
+                except TypeError:
+                    continue
+                ndict['resnum'] = get_item(atom, 'auth_seq_id', conv = int)
+                chain_list.append(deepcopy(ndict))
+        
+        scheme_list = list()
+        for scheme in soup.findAll('pdbx:pdbx_poly_seq_scheme'):
+            scheme_list.append({
+            'res':get_item(scheme, 'pdbx:auth_mon_id'),
+            'authnum':get_item(scheme, 'pdbx:auth_seq_num', conv = int),
+            'ndbnum':get_item(scheme, 'pdbx:ndb_seq_num', conv = int),
+            'pdbnum':get_item(scheme, 'pdbx:pdb_seq_num', conv = int)
+            })
+            
+        return chain_list, scheme_list
 
     def calculate_pairwise(self):
         
