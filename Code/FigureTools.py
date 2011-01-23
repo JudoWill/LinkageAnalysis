@@ -24,7 +24,7 @@ class CircosGraph():
         self.links = list()
     
     @staticmethod
-    def load_from_dir(load_dir, align_dir):
+    def load_from_dir(load_dir, align_dir, ref = 'K03455'):
         
         def treatrow(row, sprot, tprot, smapping, tmapping):
             nrow = dict(**row)
@@ -42,21 +42,23 @@ class CircosGraph():
                     nrow[it] = mapping[nrow[it]]
                 except:
                     print sprot, tprot, nrow[it], len(smapping)
-                    raise IndexError
+                    #raise IndexError
+                    return None
 
             nrow['Score'] = float(nrow['Total-Score'])
             nrow['Source-Prot'] = sprot
             nrow['Target-Prot'] = tprot
             return nrow
 
-        ref = 'K03455'
         mapping_dict = {}
         for f in os.listdir(align_dir):
             if f.endswith('.aln'):
                 key = f.split('.')[0]
                 align = Alignment.alignment_from_file(os.path.join(align_dir, f))
-
-                _, mapping_dict[key] = align.convert_numbering(ref)
+                try:
+                    _, mapping_dict[key] = align.convert_numbering(ref)
+                except KeyError:
+                    continue
                 print key, len(mapping_dict[key])
 
         grouper = itemgetter('Source-Start', 'Source-End', 
@@ -69,16 +71,21 @@ class CircosGraph():
                 parts = f.split('.')[0].split('--')
                 source = parts[0]
                 target = parts[1]
-                smapping = mapping_dict[source]
-                tmapping = mapping_dict[target]
+                try:
+                    smapping = mapping_dict[source]
+                    tmapping = mapping_dict[target]
+                except KeyError:
+                    continue
                 with open(os.path.join(load_dir, f)) as handle:
                     for key, rows in groupby(csv.DictReader(handle, delimiter = '\t'), grouper):
                         row = rows.next()
                         if row['Correct-Num'] is not None and not row['Correct-Num'].startswith('too'):
-                            graph.links.append(treatrow(row, source, target, smapping, tmapping))
+                            nrow = treatrow(row, source, target, smapping, tmapping)                            
+                            if not (nrow is None):
+                                graph.links.append(nrow)
 
         return graph        
-        
+    
 
     def add_link(self, sprot, spos, tprot, tpos, score, bidirectional = False):
         self.links.append({'Source-Start':spos[0],
