@@ -296,7 +296,7 @@ def get_last(iterable):
     return (sw, tw, ss, ts)
     
 
-def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False, mode = 'a'):
+def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False, mode = 'a', cons_cut = 0.8):
 
     
     def get_signals(align1, align2, widths, same, last):
@@ -376,7 +376,7 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
             c1 = make_counts(s1)
             c2 = make_counts(s2)
 
-            if any([x/len(s1) > 0.8 for x in c1.values()]) or any([x/len(s2) > 0.8 for x in c2.values()]):
+            if any([x/len(s1) > 0.8 for x in c1.values()]) or any([x/len(s2) > cons_cut for x in c2.values()]):
                 loc.update({'Source-Seq':None,
                                 'Target-Seq':None,
                                 'Correct-Num':'too conserved',
@@ -384,9 +384,9 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
                                 'This-Score': 0})
                 writer.writerow(loc)
                 #print 'conserved %(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i' % loc
-                if any([x/len(s1) > 0.8 for x in c1.values()]):
+                if any([x/len(s1) > cons_cut for x in c1.values()]):
                     source_skip.add((loc['Source-Start'], loc['Source-End']))
-                if any([x/len(s2) > 0.8 for x in c2.values()]):
+                if any([x/len(s2) > cons_cut for x in c2.values()]):
                     target_skip.add((loc['Target-Start'], loc['Target-End']))
                 #print len(s1),c1.values()
                 #print len(s2),c2.values() 
