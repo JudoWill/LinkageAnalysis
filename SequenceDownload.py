@@ -50,7 +50,7 @@ def unzip_dir(base_dir):
     for f in flist:
         fname = os.path.join(base_dir, f)
         handle = tarfile.open(fname)
-        handle.extractall()
+        handle.extractall(path = base_dir)
         handle.close()
         
 
