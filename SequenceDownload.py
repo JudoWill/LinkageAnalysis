@@ -3,7 +3,7 @@ from urlparse import urljoin
 from collections import defaultdict
 from itertools import izip, repeat, chain, product
 from operator import itemgetter
-import csv, argparse, os.path, logging
+import csv, argparse, os.path, logging, tarfile
 
 
 
@@ -44,6 +44,16 @@ def check_NCBI(search_dict, urls):
             for furl in get_file_urls(url):
                 download_file(furl, dump_dir)
 
+def unzip_dir(base_dir):
+    
+    flist = [x for x in os.listdir(base_dir) if x.endswith('.tgz')]
+    for f in flist:
+        fname = os.path.join(base_dir, f)
+        handle = tarfile.open(fname)
+        handle.extractall()
+        handle.close()
+        
+
 
 if __name__ == '__main__':
     
@@ -52,6 +62,8 @@ if __name__ == '__main__':
     parser.add_argument('--no-download', dest = 'skipdownload', default = False,
                         action = 'store_true')
     parser.add_argument('--no-drafts', dest = 'skipdraft', default = False,
+                        action = 'store_true')
+    parser.add_argument('--no-unzip', dest = 'skipunzip', default = False,
                         action = 'store_true')
     
     args = parser.parse_args()
@@ -66,4 +78,24 @@ if __name__ == '__main__':
     if not args.skipdownload:
         check_NCBI(search_dict, urls)
     
+    if not args.skipunzip:
+        for direc in search_dict.values():
+            logging.warning('Unzipping: ' + direc)
+            unzip_dir(direc)
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
