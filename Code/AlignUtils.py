@@ -180,6 +180,24 @@ def prediction_mapping(signal1, signal2):
             return [mapping]
 
 
+def run_muscle(filename, out_align, SCRATCH_DIR = '/tmp/', MAX_MEM = 1000):
+    
+    tdir = tempfile.mkdtemp(dir = SCRATCH_DIR)
+    tfasta = os.path.join(tdir, 'aligned.fasta')
+
+    info = {'ifile':filename.
+            'ofile':tfasta,
+            'maxmem':MAX_MEM}
+    cmd = 'muscle -in %(ifile)s -out %(ofile)s -maxmb %(maxmem)i'
+    args = shlex.split(cmd % info)
+    call(args)
+    with open(out_align, 'w') as handle:
+        for name, seq in fasta_iter(tfasta):
+            handle.write('%s\t%s\n' % (name, seq))
+    shutil.rmtree(tdir)    
+    
+
+
 def run_clustalw(filenames, out_fasta, out_tree, out_align, SCRATCH_DIR = '/tmp/',
                 SCRATCH_FASTA = 'seqs.fasta', SCRATCH_TREE = 'tree.dnd', 
                 SCRATCH_ALIGN = 'seqs.align'):
