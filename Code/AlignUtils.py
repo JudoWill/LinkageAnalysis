@@ -9,7 +9,7 @@ from random import shuffle, sample
 from operator import itemgetter, ne, eq
 import csv, tempfile, shutil
 from functools import partial
-import os.path
+import os.path, os
 
 try:
     from memorised.decorators import memorise
@@ -180,22 +180,25 @@ def prediction_mapping(signal1, signal2):
             return [mapping]
 
 
-def run_muscle(filename, out_align, SCRATCH_DIR = '/tmp/', MAX_MEM = 1000):
+def run_muscle(filename, out_align, MAX_MEM = 1500):
     
-    tdir = tempfile.mkdtemp(dir = SCRATCH_DIR)
-    tfasta = os.path.join(tdir, 'aligned.fasta')
 
-    info = {'ifile':filename.
+    tfasta = out_align + '.msf'
+
+    info = {'ifile':filename,
             'ofile':tfasta,
             'maxmem':MAX_MEM}
     cmd = 'muscle -in %(ifile)s -out %(ofile)s -maxmb %(maxmem)i'
     args = shlex.split(cmd % info)
     call(args)
-    with open(out_align, 'w') as handle:
-        for name, seq in fasta_iter(tfasta):
+
+
+def fasta2aln(in_file, out_file):
+    with open(out_file, 'w') as handle:
+        for name, seq in fasta_iter(in_file):
             handle.write('%s\t%s\n' % (name, seq))
-    shutil.rmtree(tdir)    
-    
+
+
 
 
 def run_clustalw(filenames, out_fasta, out_tree, out_align, SCRATCH_DIR = '/tmp/',

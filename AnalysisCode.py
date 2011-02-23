@@ -75,25 +75,13 @@ def lanl_align_gen():
     for f in os.listdir(load_dir):
         if f.endswith('.fasta'):
             name = f.split('.')[0]
-            yield os.path.join(load_dir, f), os.path.join(dump_dir, name+'.aln'), name
+            yield os.path.join(load_dir, f), [os.path.join(dump_dir, name+'.aln.fasta'), os.path.join(dump_dir, name+'.aln')], name
 
 @ruffus.files(lanl_align_gen)
-def make_lanl_alignments(in_file, out_file, name):
-
-    if os.path.exists(out_file):
-        return
-    print out_file
-    tempdir = tempfile.mkdtemp(dir = os.path.join(DATA_DIR))
-    
-    base_name = os.path.join(tempdir, name)
-    run_clustalw([in_file], 
-                 base_name + '.fasta', 
-                 base_name + '.dnd', 
-                 base_name + '.align')
-    convert_alignment(base_name + '.align', out_file)
-
-    shutil.rmtree(tempdir)
-    
+@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'LANLSequences', 'Alignments')))
+def make_lanl_alignments(in_file, out_files, name):
+    run_muscle(in_file, out_files[0])
+    fasta2aln(out_files[0], out_files[1])
 
 def lanl_align_pairs():
     load_dir = os.path.join(DATA_DIR, 'LANLSequences', 'Alignments')
