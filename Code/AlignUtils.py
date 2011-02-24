@@ -150,7 +150,7 @@ def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
     for i in xrange(num_reps):
         
         r = calculate_mutual_info(signal1, sample(signal2, len(signal2)))
-        print r, rmut
+        #print r, rmut
         if r > rmut:
             num_greater += 1
 
@@ -159,17 +159,20 @@ def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
 @memorise()
 def get_mapping_pval(signal1, signal2, num_reps = 5000):
     
-    rmut = prediction_mapping(signal1, signal2)
+    def calc_score(mappings, slen):
+        return sum([z for _, _, z in mappings])/slen
 
+    rmut = prediction_mapping(signal1, signal2)
+    true_score = calc_score(rmut, len(signal1))
     num_greater = 0
     
     for i in xrange(num_reps):
-        
         r = prediction_mapping(signal1, sample(signal2, len(signal2)))
-        print r, rmut
-        if r > rmut:
+        nscore = calc_score(r, len(signal1))
+        #print true_score, nscore
+        if nscore > true_score:
             num_greater += 1
-
+    print 'pval', true_score, num_greater, num_greater / num_reps
     return num_greater / num_reps
     
 
