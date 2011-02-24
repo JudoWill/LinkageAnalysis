@@ -156,6 +156,23 @@ def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
 
     return num_greater / num_reps
 
+@memorise()
+def get_mapping_pval(signal1, signal2, num_reps = 5000):
+    
+    rmut = prediction_mapping(signal1, signal2)
+
+    num_greater = 0
+    
+    for i in xrange(num_reps):
+        
+        r = prediction_mapping(signal1, sample(signal2, len(signal2)))
+        print r, rmut
+        if r > rmut:
+            num_greater += 1
+
+    return num_greater / num_reps
+    
+
 
 @memorise()
 def prediction_mapping(signal1, signal2):
@@ -183,7 +200,7 @@ def prediction_mapping(signal1, signal2):
 def run_muscle(filename, out_align, MAX_MEM = 1500):
     
 
-    tfasta = out_align + '.msf'
+    tfasta = out_align
 
     info = {'ifile':filename,
             'ofile':tfasta,
@@ -361,7 +378,7 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
 
     fields = ('Source-Start', 'Source-End', 'Target-Start', 'Target-End',
                 'Source-Seq', 'Target-Seq', 'Correct-Num', 'Total-Num', 
-                'This-Score', 'Total-Score')
+                'This-Score', 'Total-Score', 'P-val')
     source_skip = set()
     target_skip = set()
     
@@ -381,7 +398,8 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
                             'Target-Seq':None,
                             'Correct-Num':'too few',
                             'Total-Num':'too few',
-                            'This-Score': 0})
+                            'This-Score': 0,
+                            'P-val':None})
                 #print 'few %(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i' % loc
                 writer.writerow(loc)
                 continue
@@ -397,12 +415,13 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
             c1 = make_counts(s1)
             c2 = make_counts(s2)
 
-            if any([x/len(s1) > 0.8 for x in c1.values()]) or any([x/len(s2) > cons_cut for x in c2.values()]):
+            if any([x/len(s1) > cons_cut for x in c1.values()]) or any([x/len(s2) > cons_cut for x in c2.values()]):
                 loc.update({'Source-Seq':None,
                                 'Target-Seq':None,
                                 'Correct-Num':'too conserved',
                                 'Total-Num':'too conserved',
-                                'This-Score': 0})
+                                'This-Score': 0,
+                                'P-val':None})
                 writer.writerow(loc)
                 #print 'conserved %(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i' % loc
                 if any([x/len(s1) > cons_cut for x in c1.values()]):
@@ -417,13 +436,15 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
             mappings = prediction_mapping(tuple(s1), tuple(s2))
             score = sum([z for _, _, z in mappings])/len(s1)
             loc['Total-Score'] = score
+            pval = None if score < 0.8 else get_mapping_pval(tuple(s1), tuple(s2))
             #print '%(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i, %(Total-Score)f' % loc
             for mapping in mappings:
                 loc.update({'Source-Seq':rm1[mapping[0]],
                                 'Target-Seq':rm2[mapping[1]],
                                 'Correct-Num':mapping[2],
                                 'Total-Num':c1[mapping[0]],
-                                'This-Score': mapping[2]/c1[mapping[0]]})                
+                                'This-Score': mapping[2]/c1[mapping[0]],
+                                'P-val':pval})                
                 writer.writerow(loc)
             handle.flush()
             os.fsync(handle.fileno())
