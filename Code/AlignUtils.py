@@ -35,6 +35,7 @@ except ImportError:
         
 
 class Alignment():
+    """A container for holding multiple alignments."""
     
     def __init__(self):
         self.seqs = {}
@@ -43,6 +44,8 @@ class Alignment():
     
     @staticmethod
     def alignment_from_file(filename):
+        """Loads alignments from a tab-delimited file."""
+
         align = Alignment()        
         with open(filename) as handle:
             for line in handle:
@@ -53,12 +56,28 @@ class Alignment():
         return align
 
     def _process_seq_nums(self):
+        """Calculating the number of letters at a position."""
         
         self.seq_nums = []
         for group in zip(*self.seqs.values()):
             self.seq_nums.append(len(set(group)))
 
     def get_slice(self, start, stop, MIN_NUM = 2):
+        """Return a slice of an alignment.
+
+            Returns a sub-slice of an alignment as an Alignment instance. Will 
+            return None is the alignment is too conserved.
+            
+            Arguments:
+            start -- Start of the region.
+            stop -- End of the region.
+            
+            Kwargs:
+            MIN_NUM -- The minumum number of unique sequences.
+
+            Returns:
+            An Alignemnt-instance
+            """
         
         if any([x >= MIN_NUM for x in self.seq_nums[start:stop]]):
             ngapfun = partial(ne, '-')
@@ -72,6 +91,17 @@ class Alignment():
             return None
 
     def get_signal(self, seq_names):
+        """Returns an interger "signal" from the alignment.
+
+        Arguements:
+        seq_names -- An ordered list of sequences that are part of this signal.
+
+        Returns:
+        (signal_list, mapping_dict)
+        signal_list -- List of integers indicating the signal.
+        mapping_dict -- A dictionary which maps the sequence keys 
+                        to signal values.
+        """
         
         signal = []
         count = 0
@@ -83,6 +113,12 @@ class Alignment():
         return signal, seq_dict
 
     def get_consensus(self):
+        """Returns the consensus sequence.
+
+        Returns a sequence which is the most common value at each position. 
+        Gaps are excluded from the count.
+        """
+
         seqs = []
         for col in range(self.width):
             cdict = defaultdict(int)            
@@ -95,6 +131,24 @@ class Alignment():
         return ''.join(seqs)
     
     def convert_numbering(self, dest_key):
+        """Determines the numbering between an alignment and a sequence.
+
+        Determines the coulmbn number mapping between columns in an 
+        alignment and sequence positions. This allows one to convert results 
+        that are in "alignment-space" to a "reference sequence space".
+        
+        Arguements:
+        dest_key -- The desired reference sequence. MUST be present in the 
+                    alignment.
+        
+        Returns:
+        (dest_nums, align_nums)
+        dest_nums -- A list which is the same length as the "reference" 
+                    sequence. The items indicate the corresponding column in 
+                    the alignment.
+        align_nums -- A list the same length as the alignment. The items 
+                      indicate the corresponding position in the reference 
+                      sequence."""
         
         seq_count = -1
         dest_nums = [] #same length as sequence and tells which column the reference belongs too
@@ -107,12 +161,20 @@ class Alignment():
             
         return dest_nums, align_nums
 
-    
-
 
 @memorise()
 def calculate_mutual_info(signal1, signal2):
+    """Caluculates the Mutual Information shared by two signals.
+
+    Arguements:
+    signal1 -- An iterable indicating the first signal
+    signal2 -- An iterable indicating the second signal
+
+    Signals MUST be the same length! Items must be hashable!
     
+    Returns:
+    Mutual Information -- float"""
+
     def count2prob(d, num):
         for key, val in d.items():
             d[key] = val/num
@@ -142,7 +204,24 @@ def calculate_mutual_info(signal1, signal2):
 
 @memorise()
 def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
+    """Caluculates the p-value associated with the mutual information.
+
+    Uses a permutation test to determine the likelihood of getting a mutual
+    information score greater than the observed score. Returns the fraction 
+    of permutations which have an MI greater than observed.
     
+    Arguements:
+    signal1 -- An iterable indicating the first signal
+    signal2 -- An iterable indicating the second signal
+    
+    Kwargs:
+    num_reps -- The number of repititions to perform. Default: 5000
+
+    Signals MUST be the same length! Items must be hashable!
+    
+    Returns:
+    p-value -- float"""
+
     rmut = calculate_mutual_info(signal1, signal2)
 
     num_greater = 0
@@ -158,7 +237,24 @@ def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
 
 @memorise()
 def get_mapping_pval(signal1, signal2, num_reps = 5000):
+    """Caluculates the p-value associated with the observed linkage.
+
+    Uses a permutation test to determine the likelihood of getting a linkage 
+    score greater than the observed score. Returns the fraction 
+    of permutations which have a linkage greater than observed.
     
+    Arguements:
+    signal1 -- An iterable indicating the first signal
+    signal2 -- An iterable indicating the second signal
+    
+    Kwargs:
+    num_reps -- The number of repititions to perform. Default: 5000
+
+    Signals MUST be the same length! Items must be hashable!
+    
+    Returns:
+    p-value -- float"""
+
     def calc_score(mappings, slen):
         return sum([z for _, _, z in mappings])/slen
 
@@ -179,6 +275,23 @@ def get_mapping_pval(signal1, signal2, num_reps = 5000):
 
 @memorise()
 def prediction_mapping(signal1, signal2):
+    """Calculates the mapping between any two signals.
+
+    Uses a depth-first search algorithm to match the most likely value in 
+    signal2 for each value in signal1. Returns a nested list of the mappings 
+    and thier occurance values.
+    
+    Arguements:
+    signal1 -- An iterable indicating the first signal
+    signal2 -- An iterable indicating the second signal
+
+    Signals MUST be the same length! Items must be hashable!
+    
+    Returns:
+    [(s1a, s2a, #occurance), (s1b, s2b, #occurance), ...]"""
+
+
+
     counts = defaultdict(int)
     for s1, s2 in zip(signal1, signal2):
         counts[(s1, s2)] += 1
@@ -201,7 +314,21 @@ def prediction_mapping(signal1, signal2):
 
 
 def run_muscle(filename, out_align, MAX_MEM = 1500):
-    
+    """Runs MUSCLE command-line alignment program.
+
+    Uses subprocessing to call the MUSCLE alignment tool to align sequences 
+    in a fasta-file.
+
+    Arguements:
+    filename -- A full-path to a fasta-formatted sequence file.
+    out_align -- A full-path to the desired dest of the output alignment.
+
+    Kwargs:
+    MAX_MEM -- The maximum amount of memory allowed for the MUSCLE program
+                in mb. Default: 1500
+
+    Returns:
+    None"""    
 
     tfasta = out_align
 
@@ -214,6 +341,7 @@ def run_muscle(filename, out_align, MAX_MEM = 1500):
 
 
 def fasta2aln(in_file, out_file):
+    """Converts fasta-alignment files into tab-delimited alignments."""
     with open(out_file, 'w') as handle:
         for name, seq in fasta_iter(in_file):
             handle.write('%s\t%s\n' % (name, seq))
@@ -224,6 +352,10 @@ def fasta2aln(in_file, out_file):
 def run_clustalw(filenames, out_fasta, out_tree, out_align, SCRATCH_DIR = '/tmp/',
                 SCRATCH_FASTA = 'seqs.fasta', SCRATCH_TREE = 'tree.dnd', 
                 SCRATCH_ALIGN = 'seqs.align'):
+    """Runs the clustalW alignment program.
+
+    Currently depreciated and superceded by the MUSCLE program which produces
+    better quality alignments."""
     
     tdir = tempfile.mkdtemp(dir = SCRATCH_DIR)
     print     
@@ -270,6 +402,7 @@ def run_clustalw(filenames, out_fasta, out_tree, out_align, SCRATCH_DIR = '/tmp/
 
 
 def join_alignments(*aligns):
+    """Joins two alignments using clustalW."""
     
     base_align = aligns[0]
     for align in aligns[1:]:
@@ -283,6 +416,7 @@ def join_alignments(*aligns):
         call(args)
 
 def convert_alignment(clustal_v, modified_v):
+    """Converts clustalW formatted alignments into tab-delimited format."""
     
     grouper = lambda x: x.startswith(' ') or x.startswith('\n')
     seqs = defaultdict(str)    
@@ -306,6 +440,25 @@ def convert_alignment(clustal_v, modified_v):
             handle.write('%s\t%s\n' % (name, seq))
 
 def crazy_iter(source_lim, target_lim, widths, last_items = None):
+    """An iterator which returns ranges to check for alignments.
+
+    This iterator has a strange return format which tries to take advantage
+    of memcached items. It also takes care of restarting incomplete results.
+
+    Arguements:
+    source_lim -- The length of the source sequence
+    target_lim -- The length of the target sequence
+    widths -- The desired widths to check as a LIST ie. [1,2,3,4,5]
+
+    Kwargs:
+    last_items -- a tuple of (source-width, target-width, 
+                  source-start, target-start) which indicates where
+                  to resume iteration.
+    
+    Yields:
+    (source-width, target-width, source-start, target-start) tuples
+
+"""
     
     def pred(args):
         return not all([x == y for x,y in zip(args, last_items)])
@@ -324,9 +477,22 @@ def crazy_iter(source_lim, target_lim, widths, last_items = None):
             yield sw, tw, ss, ts
 
 def getOverlap(a, b):
+    """Calculates the amount of overlap between two ranges."""
     return max(0, min(a[1], b[1]) - max(a[0], b[0]))
     
 def get_last(iterable):
+    """Finds the last completed tuple.
+    
+    Used for restarting an un-finished analysis. It iterates through the 
+    results file and finds the last completed analysis tuple.
+    
+    Arguements:
+    iterable -- A file-like iterable that was created by Prediction Analysis
+
+    Returns:
+    Last completed tuple: 
+    (source-width, target-width, source-start, target-start)"""
+
     l = deque(iterable, maxlen = 1)
     row = l.pop()
     ss = int(row['Source-Start'])
@@ -338,7 +504,30 @@ def get_last(iterable):
     
 
 def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False, mode = 'a', cons_cut = 0.8, calc_pval = False):
+    """Analyzes the linkages between 2 alignments.
+    
+    A controller function which calculates the Linkage between columns in 
+    the alignment files. This function takes care of opening/loading 
+    alignments, iterating through the columns, calculating linkages, 
+    and writing to an output file.
 
+    Arguements:
+    align1 -- Path to source alignment file.
+    align2 -- Path to target alignment file.
+    outfile -- Path to the results file.
+    
+    Kwargs:
+    widths -- The desired column widths to check. Default: range(1,5)
+    same -- A boolean indicating whether these files are the same protein.
+            Default: False
+    mode -- Which mode to open the results file. Default: 'a'
+    cons_cut -- The conservation cutoff to use for ignoring columns. 
+                Default: 0.8
+    calc_pval -- A boolean indicating whether to calculate p-values for 
+                 linkages. Default: False
+    
+    Returns:
+    None"""
     
     def get_signals(align1, align2, widths, same, last):
         for sw, tw, ss, ts in crazy_iter([0, align1.width], [0, align2.width], widths, last_items = last):
