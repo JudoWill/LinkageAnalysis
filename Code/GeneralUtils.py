@@ -6,9 +6,11 @@ from itertools import islice, groupby, imap, starmap, repeat
 from operator import itemgetter
 
 def unique_justseen(iterable, key = None):
+    """Yields unique values."""
     return imap(next, imap(itemgetter(1), groupby(iterable, key)))
 
 def repeatfunc(func, times , *args):
+    """Repeatedly causes a function."""
     if times is None:
         return starmap(func, repeat(args))
     return starmap(func, repeat(args, times))
@@ -34,10 +36,12 @@ def filter_gi(load_dir, dump_dir, load_extension = '.xml',
 
 
 def take(N, iterable):
+    """Takes N items from an iterable."""
     return list(islice(iterable, N))
     
     
 def OverlappingIterator(iterable, win_size, win_overlap):
+    """Yields overlapping sets of items."""
     
     this_iter = iter(iterable)
     
@@ -55,6 +59,10 @@ def OverlappingIterator(iterable, win_size, win_overlap):
     
     
 def fasta_iter(filename):
+    """Iterates over a fasta-file
+
+    Yields (name, seq) pairs."""
+
     name = None
     with open(filename) as handle:
         for header, group in groupby(handle, lambda x: x.startswith('>')):
@@ -65,9 +73,12 @@ def fasta_iter(filename):
                 yield name, seq
 
 def count_fasta(filename):
+    """Counts the number of sequences in a fasta-file."""
+
     return sum(imap(bool, fasta_iter(filename)))
     
 def join_fasta(filenames, out_file, mode = 'w', strip = False):
+    """Joins multiple fasta file into one."""
     
     with open(out_file, mode) as ohandle:
         for f in filenames:
@@ -78,8 +89,8 @@ def join_fasta(filenames, out_file, mode = 'w', strip = False):
                 ohandle.write('>%s\n%s\n' % (name, seq))
             
 def split_fasta(filename, max_num = 20000):
+    """Splits fasta files."""
     
-
     it = fasta_iter(filename)
     total_num = sum(imap(bool, it))
     print total_num
@@ -118,6 +129,7 @@ def mapping_func(mapping_dict, name):
     return mapping_dict.get(name.lower(), None)
 
 def gi_from_path(path):
+    """Returns the GI from a path."""
 
     fname = path.split(os.sep)[-1]
     gi = fname.split('.')[0]
@@ -130,6 +142,8 @@ def prots_from_path(path):
     return p1,p2
     
 class pushd():
+    """Chnages a directory and then changes back when leaving the context."""
+
     def __init__(self, newpath):
         self.prev_path = os.getcwd()
         self.new_path = newpath        
@@ -142,6 +156,7 @@ class pushd():
 
 
 def safe_mkdir(path):
+    """Makes a new directory but catches Exceptions."""
     
     try:
         os.mkdir(path)
