@@ -337,7 +337,7 @@ def get_last(iterable):
     return (sw, tw, ss, ts)
     
 
-def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False, mode = 'a', cons_cut = 0.8):
+def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False, mode = 'a', cons_cut = 0.8, calc_pval = False):
 
     
     def get_signals(align1, align2, widths, same, last):
@@ -439,7 +439,10 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
             mappings = prediction_mapping(tuple(s1), tuple(s2))
             score = sum([z for _, _, z in mappings])/len(s1)
             loc['Total-Score'] = score
-            pval = None if score < 0.8 else get_mapping_pval(tuple(s1), tuple(s2))
+            if calc_pval:
+                pval = None if score < 0.8 else get_mapping_pval(tuple(s1), tuple(s2))
+            else:
+                pval = None
             #print '%(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i, %(Total-Score)f' % loc
             for mapping in mappings:
                 loc.update({'Source-Seq':rm1[mapping[0]],
