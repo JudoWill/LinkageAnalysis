@@ -19,6 +19,20 @@ def take(N, iterable):
 
 
 def SearchNCBI(search_sent, recent_date = None, BLOCK_SIZE = 1000000, START = 0, db = 'nucleotide'):
+    """Search NCBI and returns ID results.
+
+    Arguements:
+    search_sent -- A string to search NCBI.
+
+    Kwargs:
+    recent_date -- A datetime object. Will return all results newer than this 
+                    date. Default: None
+    BLOCK_SIZE -- The number of items to retrieve at once. Default: 1000000
+    START -- The first item to retrieve. Default: 0
+    db -- The database to search. Default: 'nucleotide'
+    
+    Returns:
+    A list of GIs which match the search."""
 
     POST_URL = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=%s&'  % db
     POST_URL += 'retmax=%i&' % BLOCK_SIZE
@@ -46,6 +60,7 @@ def SearchNCBI(search_sent, recent_date = None, BLOCK_SIZE = 1000000, START = 0,
 
 
 def extract_sequences(soup, XML = True, seq_only = False):
+    """Extract sequences from genbank XML files."""
 
     for seq in soup.findAll('gbseq'):
         gi = None
@@ -64,7 +79,7 @@ def extract_sequences(soup, XML = True, seq_only = False):
 
 
 def GetSeqs(ID_LIST, BLOCK_SIZE = 100, XML = False):
-
+    """Retrieves sequences from Genbank."""
     
 
     wsdl_url = 'http://www.ncbi.nlm.nih.gov/entrez/eutils/soap/v2.0/efetch_seq.wsdl'
@@ -92,6 +107,7 @@ def GetSeqs(ID_LIST, BLOCK_SIZE = 100, XML = False):
         block = take(BLOCK_SIZE, iter_list)
 
 def extract_features(in_file, mapping = None):
+    """Extracts features from from a Genbank file."""
     
     def get_interval(feature):
         locs = []
@@ -129,6 +145,8 @@ def extract_features(in_file, mapping = None):
 
 
 def determine_subtype(in_file):
+    """Determines the subtype of a genome."""
+
     hits = defaultdict(int)
     with open(in_file) as handle:
         soup = BeautifulStoneSoup(handle.read())
@@ -153,6 +171,7 @@ def determine_subtype(in_file):
                 return key
 
 def determine_subtype_short(in_file):
+
     hits = defaultdict(int)
     strainer = SoupStrainer(re.compile('iteration'))
     with open(in_file) as handle:
@@ -207,6 +226,7 @@ def determine_subtype_element(in_file, delete_extra = True):
                 return key
 
 def guess_location(in_xml, in_fasta, write_out = False):
+    """Tries to guess the genomic location of a fragment."""
     
     name, seq = fasta_iter(in_fasta).next()
     parts = name.split('|')
@@ -235,6 +255,7 @@ def guess_location(in_xml, in_fasta, write_out = False):
     
 
 def simplify_xml(in_file):
+    """Simplifies BLAST xml files to reduce size."""
     
     try:    
         tree = ElementTree(file = in_file)
@@ -251,6 +272,7 @@ def simplify_xml(in_file):
         return None
 
 def translate_genome(gi, load_path, db_path, out_report):
+    """Translates a genome."""
     
     if not os.path.exists(out_report):
         in_fa = os.path.join(load_path, gi + '.gi')
@@ -325,7 +347,9 @@ def translate_genome(gi, load_path, db_path, out_report):
         
             
 def make_blast_cmd(program_type, database_path, in_path, out_path, blast_type = 0, **options):
-    
+    """Formats a blast command."""    
+
+
     def get_formatdb_options(options):
         assert 'dbtype' in options, \
                 'You must have a "dbtype" option when using formatdb'
@@ -384,6 +408,7 @@ def make_blast_cmd(program_type, database_path, in_path, out_path, blast_type = 
             
 
 def guess_blast_computer_type():
+    """Guesses which type of BLAST is installed on this computer."""
     
     progs = ('formatdb', 'makeblastdb')
     for i, prog in enumerate(progs):
