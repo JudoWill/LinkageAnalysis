@@ -40,6 +40,23 @@ def tuple_shuffle(tup):
 
 @memorise()
 def linkage_pval(sa, sb, num_reps = 100000):
+    """Caluculates the p-value associated with the observed linkage.
+
+    Uses a permutation test to determine the likelihood of getting a linkage 
+    score greater than the observed score. Returns the fraction 
+    of permutations which have a linkage greater than observed.
+    
+    Arguements:
+    sa -- An iterable indicating the first signal
+    sb -- An iterable indicating the second signal
+    
+    Kwargs:
+    num_reps -- The number of repititions to perform. Default: 5000
+
+    Signals MUST be the same length! Items must be hashable!
+    
+    Returns:
+    p-value -- float"""
 
     def get_score(signal_a, signal_b):
         mappings = prediction_mapping(tuple(signal_a), tuple_shuffle(signal_b))
