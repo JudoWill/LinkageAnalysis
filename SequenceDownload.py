@@ -9,6 +9,8 @@ from shutil import rmtree
 
 
 def get_directories(url, check_terms):
+    """Yields the directories from an FTP-url."""
+
     handle = urlopen(url)
     for row in csv.reader(handle, delimiter = ' '):
         for term in check_terms:
@@ -16,6 +18,8 @@ def get_directories(url, check_terms):
                 yield term, url + '/' + row[-1]
 
 def get_file_urls(url):
+    """Yields the file urls that should be downloaded."""
+
     wanted_extensions = ('.ptt', '.faa', '.ptt.tgz', '.faa.tgz')
     handle = urlopen(url)
     filenames = map(itemgetter(-1), csv.reader(handle, delimiter = ' '))
@@ -24,12 +28,14 @@ def get_file_urls(url):
             yield url + '/' + fname
 
 def download_file(url, dump_dir):
+    """Downloads a url and puts into teh dump_dir"""
     
     fname = url.rsplit('/',1)[-1]
     with open(os.path.join(dump_dir, fname), 'w') as handle:
         handle.write(urlopen(url).read())
 
 def check_NCBI(search_dict, urls):
+    """Checks the NCBI ftp directories and downloads the file."""
 
     check_locs = defaultdict(list)
     logging.warning('Getting base directories')
@@ -46,6 +52,7 @@ def check_NCBI(search_dict, urls):
                 download_file(furl, dump_dir)
 
 def unzip_dir(base_dir):
+    """Unzips all of the relevant files."""
     
     flist = [x for x in os.listdir(base_dir) if x.endswith('.tgz')]
     for f in flist:
@@ -55,6 +62,7 @@ def unzip_dir(base_dir):
         handle.close()
 
 def read_ptt(filename):
+    """Reads ptt files and returns a name-to-gi mapping."""
     
     with open(filename) as handle:
         handle.next()
@@ -66,6 +74,7 @@ def read_ptt(filename):
     return id2name            
 
 def read_fasta(filename):
+    """Reads a fasta file and returns a go-to-seq mapping."""
     
     id2seq = {}
     with open(filename) as handle:
@@ -79,6 +88,7 @@ def read_fasta(filename):
     return id2seq
 
 def process_pair(fasta_file, ptt_file):
+    """Process .faa and .ptt files to return name-to-seq mapping."""
     
     gi2seq = read_fasta(fasta_file)
     gi2name = read_ptt(ptt_file)
@@ -91,6 +101,7 @@ def process_pair(fasta_file, ptt_file):
     return name2seq
 
 def process_many(grouped_names):
+    """Processes groups of .faa and .ptt files."""
 
     res = dict()    
     for group in grouped_names:
