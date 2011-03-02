@@ -2,7 +2,8 @@ from urllib2 import urlopen
 from urlparse import urljoin
 from collections import defaultdict
 from itertools import izip, repeat, chain, product, groupby
-from operator import itemgetter, partial
+from operator import itemgetter
+from functools import partial
 import csv, argparse, os.path, logging, tarfile, os
 from shutil import rmtree
 
