@@ -136,12 +136,14 @@ def process_directory(direc):
 
     for key, count in counts.iteritems():
         if count >= 10:
-            fname = df('Aggregated', key + '.fasta')
-            with open(fname, 'w') as handle:
-                for genome, seq_dict in results:
-                    if key in seq_dict:
-                        handle.write('>%s\n%s\n' % (genome, seq_dict[key]))
-            
+            try:
+                fname = df('Aggregated', key + '.fasta')
+                with open(fname, 'w') as handle:
+                    for genome, seq_dict in results:
+                        if key in seq_dict:
+                            handle.write('>%s\n%s\n' % (genome, seq_dict[key]))
+            except IOError:
+                pass
 
 
 if __name__ == '__main__':
