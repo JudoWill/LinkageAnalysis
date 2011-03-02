@@ -2,10 +2,9 @@ from urllib2 import urlopen
 from urlparse import urljoin
 from collections import defaultdict
 from itertools import izip, repeat, chain, product, groupby
-from operator import itemgetter
+from operator import itemgetter, partial
 import csv, argparse, os.path, logging, tarfile, os
 from shutil import rmtree
-
 
 
 def get_directories(url, check_terms):
@@ -45,6 +44,11 @@ def check_NCBI(search_dict, urls):
     
     for term, urls in check_locs.items():
         dump_dir = search_dict[term]
+        try:
+            os.makedirs(dump_dir)
+        except OSError:
+            pass
+
         logging.warning('Fetching %i genomes for %s' % (len(urls), term))
         for url in urls:
             logging.warning('Fetching: ' + url)
@@ -111,6 +115,31 @@ def process_many(grouped_names):
             pass
 
     return res
+
+def process_directory(direc):
+    
+    files = os.listdir(direc)
+    df = partial(os.path.join, direc)
+    files = [df(x.split('.')[0]) for x in files if x.endswith('.faa')]
+    grouper = lambda x: x.split(os.sep)[-1][:9]
+    results = []
+    logging.warning('%i files to process' % len(files))
+    for key, fs in groupby(sorted(files), grouper):
+        logging.warning('Processing group: ' + key)
+        results.append((key, process_many(fs)))
+    
+    counts = defaultdict(int)
+    for _, res in results:
+        for key in res.iterkeys():
+            counts[key] += 1
+
+    for key, count in counts.iteritems():
+        if count >= 10:
+            fname = df('Aggregated', key + '.fasta')
+            with open(fname, 'w') as handle:
+                for genome, seq_dict in results:
+                    if key in seq_dict:
+                        handle.write('>%s\n%s\n' % (genome, seq_dict[key]))
             
 
 
