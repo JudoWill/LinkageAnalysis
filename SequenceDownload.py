@@ -1,9 +1,10 @@
 from urllib2 import urlopen
 from urlparse import urljoin
 from collections import defaultdict
-from itertools import izip, repeat, chain, product
+from itertools import izip, repeat, chain, product, groupby
 from operator import itemgetter
-import csv, argparse, os.path, logging, tarfile
+import csv, argparse, os.path, logging, tarfile, os
+from shutil import rmtree
 
 
 
@@ -52,7 +53,54 @@ def unzip_dir(base_dir):
         handle = tarfile.open(fname)
         handle.extractall(path = base_dir)
         handle.close()
-        
+
+def read_ptt(filename):
+    
+    with open(filename) as handle:
+        handle.next()
+        handle.next()
+        id2name = {}
+        for row in csv.DictReader(handle, delimiter = '\t'):
+            if row['Gene'] != '-':            
+                id2name[row['PID']] = row['Gene']
+    return id2name            
+
+def read_fasta(filename):
+    
+    id2seq = {}
+    with open(filename) as handle:
+        name = None
+        for key, lines in groupby(handle, lambda x: x.startswith('>')):
+            if key:
+                name = lines.next().strip()[1:]
+                gi = name.split('|')[1]
+            else:
+                id2seq[gi] = ''.join([x.strip() for x in lines])
+    return id2seq
+
+def process_pair(fasta_file, ptt_file):
+    
+    gi2seq = read_fasta(fasta_file)
+    gi2name = read_ptt(ptt_file)
+
+    name2seq = dict()
+    for gi, seq in gi2seq.iteritems():
+        if gi in gi2name:        
+            name2seq[gi2name[gi]] = seq
+
+    return name2seq
+
+def process_many(grouped_names):
+
+    res = dict()    
+    for group in grouped_names:
+        try:        
+            res.update(process_pair(group + '.faa', group + '.ptt'))
+        except IOError:
+            pass
+
+    return res
+            
 
 
 if __name__ == '__main__':
@@ -65,15 +113,24 @@ if __name__ == '__main__':
                         action = 'store_true')
     parser.add_argument('--no-unzip', dest = 'skipunzip', default = False,
                         action = 'store_true')
+    parser.add_argument('--fresh', dest = 'fresh', default = False,
+                        action = 'store_true')
     
     args = parser.parse_args()
-
+    
     urls = ('ftp://ftp.ncbi.nih.gov/genomes/Bacteria/',)
     if not args.skipdraft:
         urls += ('ftp://ftp.ncbi.nih.gov/genomes/Bacteria_DRAFT/',)
     
     with open(args.file) as handle:
         search_dict = dict(csv.reader(handle))
+
+    if args.fresh:
+        logging.warning('Cleaning up previous downlaods!')
+        for d in search_dict.values():
+            rmtree(d)
+            os.mkdir(d)
+        
         
     if not args.skipdownload:
         check_NCBI(search_dict, urls)
@@ -83,6 +140,32 @@ if __name__ == '__main__':
             logging.warning('Unzipping: ' + direc)
             unzip_dir(direc)
     
+    for key, direc in search_dict.items():
+        logging.warning('Processing ' + key)
+        try:
+            os.mkdir(os.path.join(direc, 'Aggregated'))
+        except OSError:
+            pass
+        files = [os.path.join(direc, x.split('.')[0]) for x in os.listdir(direc) if x.endswith('.faa')]
+        grouper = lambda x: x.split(os.sep)[-1][:9]
+        results = []
+        logging.warning('%i files to process' % len(files))
+        for key, fs in groupby(sorted(files), grouper):
+            logging.warning('Processing group: ' + key)
+            results.append((key, process_many(fs)))
+        
+        counts = defaultdict(int)
+        for _, res in results:
+            for key in res.iterkeys():
+                counts[key] += 1
+
+        for key, count in counts.iteritems():
+            if count >= 10:
+                fname = os.path.join(direc, 'Aggregated', key + '.fasta')
+                with open(fname, 'w') as handle:
+                    for genome, seq_dict in results:
+                        if key in seq_dict:
+                            handle.write('>%s\n%s\n' % (genome, seq_dict[key]))
 
 
 
