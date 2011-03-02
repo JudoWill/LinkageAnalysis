@@ -185,29 +185,10 @@ if __name__ == '__main__':
     for key, direc in search_dict.items():
         logging.warning('Processing ' + key)
         try:
-            os.mkdir(os.path.join(direc, 'Aggregated'))
+            os.makedirs(os.path.join(direc, 'Aggregated'))
         except OSError:
             pass
-        files = [os.path.join(direc, x.split('.')[0]) for x in os.listdir(direc) if x.endswith('.faa')]
-        grouper = lambda x: x.split(os.sep)[-1][:9]
-        results = []
-        logging.warning('%i files to process' % len(files))
-        for key, fs in groupby(sorted(files), grouper):
-            logging.warning('Processing group: ' + key)
-            results.append((key, process_many(fs)))
-        
-        counts = defaultdict(int)
-        for _, res in results:
-            for key in res.iterkeys():
-                counts[key] += 1
-
-        for key, count in counts.iteritems():
-            if count >= args.minrequired:
-                fname = os.path.join(direc, 'Aggregated', key + '.fasta')
-                with open(fname, 'w') as handle:
-                    for genome, seq_dict in results:
-                        if key in seq_dict:
-                            handle.write('>%s\n%s\n' % (genome, seq_dict[key]))
+        process_directory(direc)
 
 
 
