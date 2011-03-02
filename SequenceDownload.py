@@ -156,6 +156,7 @@ if __name__ == '__main__':
                         action = 'store_true')
     parser.add_argument('--fresh', dest = 'fresh', default = False,
                         action = 'store_true')
+    parser.add_argument('--min-required', dest = 'minrequired', default = 7)
     
     args = parser.parse_args()
     
@@ -201,7 +202,7 @@ if __name__ == '__main__':
                 counts[key] += 1
 
         for key, count in counts.iteritems():
-            if count >= 10:
+            if count >= args.minrequired:
                 fname = os.path.join(direc, 'Aggregated', key + '.fasta')
                 with open(fname, 'w') as handle:
                     for genome, seq_dict in results:
