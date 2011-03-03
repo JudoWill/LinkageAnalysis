@@ -117,7 +117,7 @@ def process_many(grouped_names):
 
     return res
 
-def process_directory(direc):
+def process_directory(direc, out_direc = None):
     
     files = os.listdir(direc)
     df = partial(os.path.join, direc)
@@ -133,11 +133,16 @@ def process_directory(direc):
     for _, res in results:
         for key in res.iterkeys():
             counts[key] += 1
+    
+    if out_direc is None:
+        dump_dir = partial(os.path.join, direc, 'Aggregated')
+    else:
+        dump_dir = partial(os.path.join, out_direc)
 
     for key, count in counts.iteritems():
         if count >= 10:
             try:
-                fname = df('Aggregated', key + '.fasta')
+                fname = dump_dir(key + '.fasta')
                 with open(fname, 'w') as handle:
                     for genome, seq_dict in results:
                         if key in seq_dict:
