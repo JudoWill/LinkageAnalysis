@@ -29,27 +29,44 @@ WIDTHS = range(1,5)
 SUBTYPE = None
 MIN_SEQS = 20
 MIN_OVERLAP = 20
-PROCESS_LIST = None
+SPECIES_LIST = None
+SPECIES_FILE = None
 
 
 def touch(fname, times = None):
     with file(fname, 'a'):
         os.utime(fname, times)
 
+@ruffus.files(SPECIES_FILE, SPECIES_FILE + '.sen')
+def make_dirs(ifile, ofile):
+    """Make all directories in the species list."""
+    
+    for species in SPECIES_LIST:
+        for field, val in species.keys():
+            if field.endswith('Dir'):
+                safe_mkdir(val)
+    touch(ofile)    
 
               
-def lanl_align_gen():
-    load_dir = os.path.join(DATA_DIR, 'LANLSequences', 'Sequences')
-    dump_dir = os.path.join(DATA_DIR, 'LANLSequences', 'Alignments')
+def align_gen():
+    """Takes the generates the files which need to be aligned."""
 
-    for f in os.listdir(load_dir):
-        if f.endswith('.fasta'):
-            name = f.split('.')[0]
-            yield os.path.join(load_dir, f), [os.path.join(dump_dir, name+'.aln.fasta'), os.path.join(dump_dir, name+'.aln')], name
+    for species in SPECIES_LIST:
+        if 'SequenceDir' in species and 'AlignmentDir' in species:
+            seqdir = partial(os.path.join, species['SequenceDir'])
+            aligndir = partial(os.path.join, species['AlignmentDir'])
+            for f in os.listdir(species['SequenceDir']):
+                if f.endswith('.fasta'):
+                    name = f.split('.')[0]
+                    ifile = seqdir(f)
+                    ofiles = [aligndir(name+'.aln.fasta'), 
+                                aligndir(name+'.aln')]
+                    yield ifile, ofiles
 
-@ruffus.files(lanl_align_gen)
-@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'LANLSequences', 'Alignments')))
-def make_lanl_alignments(in_file, out_files, name):
+
+@ruffus.files(align_gen)
+@ruffus.follows(make_dirs)
+def make_alignments(in_file, out_files, name):
     run_muscle(in_file, out_files[0])
     fasta2aln(out_files[0], out_files[1])
 
@@ -81,7 +98,7 @@ def lanl_align_pairs():
 
 
 @ruffus.files(lanl_align_pairs)
-@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'LinkageResults')), 'make_lanl_alignments')
+@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'LinkageResults')), 'make_alignments')
 def calculate_lanl_linkages(in_files, out_files):
     print WIDTHS
     PredictionAnalysis(in_files[0], in_files[1], out_files[0], 
@@ -187,7 +204,7 @@ if __name__ == '__main__':
                         default = False)
     parser.add_argument('--link-lanl', dest = 'lanl', action = 'store_true', default = False)
     parser.add_argument('--filter-lanl', dest = 'filterlanl', action = 'store_true', default = False)
-    parser.add_argument('--align-lanl', dest = 'lanlalignments', action = 'store_true', default = False)
+    parser.add_argument('--align', dest = 'alignments', action = 'store_true', default = False)
     parser.add_argument('--scatter-lanl', dest = 'lanlscatter', action = 'store_true', default = False)
     parser.add_argument('--circos-lanl', dest = 'lanlcircos', action = 'store_true', default = False)
 
@@ -220,8 +237,8 @@ if __name__ == '__main__':
         ruffus.pipeline_run([slice_scatters], logger = my_ruffus_logger, multiprocess = args.workers)
     elif args.lanlcircos:
         ruffus.pipeline_run([circos_figs], logger = my_ruffus_logger)        
-    elif args.lanlalignments:
-        ruffus.pipeline_run([make_lanl_alignments], logger = my_ruffus_logger, multiprocess = args.workers)        
+    elif args.alignments:
+        ruffus.pipeline_run([make_alignments], logger = my_ruffus_logger, multiprocess = args.workers)        
     elif args.lanl:
         ruffus.pipeline_run([calculate_lanl_linkages], logger = my_ruffus_logger, multiprocess = args.workers)
     else:
