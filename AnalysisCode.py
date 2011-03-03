@@ -11,6 +11,7 @@ from Code.GeneralUtils import *
 from Code.AlignUtils import *
 from Code.ThreeDUtils import *
 from Code.FigureTools import *
+from 
 from functools import partial
 from subprocess import call, check_call
 import shlex, tempfile, shutil
@@ -45,7 +46,28 @@ def make_dirs(ifile, ofile):
         for field, val in species.keys():
             if field.endswith('Dir'):
                 safe_mkdir(val)
-    touch(ofile)    
+    touch(ofile)
+
+@ruffus.files(SPECIES_FILE, SPECIES_FILE + '.downloaded')
+@ruffus.follows('make_dirs')
+def download_data(ifile, ofile):    
+
+    urls = ('ftp://ftp.ncbi.nih.gov/genomes/Bacteria/',
+            'ftp://ftp.ncbi.nih.gov/genomes/Bacteria_DRAFT/',)
+
+    term_dict = {}    
+    for species in SPECIES_LIST:
+        if species.get('DOWNLOAD', False):
+            term_dict[species['SpeciesName']] = species['DownloadDir']
+
+    check_NCBI(term_dict, urls)
+    for species in SPECIES_LIST:
+        if species.get('DOWNLOAD', False):
+            unzip_dir(d)
+            process_directory(direc, out_direc = species['SequenceDir'])
+
+    touch(ofile)
+    
 
               
 def align_gen():
@@ -65,7 +87,7 @@ def align_gen():
 
 
 @ruffus.files(align_gen)
-@ruffus.follows(make_dirs)
+@ruffus.follows('download_data')
 def make_alignments(in_file, out_files, name):
     run_muscle(in_file, out_files[0])
     fasta2aln(out_files[0], out_files[1])
