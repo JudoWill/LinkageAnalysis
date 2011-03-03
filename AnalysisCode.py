@@ -29,6 +29,8 @@ WIDTHS = range(1,5)
 SUBTYPE = None
 MIN_SEQS = 20
 MIN_OVERLAP = 20
+PROCESS_LIST = None
+
 
 def touch(fname, times = None):
     with file(fname, 'a'):
@@ -36,38 +38,6 @@ def touch(fname, times = None):
 
 
               
-def fasta_gen():
-    load_dir = os.path.join(DATA_DIR, 'LANLSequences', 'Sequences')
-    flist = []
-    for f in os.listdir(load_dir):
-        if f.endswith('.fasta'):
-            flist.append(os.path.join(load_dir, f))
-    yield flist, None
-
-@ruffus.files(fasta_gen)
-def filter_alignmets(in_files, out_file):
-
-    
-    seq_count = defaultdict(int)    
-    for f in in_files:
-        for name, _ in fasta_iter(f):
-            seq_count[name] += 1
-    for f in in_files:
-        print 'checking', f
-        if f.endswith('.fasta') and count_fasta(f) > 19990:
-            print 'shortening', f
-            tdir = tempfile.mkdtemp(dir = '/tmp/')            
-            tname = os.path.join(tdir, 'temp.fasta')
-            seqlist = list(fasta_iter(f))
-            seqlist.sort(key = lambda x: seq_count[x[0]], reverse = True)
-            with open(tname, 'w') as handle:
-                for name, seq in islice(seqlist, 19989):
-                    handle.write('>%s\n%s\n' % (name, seq))
-            shutil.move(tname, f)
-            shutil.rmtree(tdir)
-
-
-
 def lanl_align_gen():
     load_dir = os.path.join(DATA_DIR, 'LANLSequences', 'Sequences')
     dump_dir = os.path.join(DATA_DIR, 'LANLSequences', 'Alignments')
@@ -211,6 +181,7 @@ if __name__ == '__main__':
     parser.add_argument('--max-width', dest = 'maxwidth', default = 1, action = 'store',
                         type = int)
     parser.add_argument('--data-dir', dest = 'datadir', default = 'OtherData', action = 'store')
+    parser.add_argument('--processing-file', dest = 'processfile', default = None, action = 'store')
     parser.add_argument('--quiet', dest = 'quiet', action = 'store_true', default = False)
     parser.add_argument('--parse-align', dest = 'parsealign', action = 'store_true',
                         default = False)
@@ -219,6 +190,10 @@ if __name__ == '__main__':
     parser.add_argument('--align-lanl', dest = 'lanlalignments', action = 'store_true', default = False)
     parser.add_argument('--scatter-lanl', dest = 'lanlscatter', action = 'store_true', default = False)
     parser.add_argument('--circos-lanl', dest = 'lanlcircos', action = 'store_true', default = False)
+
+
+
+
     args = parser.parse_args()
     
     
@@ -245,8 +220,6 @@ if __name__ == '__main__':
         ruffus.pipeline_run([slice_scatters], logger = my_ruffus_logger, multiprocess = args.workers)
     elif args.lanlcircos:
         ruffus.pipeline_run([circos_figs], logger = my_ruffus_logger)        
-    elif args.filterlanl:
-        ruffus.pipeline_run([filter_alignmets], logger = my_ruffus_logger)
     elif args.lanlalignments:
         ruffus.pipeline_run([make_lanl_alignments], logger = my_ruffus_logger, multiprocess = args.workers)        
     elif args.lanl:
