@@ -70,7 +70,7 @@ def make_alignments(in_file, out_files, name):
     run_muscle(in_file, out_files[0])
     fasta2aln(out_files[0], out_files[1])
 
-def lanl_align_pairs():
+def align_pairs():
     load_dir = os.path.join(DATA_DIR, 'LANLSequences', 'Alignments')
     dump_dir = os.path.join(DATA_DIR, 'LinkageResults')
     aligns_present = [x.split('.')[0] for x in os.listdir(load_dir) if x.endswith('.aln')]
@@ -97,9 +97,9 @@ def lanl_align_pairs():
             yield (a1, a2), (d, s)
 
 
-@ruffus.files(lanl_align_pairs)
-@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'LinkageResults')), 'make_alignments')
-def calculate_lanl_linkages(in_files, out_files):
+@ruffus.files(align_pairs)
+@ruffus.follows('make_alignments')
+def calculate_linkages(in_files, out_files):
     print WIDTHS
     PredictionAnalysis(in_files[0], in_files[1], out_files[0], 
                         same = in_files[0] == in_files[1],
@@ -128,15 +128,13 @@ def scatter_files():
 
 
 @ruffus.files(scatter_files)
-@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'ScatterResults')),
-                'calculate_lanl_linkages')
+@ruffus.follows('calculate_linkages')
 def generate_scatter(in_files, out_files, chain):
     args = in_files+out_files+[chain]
     create_scatter(*args)
     
     
-@ruffus.follows(ruffus.mkdir(os.path.join(DATA_DIR, 'ScatterResults', 'figures')),
-                'generate_scatter')
+@ruffus.follows('generate_scatter')
 def slice_scatters():
     
     guessing_figures(os.path.join(DATA_DIR, 'ScatterResults'))
@@ -202,7 +200,7 @@ if __name__ == '__main__':
     parser.add_argument('--quiet', dest = 'quiet', action = 'store_true', default = False)
     parser.add_argument('--parse-align', dest = 'parsealign', action = 'store_true',
                         default = False)
-    parser.add_argument('--link-lanl', dest = 'lanl', action = 'store_true', default = False)
+    parser.add_argument('--link', dest = 'link', action = 'store_true', default = False)
     parser.add_argument('--filter-lanl', dest = 'filterlanl', action = 'store_true', default = False)
     parser.add_argument('--align', dest = 'alignments', action = 'store_true', default = False)
     parser.add_argument('--scatter-lanl', dest = 'lanlscatter', action = 'store_true', default = False)
@@ -239,8 +237,8 @@ if __name__ == '__main__':
         ruffus.pipeline_run([circos_figs], logger = my_ruffus_logger)        
     elif args.alignments:
         ruffus.pipeline_run([make_alignments], logger = my_ruffus_logger, multiprocess = args.workers)        
-    elif args.lanl:
-        ruffus.pipeline_run([calculate_lanl_linkages], logger = my_ruffus_logger, multiprocess = args.workers)
+    elif args.link:
+        ruffus.pipeline_run([calculate_linkages], logger = my_ruffus_logger, multiprocess = args.workers)
     else:
         ruffus.pipeline_run([top_function], logger = my_ruffus_logger, multiprocess = args.workers)
 
