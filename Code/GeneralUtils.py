@@ -159,7 +159,7 @@ def safe_mkdir(path):
     """Makes a new directory but catches Exceptions."""
     
     try:
-        os.mkdir(path)
+        os.makedirs(path)
     except OSError:
         pass
 
