@@ -5,13 +5,13 @@ import urllib2, re, logging
 from datetime import datetime
 from itertools import *
 from BeautifulSoup import BeautifulStoneSoup
-import argparse
+import argparse, yaml
 from Code.NCBIUtils import *
 from Code.GeneralUtils import *
 from Code.AlignUtils import *
 from Code.ThreeDUtils import *
 from Code.FigureTools import *
-from 
+from SequenceDownload import *
 from functools import partial
 from subprocess import call, check_call
 import shlex, tempfile, shutil
@@ -30,9 +30,10 @@ WIDTHS = range(1,5)
 SUBTYPE = None
 MIN_SEQS = 20
 MIN_OVERLAP = 20
-SPECIES_LIST = None
-SPECIES_FILE = None
+SPECIES_FILE = 'BacterialData/BacterialProcessing.yaml'
 
+with open(SPECIES_FILE) as handle:
+    SPECIES_LIST = yaml.load(handle)
 
 def touch(fname, times = None):
     with file(fname, 'a'):
@@ -43,7 +44,7 @@ def make_dirs(ifile, ofile):
     """Make all directories in the species list."""
     
     for species in SPECIES_LIST:
-        for field, val in species.keys():
+        for field, val in species.items():
             if field.endswith('Dir'):
                 safe_mkdir(val)
     touch(ofile)
@@ -63,8 +64,8 @@ def download_data(ifile, ofile):
     check_NCBI(term_dict, urls)
     for species in SPECIES_LIST:
         if species.get('DOWNLOAD', False):
-            unzip_dir(d)
-            process_directory(direc, out_direc = species['SequenceDir'])
+            unzip_dir(species['DownloadDir'])
+            process_directory(species['DownloadDir'], out_direc = species['SequenceDir'])
 
     touch(ofile)
     
@@ -88,7 +89,7 @@ def align_gen():
 
 @ruffus.files(align_gen)
 @ruffus.follows('download_data')
-def make_alignments(in_file, out_files, name):
+def make_alignments(in_file, out_files):
     run_muscle(in_file, out_files[0])
     fasta2aln(out_files[0], out_files[1])
 
@@ -114,6 +115,8 @@ def align_pairs():
             id_dict[f.split('.')[0]] = set(aln.seqs.keys())
         return id_dict
     
+
+
     for species in SPECIES_LIST:
         aligndir = partial(os.path.join, species['AlignmentDir'])
         linkagedir = partial(os.path.join, species['LinkageDir'])
@@ -246,8 +249,8 @@ if __name__ == '__main__':
 
 
     args = parser.parse_args()
-    
-    
+    SPECIES_FILE = args.processfile
+
     my_ruffus_logger = logging.getLogger('My_Ruffus_logger')
     my_ruffus_logger.setLevel(logging.INFO)
     
