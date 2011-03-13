@@ -494,12 +494,16 @@ def get_last(iterable):
     (source-width, target-width, source-start, target-start)"""
 
     l = deque(iterable, maxlen = 1)
-    row = l.pop()
+    try:
+        row = l.pop()
+    except IndexError:
+        return None
+
     ss = int(row['Source-Start'])
     ts = int(row['Target-Start'])
     sw = int(row['Source-End'])-ss
     tw = int(row['Target-End'])-ts
-    
+
     return (sw, tw, ss, ts)
     
 
