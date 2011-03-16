@@ -6,7 +6,7 @@ from itertools import islice, groupby, imap, starmap, repeat, dropwhile
 from operator import itemgetter
 from functools import partial
 
-def AggregateLinkageData(in_direc, full_file, short_file, mode = 'w', short_cut = 0.9):
+def AggregateLinkageData(files, full_file, short_file, mode = 'w', short_cut = 0.9):
     """Aggregates linkage data into to files for easier processing.
     
     Inputs:
@@ -15,10 +15,10 @@ def AggregateLinkageData(in_direc, full_file, short_file, mode = 'w', short_cut 
     short_file  The place to put all shortened data.
     """
     
-    def multi_file_iterator(files, in_direc):
+    def multi_file_iterator(files):
         for f in files:
-            sprot, tprot = f.split('.')[0].split('--')
-            print sprot, tprot
+            fpart = f.split(os.sep)[-1]
+            sprot, tprot = fpart.split('.')[0].split('--')
             with open(os.path.join(in_direc,f)) as handle:
                 for row in csv.DictReader(handle, delimiter = '\t'):
                     if not row['Total-Num'].startswith('too') and row['Total-Num'] != 'Total-Num':
@@ -26,7 +26,7 @@ def AggregateLinkageData(in_direc, full_file, short_file, mode = 'w', short_cut 
                         row['Target-Prot'] = tprot
                         yield row
     
-    files = sorted([x for x in os.listdir(in_direc) if x.endswith('.res')])
+    files.sort()
     outfields = ('Source-Prot', 'Target-Prot','Source-Start','Source-End',
                 'Target-Start','Target-End','Source-Seq','Target-Seq',
                 'Correct-Num','Total-Num','This-Score','Total-Score')
