@@ -146,6 +146,24 @@ def calculate_linkages(in_files, out_files, widths):
                         widths = widths)
     touch(out_files[1])
 
+def linkage_merge():
+    
+    for species in SPECIES_LIST:
+        circosdir = partial(os.path.join, species['CircosDir'])
+        linkagedir = partial(os.path.join, species['LinkageDir'])
+        
+        ifiles = [linkagedir(x) for x in os.listdir(linkage_dir(''))]
+        ofiles = [circosdir('FullAggregatedData.txt'),
+                    circosdir('ShortAggregatedData.txt')]
+        yield ifiles, ofiles
+
+@ruffus.files(linkage_merge)
+@ruffus.follows('calculate_linkages')
+def merge_linkages(infiles, ofiles):
+    
+    AggregateLinkageData(infiles, ofiles[0], ofiles[1])
+
+
 def scatter_files():
     struct_dir = os.path.join(DATA_DIR, 'ProteinStructures')
     linkage_dir = os.path.join(DATA_DIR, 'LinkageResults')
