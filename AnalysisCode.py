@@ -111,8 +111,9 @@ def align_pairs():
         aligndir = partial(os.path.join, align_direc)
         id_dict = defaultdict(set)
         for f in os.listdir(align_direc):
-            aln = Alignment.alignment_from_file(aligndir(f))
-            id_dict[f.split('.')[0]] = set(aln.seqs.keys())
+            if f.endswith('.aln'):
+                aln = Alignment.alignment_from_file(aligndir(f))
+                id_dict[f.split('.')[0]] = set(aln.seqs.keys())
         return id_dict
     
 
@@ -125,6 +126,7 @@ def align_pairs():
         widths = WIDTHS or species.get('WIDTHS', range(1,5))
 
         for p1, p2 in product(sorted(aligns_present), repeat = 2):
+            print p1, p2, len(align_ids[p1] & align_ids[p2]), species.get('OVERLAP', 5)
             if len(align_ids[p1] & align_ids[p2]) > species.get('OVERLAP', 5):
                 a1 = aligndir(p1 + '.aln')
                 a2 = aligndir(p2 + '.aln')
@@ -137,10 +139,11 @@ def align_pairs():
 
 
 
+
 @ruffus.files(align_pairs)
 @ruffus.follows('make_alignments')
 def calculate_linkages(in_files, out_files, widths):
-
+    print in_files
     PredictionAnalysis(in_files[0], in_files[1], out_files[0], 
                         same = in_files[0] == in_files[1],
                         widths = widths)
