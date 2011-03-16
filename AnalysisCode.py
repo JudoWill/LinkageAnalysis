@@ -295,7 +295,7 @@ if __name__ == '__main__':
     elif args.alignments:
         ruffus.pipeline_run([make_alignments], logger = my_ruffus_logger, multiprocess = args.workers)        
     elif args.link:
-        ruffus.pipeline_run([calculate_linkages], logger = my_ruffus_logger, multiprocess = args.workers)
+        ruffus.pipeline_run([merge_linkages], logger = my_ruffus_logger, multiprocess = args.workers)
     else:
         ruffus.pipeline_run([top_function], logger = my_ruffus_logger, multiprocess = args.workers)
 
