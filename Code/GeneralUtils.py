@@ -2,9 +2,82 @@ import csv
 import os, os.path
 from collections import deque
 from types import ListType, TupleType
-from itertools import islice, groupby, imap, starmap, repeat
+from itertools import islice, groupby, imap, starmap, repeat, dropwhile
 from operator import itemgetter
+from functools import partial
 
+def AggregateLinkageData(files, full_file, short_file, mode = 'w', short_cut = 0.9):
+    """Aggregates linkage data into to files for easier processing.
+    
+    Inputs:
+    in_direc    The input directory which has all linkages.
+    full_file   The place to put all aggregaed data.
+    short_file  The place to put all shortened data.
+    """
+    
+    def multi_file_iterator(files):
+        for f in files:
+            fpart = f.split(os.sep)[-1]
+            sprot, tprot = fpart.split('.')[0].split('--')
+            with open(os.path.join(in_direc,f)) as handle:
+                for row in csv.DictReader(handle, delimiter = '\t'):
+                    if not row['Total-Num'].startswith('too') and row['Total-Num'] != 'Total-Num':
+                        row['Source-Prot'] = sprot
+                        row['Target-Prot'] = tprot
+                        yield row
+    
+    files.sort()
+    outfields = ('Source-Prot', 'Target-Prot','Source-Start','Source-End',
+                'Target-Start','Target-End','Source-Seq','Target-Seq',
+                'Correct-Num','Total-Num','This-Score','Total-Score')
+    pred = itemgetter('Source-Prot', 'Target-Prot','Source-Start',
+                     'Source-End', 'Target-Start','Target-End')
+    
+    if mode == 'w':
+        item_iter = multi_file_iterator(files, in_direc)
+    elif mode == 'a':
+        with open(full_file) as handle:
+            reader = csv.DictReader(handle, delimiter='\t')
+            items = deque(reader, 1)
+            try:
+                last_item = items.pop()
+                lvals = pred(last_item)
+                item_iter = dropwhile(lambda x: pred(x) <= lvals, 
+                                        multi_file_iterator(files, in_direc))
+            except IndexError:
+                item_iter = multi_file_iterator(files, in_direc)
+    
+    total_getter = itemgetter('Total-Num')
+    
+    with open(full_file, mode) as fhandle:
+        fwriter = csv.DictWriter(fhandle, outfields, delimiter = '\t')
+        if mode == 'w':
+            fwriter.writerow(dict(zip(outfields, outfields)))
+        with open(short_file, mode) as shandle:
+            swriter = csv.DictWriter(shandle, outfields, delimiter = '\t')
+            if mode == 'w':
+                swriter.writerow(dict(zip(outfields, outfields)))
+            
+            for key, group in groupby(item_iter, pred):
+                lgroup = list(group)
+                fwriter.writerows(lgroup)
+                if float(lgroup[0]['Total-Score']) >= short_cut:
+                    total_seqs = sum((int(x['Total-Num']) for x in lgroup))
+                    total_correct = sum((int(x['Correct-Num']) for x in lgroup))
+                    lgroup[0]['Total-Num'] = total_seqs
+                    lgroup[0]['Correct-Num'] = total_correct
+                    swriter.writerow(lgroup[0])
+                    sync_handle(shandle)
+                sync_handle(fhandle)
+                
+            
+            
+def sync_handle(fhandle):
+    """Helper function for syncing filehandles to disk."""
+    fhandle.flush()
+    os.fsync(fhandle.fileno())
+    
+    
 def unique_justseen(iterable, key = None):
     """Yields unique values."""
     return imap(next, imap(itemgetter(1), groupby(iterable, key)))
