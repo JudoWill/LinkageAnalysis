@@ -11,6 +11,7 @@ from Code.GeneralUtils import *
 from Code.AlignUtils import *
 from Code.ThreeDUtils import *
 from Code.FigureTools import *
+from Code.CrossCompUtils import *
 from SequenceDownload import *
 from functools import partial
 from subprocess import call, check_call
@@ -163,6 +164,27 @@ def merge_linkages(infiles, ofiles):
     
     AggregateLinkageData(infiles, ofiles[0], ofiles[1])
 
+def linkage_summarize():
+    
+    orgs = []
+    fnames = []
+    
+    for species in SPECIES_LIST:
+        circosdir = partial(os.path.join, species['CircosDir'])
+        orgs.append(species['SpeciesName'])
+        fnames.append(circosdir('ShortAggregatedData.txt'))
+    ofiles = [os.path.dirname(SPECIES_FILE) + os.sep + 'ShortOverlap.txt',
+            os.path.dirname(SPECIES_FILE) + os.sep + 'LongOverlap.txt']    
+    yield fnames, ofiles, orgs
+
+
+@ruffus.files(linkage_summarize)
+@ruffus.follows('merge_linkages')
+def summarize_linkages(infiles, outfiles, orgnames):
+    
+    compare_linkages(infiles, orgnames, outfiles)
+    
+    
 
 def scatter_files():
     struct_dir = os.path.join(DATA_DIR, 'ProteinStructures')
