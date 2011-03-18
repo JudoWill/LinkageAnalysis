@@ -1,0 +1,55 @@
+- {
+SpeciesName: Any,
+DownloadDir: HCVSeqs/Any/RawDL/,
+SequenceDir: HCVSeqs/Any/Sequences/,
+AlignmentDir: HCVSeqs/Any/Alignments/,
+LinkageDir: HCVSeqs/Any/LinkageResults/,
+CircosDir: HCVSeqs/Any/CircosDir/,
+OVERLAP: 70,
+WIDTHS: [1,2,3,4,5],
+DOWNLOAD: false,
+}
+- {
+SpeciesName: Subtype1,
+DownloadDir: HCVSeqs/Subtype1/RawDL/,
+SequenceDir: HCVSeqs/Subtype1/Sequences/,
+AlignmentDir: HCVSeqs/Subtype1/Alignments/,
+LinkageDir: HCVSeqs/Subtype1/LinkageResults/,
+CircosDir: HCVSeqs/Subtype1/CircosDir/,
+OVERLAP: 50,
+WIDTHS: [1,2,3,4,5],
+DOWNLOAD: false,
+}
+- {
+SpeciesName: Subtype2,
+DownloadDir: HCVSeqs/Subtype2/RawDL/,
+SequenceDir: HCVSeqs/Subtype2/Sequences/,
+AlignmentDir: HCVSeqs/Subtype2/Alignments/,
+LinkageDir: HCVSeqs/Subtype2/LinkageResults/,
+CircosDir: HCVSeqs/Subtype2/CircosDir/,
+OVERLAP: 35,
+WIDTHS: [1,2,3,4,5],
+DOWNLOAD: false,
+}
+- {
+SpeciesName: Subtype3,
+DownloadDir: HCVSeqs/Subtype3/RawDL/,
+SequenceDir: HCVSeqs/Subtype3/Sequences/,
+AlignmentDir: HCVSeqs/Subtype3/Alignments/,
+LinkageDir: HCVSeqs/Subtype3/LinkageResults/,
+CircosDir: HCVSeqs/Subtype3/CircosDir/,
+OVERLAP: 30,
+WIDTHS: [1,2,3,4,5],
+DOWNLOAD: false,
+}
+- {
+SpeciesName: Subtype4,
+DownloadDir: HCVSeqs/Subtype4/RawDL/,
+SequenceDir: HCVSeqs/Subtype4/Sequences/,
+AlignmentDir: HCVSeqs/Subtype4/Alignments/,
+LinkageDir: HCVSeqs/Subtype4/LinkageResults/,
+CircosDir: HCVSeqs/Subtype4/CircosDir/,
+OVERLAP: 30,
+WIDTHS: [1,2,3,4,5],
+DOWNLOAD: false,
+}
