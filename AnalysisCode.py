@@ -33,9 +33,6 @@ MIN_SEQS = 20
 MIN_OVERLAP = 20
 SPECIES_FILE = 'BacterialData/BacterialProcessing.yaml'
 
-with open(SPECIES_FILE) as handle:
-    SPECIES_LIST = yaml.load(handle)
-
 def touch(fname, times = None):
     with file(fname, 'a'):
         os.utime(fname, times)
@@ -61,12 +58,13 @@ def download_data(ifile, ofile):
     for species in SPECIES_LIST:
         if species.get('DOWNLOAD', False):
             term_dict[species['SpeciesName']] = species['DownloadDir']
-
-    check_NCBI(term_dict, urls)
-    for species in SPECIES_LIST:
-        if species.get('DOWNLOAD', False):
-            unzip_dir(species['DownloadDir'])
-            process_directory(species['DownloadDir'], out_direc = species['SequenceDir'])
+    print term_dict
+    if term_dict:
+        check_NCBI(term_dict, urls)
+        for species in SPECIES_LIST:
+            if species.get('DOWNLOAD', False):
+                unzip_dir(species['DownloadDir'])
+                process_directory(species['DownloadDir'], out_direc = species['SequenceDir'])
 
     touch(ofile)
     
@@ -291,6 +289,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     SPECIES_FILE = args.processfile
+
+    with open(SPECIES_FILE) as handle:
+        SPECIES_LIST = yaml.load(handle)
+
 
     my_ruffus_logger = logging.getLogger('My_Ruffus_logger')
     my_ruffus_logger.setLevel(logging.INFO)
