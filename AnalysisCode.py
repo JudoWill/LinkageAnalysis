@@ -180,7 +180,7 @@ def linkage_summarize():
 
 @ruffus.files(linkage_summarize)
 @ruffus.follows('merge_linkages')
-def summarize_linkages(infiles, outfiles, orgnames):
+def compare_genomes(infiles, outfiles, orgnames):
     
     compare_linkages(infiles, orgnames, outfiles)
     
@@ -282,6 +282,7 @@ if __name__ == '__main__':
                         default = False)
     parser.add_argument('--link', dest = 'link', action = 'store_true', default = False)
     parser.add_argument('--align', dest = 'alignments', action = 'store_true', default = False)
+    parser.add_argument('--compare', dest = 'compare', action = 'store_true', default = False)
     parser.add_argument('--scatter-lanl', dest = 'lanlscatter', action = 'store_true', default = False)
     parser.add_argument('--circos-lanl', dest = 'lanlcircos', action = 'store_true', default = False)
 
@@ -318,6 +319,8 @@ if __name__ == '__main__':
         ruffus.pipeline_run([make_alignments], logger = my_ruffus_logger, multiprocess = args.workers)        
     elif args.link:
         ruffus.pipeline_run([merge_linkages], logger = my_ruffus_logger, multiprocess = args.workers)
+    elif args.compare:
+        ruffus.pipeline_run([compare_linkages], logger = my_ruffus_logger, multiprocess = args.workers)
     else:
         ruffus.pipeline_run([top_function], logger = my_ruffus_logger, multiprocess = args.workers)
 
