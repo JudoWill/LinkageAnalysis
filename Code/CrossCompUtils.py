@@ -33,6 +33,7 @@ def compare_linkages(link_files, org_names, outfiles):
         while current_items:
             this_item = min((item for item, _ in current_items.itervalues()))
             outdict = {}
+            print this_item
             for key, (item, rows) in current_items.items():
                 if item == this_item:
                     outdict[key] = list(rows)
@@ -41,17 +42,19 @@ def compare_linkages(link_files, org_names, outfiles):
                     except StopIteration:
                         current_items.pop(key)
                         grouped.pop(key)
-            yield key, outdict
+            yield this_item, outdict
     
     
-    simple_fields = ('Source-Prot', 'Target-Prot') + sorted(org_names)
+    simple_fields = ['Source-Prot', 'Target-Prot'] + sorted(org_names)
     complex_fields = ('Organism', 'Source-Prot', 'Target-Prot','Source-Start',
                 'Source-End','Target-Start','Target-End', 'Total-Score')
     
-    simple_writer = csv.DictWriter(open(outfiles[0]), simple_fields, 
+    simple_writer = csv.DictWriter(open(outfiles[0], 'w'), simple_fields, 
                                     delimiter = '\t', extrasaction = 'ignore')
-    complex_writer = csv.DictWriter(open(outfiles[1]), complex_fields, 
+    complex_writer = csv.DictWriter(open(outfiles[1], 'w'), complex_fields, 
                                     delimiter = '\t', extrasaction = 'ignore')
+    simple_writer.writerow(dict(zip(simple_fields, simple_fields)))
+    complex_writer.writerow(dict(zip(complex_fields, complex_fields)))
     
     iterable_dict = {}
     for org, fname in zip(org_names, link_files):
@@ -59,6 +62,7 @@ def compare_linkages(link_files, org_names, outfiles):
     
     for prots, outdict in get_prot_overlaps(iterable_dict):
         counter = Counter()
+        print prots
         for org, rows in sorted(outdict.items()):
             for row in rows:
                 complex_writer.writerow(row)
