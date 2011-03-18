@@ -320,7 +320,7 @@ if __name__ == '__main__':
     elif args.link:
         ruffus.pipeline_run([merge_linkages], logger = my_ruffus_logger, multiprocess = args.workers)
     elif args.compare:
-        ruffus.pipeline_run([compare_linkages], logger = my_ruffus_logger, multiprocess = args.workers)
+        ruffus.pipeline_run([compare_genomes], logger = my_ruffus_logger, multiprocess = args.workers)
     else:
         ruffus.pipeline_run([top_function], logger = my_ruffus_logger, multiprocess = args.workers)
 
