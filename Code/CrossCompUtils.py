@@ -2,7 +2,13 @@ import csv
 from functools import partial
 from operator import itemgetter
 from itertools import *
-from collections import Counter
+
+try:
+    from collections import Counter
+except ImportError:
+    from collections import defaultdict
+    Counter = partial(defaultdict, int)
+        
 
 
 def linkage_iter(link_file, organism):
