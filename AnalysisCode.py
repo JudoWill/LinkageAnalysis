@@ -31,7 +31,7 @@ WIDTHS = range(1,5)
 SUBTYPE = None
 MIN_SEQS = 20
 MIN_OVERLAP = 20
-SPECIES_FILE = 'BacterialData/BacterialProcessing.yaml'
+SPECIES_FILE = 'HCVSeqs/HCVProcessing.yaml'
 
 def touch(fname, times = None):
     with file(fname, 'a'):
@@ -40,7 +40,7 @@ def touch(fname, times = None):
 @ruffus.files(SPECIES_FILE, SPECIES_FILE + '.sen')
 def make_dirs(ifile, ofile):
     """Make all directories in the species list."""
-    
+
     for species in SPECIES_LIST:
         for field, val in species.items():
             if field.endswith('Dir'):
@@ -86,8 +86,9 @@ def align_gen():
                     yield ifile, ofiles
 
 
+@ruffus.jobs_limit(1)
 @ruffus.files(align_gen)
-@ruffus.follows('download_data')
+@ruffus.follows('download_data', 'make_dirs')
 def make_alignments(in_file, out_files):
     run_muscle(in_file, out_files[0])
     fasta2aln(out_files[0], out_files[1])
