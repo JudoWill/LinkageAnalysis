@@ -597,7 +597,7 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
                             'This-Score': 0,
                             'P-val':None})
                 #print 'few %(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i' % loc
-                writer.writerow(loc)
+                #writer.writerow(loc)
                 continue
                           
             s1, m1 = slice1.get_signal(seqs)
@@ -618,7 +618,7 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
                                 'Total-Num':'too conserved',
                                 'This-Score': 0,
                                 'P-val':None})
-                writer.writerow(loc)
+                #writer.writerow(loc)
                 #print 'conserved %(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i' % loc
                 if any([x/len(s1) > cons_cut for x in c1.values()]):
                     source_skip.add((loc['Source-Start'], loc['Source-End']))
