@@ -1,0 +1,23 @@
+- {
+SpeciesName: SubtypeB,
+DownloadDir: HIVData/SubtypeB/RawDL/,
+SequenceDir: HIVData/SubtypeB/Sequences/,
+AlignmentDir: HIVData/SubtypeB/Alignments/,
+LinkageDir: HIVData/SubtypeB/LinkageResults/,
+CircosDir: HIVData/SubtypeB/CircosDir/,
+OVERLAP: 500,
+WIDTHS: [1,2,3,4,5],
+DOWNLOAD: false,
+}
+- {
+SpeciesName: Any,
+DownloadDir: HIVData/Any/RawDL/,
+SequenceDir: HIVData/Any/Sequences/,
+AlignmentDir: HIVData/Any/Alignments/,
+LinkageDir: HIVData/Any/LinkageResults/,
+CircosDir: HIVData/Any/CircosDir/,
+OVERLAP: 500,
+WIDTHS: [1,2,3,4,5],
+DOWNLOAD: false,
+}
+
