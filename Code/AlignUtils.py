@@ -334,8 +334,9 @@ def run_muscle(filename, out_align, MAX_MEM = 1500):
 
     info = {'ifile':filename,
             'ofile':tfasta,
-            'maxmem':MAX_MEM}
-    cmd = 'muscle -in %(ifile)s -out %(ofile)s -maxmb %(maxmem)i'
+            'maxmem':MAX_MEM,
+            'maxhours':1}
+    cmd = 'muscle -in %(ifile)s -out %(ofile)s -maxmb %(maxmem)i -maxhours %(maxhours)i'
     args = shlex.split(cmd % info)
     call(args)
 
