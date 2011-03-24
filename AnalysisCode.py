@@ -31,7 +31,7 @@ WIDTHS = range(1,5)
 SUBTYPE = None
 MIN_SEQS = 20
 MIN_OVERLAP = 20
-SPECIES_FILE = 'HCVSeqs/HCVProcessing.yaml'
+SPECIES_FILE = 'HIVData/HIVProcessing.yaml'
 
 def touch(fname, times = None):
     with file(fname, 'a'):
