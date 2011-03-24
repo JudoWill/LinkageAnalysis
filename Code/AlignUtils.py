@@ -73,7 +73,10 @@ class Alignment():
 
         for key in valid_keys:
             self.seqs[key] += newaln.seqs[key]
-            
+
+        self.width = len(self.seqs.values()[0])
+        self._process_seq_nums()
+
 
     def get_slice(self, start, stop, MIN_NUM = 2):
         """Return a slice of an alignment.
