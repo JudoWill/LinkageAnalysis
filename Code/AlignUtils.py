@@ -77,6 +77,15 @@ class Alignment():
         self.width = len(self.seqs.values()[0])
         self._process_seq_nums()
 
+    def write_phylip(self, fname):
+        """Writes a phylip formatted alignment file"""
+
+        with open(fname, 'w') as handle:
+            handle.write('%i %i\n' % (len(self.seqs), self.width))
+
+            for key, seq in self.seqs.items():
+                handle.write('%s%s\n' % (key[:10].ljust(10), seq))
+
 
     def get_slice(self, start, stop, MIN_NUM = 2):
         """Return a slice of an alignment.
