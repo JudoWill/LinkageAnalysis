@@ -62,6 +62,19 @@ class Alignment():
         for group in zip(*self.seqs.values()):
             self.seq_nums.append(len(set(group)))
 
+    def append_alignment(self, newaln):
+        """Appends a new alignment onto this one. Removes all keys not present in both."""
+        
+        valid_keys = set(self.seqs.keys()) & set(newaln.seqs.keys())
+
+        rmkeys = set(self.seqs.keys()) - valid_keys
+        for key in rmkeys:
+            self.seqs.pop(key)
+
+        for key in valid_keys:
+            self.seqs[key] += newaln.seqs[key]
+            
+
     def get_slice(self, start, stop, MIN_NUM = 2):
         """Return a slice of an alignment.
 
