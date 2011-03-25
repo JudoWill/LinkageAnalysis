@@ -25,11 +25,14 @@ def run_phylip(direc, progtype, input_args = ['y'], capture_output = False,
             raise TypeError, 'Unrecognized phylip program: %s' % progtype
 
         if clean_direc:
-            for f in outs:
+            for f in rmfiles:
                 try:
                     os.remove(f)
                 except OSError:
                     pass
+
+        if not any([os.path.exists(x) for x in check_files])
+            raise OSError, 'Could not find any input files!'
         
         if capture_output:
             out = open('screenout', 'w')
