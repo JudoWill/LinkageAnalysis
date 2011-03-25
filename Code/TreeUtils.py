@@ -17,6 +17,14 @@ def run_proml(direc, input_args = ['Y'], capture_output = False,
 
         with open('input', 'w') as handle:
             handle.write('\n'.join(input_args))
+        
+        if clean_direc:
+            outs = ('outfile', 'outtree')
+            for f in outs:
+                try:
+                    os.remove(f)
+                except OSError:
+                    pass
 
         cmd = 'phylip proml < input'
         if capture_output:
