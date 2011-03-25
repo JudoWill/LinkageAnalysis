@@ -212,9 +212,26 @@ def tree_merge(ifiles, ofiles):
                 ohandle.write(handle.read())
     touch(ofiles[1])
     
+
+def merged_trees():
+
+    for species in SPECIES_LIST:
+        if 'TreeDir' in species:
+            dfun = partial(os.path.join, species['TreeDir'])
+            mergedtree = dfun('intree')
+            tsfile = dfun('intree.sen')                
+            otree = dfun('outtree')
+            osfile = dfun('outtree.sen')
+            direc = dfun('')
+
+            yield (mergedtree, tsfile), (otree, osfile), direc
     
+@ruffus.files(merged_trees)
+@ruffus.follows('tree_merge')
+def cons_tree(ifiles, ofiles, direc):
     
-                
+    run_consense(direc)
+    touch(ofiles[0]
 
 
 @ruffus.files(align_pairs)
