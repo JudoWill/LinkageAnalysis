@@ -10,6 +10,7 @@ from operator import itemgetter, ne, eq
 import csv, tempfile, shutil
 from functools import partial
 import os.path, os
+from collections import defaultdict
 
 try:
     from memorised.decorators import memorise
@@ -33,6 +34,19 @@ except ImportError:
         def __get__(self, obj, objtype):
             return partial(self.__call__, obj)
         
+
+def calculate_entropy(seq):
+    """calculates the Shannon Entropy of any sequence."""
+
+    counts = defaultdict(int)
+    for v in seq:
+        counts[v] += 1
+
+    ent = 0.0    
+    for val in counts.values():
+        ent += (val/len(seq))*log(val/len(seq))
+
+    return ent
 
 class Alignment():
     """A container for holding multiple alignments."""
