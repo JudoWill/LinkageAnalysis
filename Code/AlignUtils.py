@@ -5,7 +5,7 @@ from subprocess import call
 import shlex
 from itertools import groupby, product, dropwhile, imap, izip, count
 from math import log
-from random import shuffle, sample
+from random import shuffle, sample, randint
 from operator import itemgetter, ne, eq
 import csv, tempfile, shutil
 from functools import partial
@@ -107,6 +107,20 @@ class Alignment():
             self.seqs[key] = ''.join(getter(seq))
         self.width = len(self.seqs[key])
         self._process_seq_nums()
+
+    def bootstrap_columns(self, num_reps):
+        """Yields randomized bootstrap alignments"""
+
+        for n in xrange(num_reps):
+            inds = [randint(0, self.width-1) for x in xrange(self.width)]
+            getter = itemgetter(*inds)
+            nalign = Alignment()
+            for key, seq in self.seqs.iteritems():
+                nalign.seqs[key] = ''.join(getter(seq))
+            nalign.width = self.width
+            nalign._process_seq_nums()
+            yield nalign
+            
 
 
     def write_phylip(self, fname):
