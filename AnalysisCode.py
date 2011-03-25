@@ -180,11 +180,11 @@ def tree_run():
                 direc = dfun('tree%i' % ind)
                 yield ifile, (ofile, sfile), direc
 
-@ruffus.files(align_pairs)
+@ruffus.files(tree_run)
 @ruffus.follows('tree_split')
 def process_trees(ifile, ofiles, direc):
     
-    run_proml(direc)
+    run_phylip(direc, 'proml')
     touch(ofiles[1])
 
 def finished_trees():
@@ -230,7 +230,7 @@ def merged_trees():
 @ruffus.follows('tree_merge')
 def cons_tree(ifiles, ofiles, direc):
     
-    run_consense(direc)
+    run_phylip(direc, 'consense')
     touch(ofiles[0])
 
 
