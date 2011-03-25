@@ -137,6 +137,34 @@ def align_pairs():
                 yield (a1, a2), (d, s), widths
 
 
+def tree_splitting():
+    
+    
+    for species in SPECIES_LIST:
+        if 'TreeDir' in species:
+            afun = partial(os.path.join, species['AlignmentDir'])
+            dfun = partial(os.path.join, species['TreeDir'])
+            numstraps = species.get('Bootstraps', 100)
+            numcols = species.get('AlignmentCols', 100)
+            ofiles = []
+            for ind in xrange(numstraps):
+                safe_mkdir(dfun('tree%i' % ind))
+                ofiles.append(dfun('tree%i' % ind, 'infile'))
+            ifiles = [afun(x) for x in os.listdir(afun('')) if x.endswith('.aln')]
+            yield ifiles, ofiles, numcols
+
+@ruffus.files(tree_splitting)
+@ruffus.follows('make_alignments')
+def tree_split(ifiles, ofiles, numcols):
+    
+    bigaln = Alignment.alignment_from_file(ifiles[0])
+    for f in ifiles[1:]:
+        bigaln.append_alignment(Alignment.alignment_from_file(f))
+
+    bigaln.entropy_filter(numcols)
+    for aln, f in izip(bigaln.bootstrap_columns(len(ofiles)), ofiles):
+        aln.write_phylip(f)
+
 
 
 
