@@ -3,7 +3,7 @@ from collections import deque, defaultdict
 from GeneralUtils import *
 from subprocess import call
 import shlex
-from itertools import groupby, product, dropwhile, imap
+from itertools import groupby, product, dropwhile, imap, izip, count
 from math import log
 from random import shuffle, sample
 from operator import itemgetter, ne, eq
@@ -90,6 +90,24 @@ class Alignment():
 
         self.width = len(self.seqs.values()[0])
         self._process_seq_nums()
+
+    def entropy_filter(self, topN, allowed_gaps = 0):
+        """Filters out all but the topN entropy sequences."""
+
+        entropies = []
+        for group, ind in izip(zip(*self.seqs.values()), count(0)):
+            if sum([x == '-' for x in group]) <= allowed_gaps:
+                entropies.append((ind, calculate_entropy(group)))
+        
+        scols = sorted(entropies, key = itemgetter(1), reverse = False)
+        wanted_cols = sorted([x for x, _ in scols[:topN]])
+        getter = itemgetter(*wanted_cols)
+        
+        for key, seq in self.seqs.items():
+            self.seqs[key] = ''.join(getter(seq))
+        self.width = len(self.seqs[key])
+        self._process_seq_nums()
+
 
     def write_phylip(self, fname):
         """Writes a phylip formatted alignment file"""
