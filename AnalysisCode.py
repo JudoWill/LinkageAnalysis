@@ -186,6 +186,34 @@ def process_trees(ifile, ofiles, direc):
     
     run_proml(direc)
     touch(ofiles[1])
+
+def finished_trees():
+
+    for species in SPECIES_LIST:
+        if 'TreeDir' in species:
+            dfun = partial(os.path.join, species['TreeDir'])
+            numstraps = species.get('Bootstraps', 100)
+            ifiles = []
+            mergedtree = dfun('intree')
+            osfile = dfun('intree.sen')                
+            for ind in xrange(numstraps):
+                ifiles.append(dfun('tree%i' % ind, 'outtree'))
+                ifiles.append(dfun('tree%i' % ind, 'process.sen'))
+            yield ifiles, (mergedtree, osfile)
+
+@ruffus.files(finished_trees)
+@ruffus.follows('process_trees')
+def tree_merge(ifiles, ofiles):
+    
+    with open(ofiles[0], 'w') as ohandle:
+        treefiles = [x for x in ifiles if x.endswith('outtree')]
+        for f in treefiles:
+            with open(f) as handle:
+                ohandle.write(handle.read())
+    touch(ofiles[1])
+    
+    
+    
                 
 
 
