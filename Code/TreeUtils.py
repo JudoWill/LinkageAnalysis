@@ -12,7 +12,9 @@ def run_phylip(direc, progtype, input_args = ['y'], capture_output = False,
     """Runs the phylip suite of programs"""
 
     with pushd(direc):
-        inbuf = StringIO('\n'.join(input_args+['']))
+        with open('input', 'w') as handle:
+            handle.write('\n'.join(input_args+['']))
+        inbuf = open('input')
         if progtype == 'proml':
             check_files = ('infile', input_args[0])
             rmfiles = ('outfile', 'outtree')
@@ -31,7 +33,7 @@ def run_phylip(direc, progtype, input_args = ['y'], capture_output = False,
                 except OSError:
                     pass
 
-        if not any([os.path.exists(x) for x in check_files])
+        if not any([os.path.exists(x) for x in check_files]):
             raise OSError, 'Could not find any input files!'
         
         if capture_output:
