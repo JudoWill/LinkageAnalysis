@@ -13,7 +13,7 @@ def run_proml(direc, input_args = ['Y'], capture_output = False,
         #make sure file is there
         fpresent = os.path.exists('infile') or os.path.exists(input_args[0].strip())
         if not fpresent:
-            rasie IOError, 'Could not find input file!'
+            raise IOError, 'Could not find input file!'
 
         with open('input', 'w') as handle:
             handle.write('\n'.join(input_args))
@@ -43,7 +43,7 @@ def run_consense(direc, input_args = ['Y'], capture_output = False,
         #make sure file is there
         fpresent = os.path.exists('intree') or os.path.exists(input_args[0].strip())
         if not fpresent:
-            rasie IOError, 'Could not find input file!'
+            raise IOError, 'Could not find input file!'
 
         with open('input', 'w') as handle:
             handle.write('\n'.join(input_args))
