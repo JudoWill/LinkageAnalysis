@@ -231,7 +231,7 @@ def merged_trees():
 def cons_tree(ifiles, ofiles, direc):
     
     run_consense(direc)
-    touch(ofiles[0]
+    touch(ofiles[0])
 
 
 @ruffus.files(align_pairs)
