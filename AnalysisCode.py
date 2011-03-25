@@ -12,6 +12,7 @@ from Code.AlignUtils import *
 from Code.ThreeDUtils import *
 from Code.FigureTools import *
 from Code.CrossCompUtils import *
+from Code.TreeUtils import *
 from SequenceDownload import *
 from functools import partial
 from subprocess import call, check_call
@@ -166,6 +167,26 @@ def tree_split(ifiles, ofiles, numcols):
         aln.write_phylip(f)
 
 
+def tree_run():
+
+    for species in SPECIES_LIST:
+        if 'TreeDir' in species:
+            dfun = partial(os.path.join, species['TreeDir'])
+            numstraps = species.get('Bootstraps', 100)
+            for ind in xrange(numstraps):
+                ifile = dfun('tree%i' % ind, 'infile')
+                ofile = dfun('tree%i' % ind, 'outtree')
+                sfile = dfun('tree%i' % ind, 'process.sen')
+                direc = dfun('tree%i' % ind)
+                yield ifile, (ofile, sfile), direc
+
+@ruffus.files(align_pairs)
+@ruffus.follows('tree_split')
+def process_trees(ifile, ofiles, direc):
+    
+    run_proml(direc)
+    touch(ofiles[1])
+                
 
 
 @ruffus.files(align_pairs)
