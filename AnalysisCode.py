@@ -377,6 +377,7 @@ if __name__ == '__main__':
     parser.add_argument('--parse-align', dest = 'parsealign', action = 'store_true',
                         default = False)
     parser.add_argument('--link', dest = 'link', action = 'store_true', default = False)
+    parser.add_argument('--tree', dest = 'tree', action = 'store_true', default = False)
     parser.add_argument('--align', dest = 'alignments', action = 'store_true', default = False)
     parser.add_argument('--compare', dest = 'compare', action = 'store_true', default = False)
     parser.add_argument('--scatter-lanl', dest = 'lanlscatter', action = 'store_true', default = False)
@@ -421,6 +422,8 @@ if __name__ == '__main__':
         ruffus.pipeline_run([merge_linkages], logger = my_ruffus_logger, multiprocess = args.workers)
     elif args.compare:
         ruffus.pipeline_run([compare_genomes], logger = my_ruffus_logger, multiprocess = args.workers)
+    elif args.tree:
+        ruffus.pipeline_run([cons_tree], logger = my_ruffus_logger, multiprocess = args.workers)
     else:
         ruffus.pipeline_run([top_function], logger = my_ruffus_logger, multiprocess = args.workers)
 
