@@ -1,6 +1,6 @@
 import sqlite3
 from types import ListType, TupleType
-from itertools import product
+from itertools import product, chain
 import os.path
 import hashlib
 
@@ -47,3 +47,54 @@ def need_to_do(ifiles, ofiles, *args, **kwargs):
             return True, 'Files out of date!'
     
     return False, 'All files up to date!'
+
+def adding_done_files(ifiles, ofiles):
+    """A function for adding files to the database"""
+
+    def flatten(LoL):
+        return chain.from_iterable(LoL)
+
+    ihashes = dict([(f, hexhash(f)) in ifiles])
+    ohashes = dict([(f, hexhash(f)) in ofiles])
+
+    con = sqlite3.connect('filedata.sql')
+
+    diter = product(ihashes.iteritems(), ohashes.iterkeys())
+    dstr = "delete from dep where spath=? and shash=? and dpath=?"
+    con.executemany(dstr, flatten(diter))
+
+    iiter = product(ihashes.iteritems(), ohashes.iteritems())
+    istr = "insert into dep values (?,?,?,?)"
+    con.executemany(istr, flatten(iiter))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
