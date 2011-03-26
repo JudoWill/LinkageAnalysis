@@ -69,7 +69,11 @@ def adding_done_files(ifiles, ofiles):
 
 
 
-
+def create_filedatabase():
+    
+    if not os.path.exists('filedata.sql'):
+        con = sqlite3.connect('filedata.sql')
+        con.execute('create table dep (spath text, shash text, dpath text, dhash text)')
 
 
 
