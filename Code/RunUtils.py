@@ -50,7 +50,7 @@ def need_to_do(ifiles, ofiles, *args, **kwargs):
     
     return False, 'All files up to date!'
 
-def adding_done_files(ifiles, ofiles):
+def add_complete_files(ifiles, ofiles):
     """A function for adding files to the database"""
 
     def del_gen(ihashes, ohashes):
