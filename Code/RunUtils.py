@@ -16,7 +16,7 @@ def hexhash(path):
     return m.hexdigest()
 
 
-def need_to_do(ifiles, ofiles, *args, **kwargs):
+def need_to_do(fname, ifiles, ofiles, *args, **kwargs):
     """Checks whether the files need to be updated."""
 
     ohashes = {}
@@ -39,10 +39,10 @@ def need_to_do(ifiles, ofiles, *args, **kwargs):
         ihashes[ifiles] = hexhash(ifiles)
 
     con = sqlite3.connect('filedata.sql')
-    stri = "select * from dep where spath=? and shash=? and dpath=? and dhash=?"
+    stri = "select * from dep where fname=? and spath=? and shash=? and dpath=? and dhash=?"
     iterable = product(ihashes.iteritems(), ohashes.iteritems())
     for (spath, shash), (dpath, dhash) in iterable:
-        rows = con.execute(stri, (spath, shash, dpath, dhash))
+        rows = con.execute(stri, (fname, spath, shash, dpath, dhash))
         r = rows.fetchone()
         print r
         if r is None:
@@ -50,27 +50,27 @@ def need_to_do(ifiles, ofiles, *args, **kwargs):
     
     return False, 'All files up to date!'
 
-def add_complete_files(ifiles, ofiles):
+def add_complete_files(fname, ifiles, ofiles):
     """A function for adding files to the database"""
 
-    def del_gen(ihashes, ohashes):
+    def del_gen(fname, ihashes, ohashes):
         for (ip, ih), op in product(ihashes.iteritems(), ohashes.iterkeys()):
-            yield (ip, ih, op)
+            yield (fname, ip, ih, op)
 
-    def in_gen(ihashes, ohashes):
+    def in_gen(fname, ihashes, ohashes):
         for (ip, ih), (op, oh) in product(ihashes.iteritems(), ohashes.iteritems()):
-            yield (ip, ih, op, oh)
+            yield (fname, ip, ih, op, oh)
 
     ihashes = dict([(x, hexhash(x)) for x in ifiles])
     ohashes = dict([(x, hexhash(x)) for x in ofiles])
 
     con = sqlite3.connect('filedata.sql')
 
-    dstr = "delete from dep where spath=? and shash=? and dpath=?"
-    con.executemany(dstr, del_gen(ihashes, ohashes))
+    dstr = "delete from dep where fname=? and spath=? and shash=? and dpath=?"
+    con.executemany(dstr, del_gen(fname, ihashes, ohashes))
 
-    istr = "insert into dep values (?,?,?,?)"
-    con.executemany(istr, in_gen(ihashes, ohashes))
+    istr = "insert into dep values (?,?,?,?,?)"
+    con.executemany(istr, in_gen(fname, ihashes, ohashes))
     con.commit()
     
 
@@ -79,7 +79,7 @@ def create_filedatabase():
     
     if not os.path.exists('filedata.sql'):
         con = sqlite3.connect('filedata.sql')
-        con.execute('create table dep (spath text, shash text, dpath text, dhash text)')
+        con.execute('create table dep (fname text, spath text, shash text, dpath text, dhash text)')
 
 
 
