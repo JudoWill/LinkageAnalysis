@@ -43,7 +43,9 @@ def need_to_do(ifiles, ofiles, *args, **kwargs):
     iterable = product(ihashes.iteritems(), ohashes.iteritems())
     for (spath, shash), (dpath, dhash) in iterable:
         rows = con.execute(stri, (spath, shash, dpath, dhash))
-        if rows.fetchone() is None:
+        r = rows.fetchone()
+        print r
+        if r is None:
             return True, 'Files out of date!'
     
     return False, 'All files up to date!'
@@ -51,22 +53,26 @@ def need_to_do(ifiles, ofiles, *args, **kwargs):
 def adding_done_files(ifiles, ofiles):
     """A function for adding files to the database"""
 
-    def flatten(LoL):
-        return chain.from_iterable(LoL)
+    def del_gen(ihashes, ohashes):
+        for (ip, ih), op in product(ihashes.iteritems(), ohashes.iterkeys()):
+            yield (ip, ih, op)
 
-    ihashes = dict([(f, hexhash(f)) in ifiles])
-    ohashes = dict([(f, hexhash(f)) in ofiles])
+    def in_gen(ihashes, ohashes):
+        for (ip, ih), (op, oh) in product(ihashes.iteritems(), ohashes.iteritems()):
+            yield (ip, ih, op, oh)
+
+    ihashes = dict([(x, hexhash(x)) for x in ifiles])
+    ohashes = dict([(x, hexhash(x)) for x in ofiles])
 
     con = sqlite3.connect('filedata.sql')
 
-    diter = product(ihashes.iteritems(), ohashes.iterkeys())
     dstr = "delete from dep where spath=? and shash=? and dpath=?"
-    con.executemany(dstr, flatten(diter))
+    con.executemany(dstr, del_gen(ihashes, ohashes))
 
-    iiter = product(ihashes.iteritems(), ohashes.iteritems())
     istr = "insert into dep values (?,?,?,?)"
-    con.executemany(istr, flatten(iiter))
-
+    con.executemany(istr, in_gen(ihashes, ohashes))
+    con.commit()
+    
 
 
 def create_filedatabase():
