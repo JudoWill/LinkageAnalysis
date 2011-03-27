@@ -1,15 +1,16 @@
 import sqlite3
-from types import ListType, TupleType
+from types import ListType, TupleType, StringType
 from itertools import product, chain, repeat
 from functools import partial
 from collections import defaultdict
-from operator import contains
+from operator import contains, itemgetter
 import os.path, os
 import hashlib, yaml
-from GeneralUtils import safe_mkdir
+from GeneralUtils import safe_mkdir, take
 from AlignUtils import Alignment
+from memorised.decorators import memorise
 
-
+@memorise()
 def hexhash(path):
     """Returns the md5 hexhash of the file at the path."""
 
@@ -58,8 +59,8 @@ def add_complete_files(fname, ifiles, ofiles):
     """A function for adding files to the database"""
 
     def del_gen(fname, ihashes, ohashes):
-        for (ip, ih), op in product(ihashes.iteritems(), ohashes.iterkeys()):
-            yield (fname, ip, ih, op)
+        for ip, op in product(ihashes.iterkeys(), ohashes.iterkeys()):
+            yield (fname, ip, op)
 
     def in_gen(fname, ihashes, ohashes):
         for (ip, ih), (op, oh) in product(ihashes.iteritems(), ohashes.iteritems()):
@@ -70,7 +71,7 @@ def add_complete_files(fname, ifiles, ofiles):
 
     con = sqlite3.connect('filedata.sql')
 
-    dstr = "delete from dep where fname=? and spath=? and shash=? and dpath=?"
+    dstr = "delete from dep where fname=? and spath=? and dpath=?"
     con.executemany(dstr, del_gen(fname, ihashes, ohashes))
 
     istr = "insert into dep values (?,?,?,?,?)"
@@ -128,7 +129,7 @@ def FileIter(species_file, funcname):
         if funcname == 'alignments':
             seqdir = partial(os.path.join, species['SequenceDir'])
             aligndir = partial(os.path.join, species['AlignmentDir'])
-            for f in os.listdir(seqdir('')):
+            for f in sorted(os.listdir(seqdir(''))):
                 name = f.split('.')[0]
                 ifile = seqdir(f)
                 ofiles = [aligndir(name+'.aln.fasta'),
@@ -176,9 +177,9 @@ def FileIter(species_file, funcname):
         elif funcname == 'tree_merge':
             treedir = partial(os.path.join, species['TreeDir'])
             numstraps = species.get('Bootstraps', 100)
-            ifiles = [treedir('tree%i' % x) for x in xrange(numstraps)]
+            ifiles = [treedir('tree%i' % x, 'outtree') for x in xrange(numstraps)]
             mergedtree = treedir('intree')
-            yield ifiles, (mergedtree, osfile)
+            yield ifiles, mergedtree
 
         elif funcname == 'linkage_merge':
             linkdir = partial(os.path.join, species['LinkageDir'])
@@ -190,9 +191,44 @@ def FileIter(species_file, funcname):
 
             yield ifiles, ofiles
 
-                
 
 
+def mark_present_as_correct(species_file, need_delete = False, block_size = 10000):
+    """A utility function for marking all present files as "correct" """
+
+    def group_iter(species_file):
+        fnames = ('alignments', 'align_pairs', 'tree_splitting', 'tree_run',
+                   'tree_merge', 'linkage_merge')
+
+        for name in fnames:
+            for tup in FileIter(species_file, name):
+                ifiles = tup[0]
+                ofiles = tup[1]
+                if type(ifiles) == StringType:
+                    ifiles = [ifiles]
+                if type(ofiles) == StringType:
+                    ofiles = [ofiles]
+                pfiles = [os.path.exists(x) for x in chain(ifiles, ofiles)]
+                if all(pfiles):
+                    print 'marking', ifiles, ofiles, name
+                    for ifile, ofile in product(ifiles, ofiles):
+                        yield name, ifile, hexhash(ifile), ofile, hexhash(ofile)
+
+    con = sqlite3.connect('filedata.sql')
+    dstr = "delete from dep where fname=? and spath=? and dpath=?"
+    istr = "insert into dep values (?,?,?,?,?)"
+    dgetter = itemgetter(0, 1, 3)
+    iterable = group_iter(species_file)
+    block = take(block_size, iterable)
+    while block:
+        
+        if need_delete:
+            con.executemany(dstr, map(dgetter, block))            
+
+        con.executemany(istr, block)
+        con.commit()
+       
+        block = take(block_size, iterable)
 
 
 
