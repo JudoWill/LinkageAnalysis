@@ -13,6 +13,7 @@ from Code.ThreeDUtils import *
 from Code.FigureTools import *
 from Code.CrossCompUtils import *
 from Code.TreeUtils import *
+from Code.RunUtils import *
 from SequenceDownload import *
 from functools import partial
 from subprocess import call, check_call
@@ -70,91 +71,18 @@ def download_data(ifile, ofile):
     touch(ofile)
     
 
-              
-def align_gen():
-    """Takes the generates the files which need to be aligned."""
-
-    for species in SPECIES_LIST:
-        if 'SequenceDir' in species and 'AlignmentDir' in species:
-            seqdir = partial(os.path.join, species['SequenceDir'])
-            aligndir = partial(os.path.join, species['AlignmentDir'])
-            for f in os.listdir(species['SequenceDir']):
-                if f.endswith('.fasta'):
-                    name = f.split('.')[0]
-                    ifile = seqdir(f)
-                    ofiles = [aligndir(name+'.aln.fasta'), 
-                                aligndir(name+'.aln')]
-                    yield ifile, ofiles
-
-
 @ruffus.jobs_limit(1)
-@ruffus.files(align_gen)
+@ruffus.files(partial(FileGen, 'alignments'))
+@ruffus.check_if_uptodate(partial(need_to_do, 'alignments'))
 @ruffus.follows('download_data', 'make_dirs')
 def make_alignments(in_file, out_files):
     run_muscle(in_file, out_files[0])
     fasta2aln(out_files[0], out_files[1])
-
-def align_pairs():
-    """Yields pairs alignments for linkages."""
-
-    def get_aligns(align_direc):
-        """Gets the alignments present in the directory."""
-
-        aligns = []
-        for f in os.listdir(align_direc):
-            if f.endswith('.aln'):
-                aligns.append(f.split('.')[0])
-        return aligns
-
-    def get_ids_dict(align_direc):
-        """Gets the IDS for each alignment in a directory."""
-        
-        aligndir = partial(os.path.join, align_direc)
-        id_dict = defaultdict(set)
-        for f in os.listdir(align_direc):
-            if f.endswith('.aln'):
-                aln = Alignment.alignment_from_file(aligndir(f))
-                id_dict[f.split('.')[0]] = set(aln.seqs.keys())
-        return id_dict
-    
+    add_complete_files('alignments', [in_file], out_files)
 
 
-    for species in SPECIES_LIST:
-        aligndir = partial(os.path.join, species['AlignmentDir'])
-        linkagedir = partial(os.path.join, species['LinkageDir'])
-        aligns_present = get_aligns(species['AlignmentDir'])
-        align_ids = get_ids_dict(species['AlignmentDir'])
-        widths = WIDTHS or species.get('WIDTHS', range(1,5))
-
-        for p1, p2 in product(sorted(aligns_present), repeat = 2):
-            print p1, p2, len(align_ids[p1] & align_ids[p2]), species.get('OVERLAP', 5)
-            if len(align_ids[p1] & align_ids[p2]) > species.get('OVERLAP', 5):
-                a1 = aligndir(p1 + '.aln')
-                a2 = aligndir(p2 + '.aln')
-
-                d = linkagedir(p1 + '--' + p2 + '.res')
-                s = linkagedir(p1 + '--' + p2 + '.sen')
-            
-                yield (a1, a2), (d, s), widths
-
-
-def tree_splitting():
-    
-    
-    for species in SPECIES_LIST:
-        if 'TreeDir' in species:
-            afun = partial(os.path.join, species['AlignmentDir'])
-            dfun = partial(os.path.join, species['TreeDir'])
-            numstraps = species.get('Bootstraps', 100)
-            numcols = species.get('AlignmentCols', 100)
-            ofiles = []
-            for ind in xrange(numstraps):
-                safe_mkdir(dfun('tree%i' % ind))
-                ofiles.append(dfun('tree%i' % ind, 'infile'))
-            ifiles = [afun(x) for x in os.listdir(afun('')) if x.endswith('.aln')]
-            yield ifiles, ofiles, numcols
-
-@ruffus.files(tree_splitting)
+@ruffus.files(partial(FileGen, 'tree_splitting'))
+@ruffus.check_if_uptodate(partial(need_to_do, 'tree_splitting'))
 @ruffus.follows('make_alignments')
 def tree_split(ifiles, ofiles, numcols):
     
@@ -166,99 +94,55 @@ def tree_split(ifiles, ofiles, numcols):
     for aln, f in izip(bigaln.bootstrap_columns(len(ofiles)), ofiles):
         aln.write_phylip(f)
 
+    add_complete_files('tree_splitting', ifiles, ofiles)
 
-def tree_run():
 
-    for species in SPECIES_LIST:
-        if 'TreeDir' in species:
-            dfun = partial(os.path.join, species['TreeDir'])
-            numstraps = species.get('Bootstraps', 100)
-            for ind in xrange(numstraps):
-                ifile = dfun('tree%i' % ind, 'infile')
-                ofile = dfun('tree%i' % ind, 'outtree')
-                sfile = dfun('tree%i' % ind, 'process.sen')
-                direc = dfun('tree%i' % ind)
-                yield ifile, (ofile, sfile), direc
-
-@ruffus.files(tree_run)
+@ruffus.files(partial(FileGen, 'tree_run'))
+@ruffus.check_if_uptodate(partial(need_to_do, 'tree_run'))
 @ruffus.follows('tree_split')
-def process_trees(ifile, ofiles, direc):
+def process_trees(ifile, ofile, direc):
     
     run_phylip(direc, 'proml')
-    touch(ofiles[1])
+    add_complete_files('tree_run', [ifile], [ofile])
 
-def finished_trees():
-
-    for species in SPECIES_LIST:
-        if 'TreeDir' in species:
-            dfun = partial(os.path.join, species['TreeDir'])
-            numstraps = species.get('Bootstraps', 100)
-            ifiles = []
-            mergedtree = dfun('intree')
-            osfile = dfun('intree.sen')                
-            for ind in xrange(numstraps):
-                ifiles.append(dfun('tree%i' % ind, 'outtree'))
-                ifiles.append(dfun('tree%i' % ind, 'process.sen'))
-            yield ifiles, (mergedtree, osfile)
-
-@ruffus.files(finished_trees)
+@ruffus.files(partial(FileGen, 'tree_merge'))
+@ruffus.check_if_uptodate(partial(need_to_do, 'tree_merge'))
 @ruffus.follows('process_trees')
-def tree_merge(ifiles, ofiles):
+def tree_merge(ifiles, ofile):
     
     with open(ofiles[0], 'w') as ohandle:
         treefiles = [x for x in ifiles if x.endswith('outtree')]
         for f in treefiles:
             with open(f) as handle:
                 ohandle.write(handle.read())
-    touch(ofiles[1])
+    add_complete_files('tree_merge', ifiles, [ofile])
     
 
-def merged_trees():
-
-    for species in SPECIES_LIST:
-        if 'TreeDir' in species:
-            dfun = partial(os.path.join, species['TreeDir'])
-            mergedtree = dfun('intree')
-            tsfile = dfun('intree.sen')                
-            otree = dfun('outtree')
-            osfile = dfun('outtree.sen')
-            direc = dfun('')
-
-            yield (mergedtree, tsfile), (otree, osfile), direc
-    
-@ruffus.files(merged_trees)
+@ruffus.files(partial(FileGen, 'tree_cons'))
+@ruffus.check_if_uptodate(partial(need_to_do, 'tree_cons'))
 @ruffus.follows('tree_merge')
-def cons_tree(ifiles, ofiles, direc):
+def cons_tree(ifile, ofile, direc):
     
     run_phylip(direc, 'consense')
-    touch(ofiles[0])
+    add_complete_files('tree_cons', [ifile], [ofile])
 
-
-@ruffus.files(align_pairs)
+@ruffus.files(partial(FileGen, 'align_pairs'))
+@ruffus.check_if_uptodate(partial(need_to_do, 'align_pairs'))
 @ruffus.follows('make_alignments')
-def calculate_linkages(in_files, out_files, widths):
+def calculate_linkages(in_files, out_file, widths):
     print in_files
-    PredictionAnalysis(in_files[0], in_files[1], out_files[0], 
+    PredictionAnalysis(in_files[0], in_files[1], out_files, 
                         same = in_files[0] == in_files[1],
                         widths = widths)
-    touch(out_files[1])
+    add_complete_files('align_pairs', in_files, [out_files])
 
-def linkage_merge():
-    
-    for species in SPECIES_LIST:
-        circosdir = partial(os.path.join, species['CircosDir'])
-        linkagedir = partial(os.path.join, species['LinkageDir'])
-        
-        ifiles = [linkagedir(x) for x in os.listdir(linkage_dir(''))]
-        ofiles = [circosdir('FullAggregatedData.txt'),
-                    circosdir('ShortAggregatedData.txt')]
-        yield ifiles, ofiles
-
-@ruffus.files(linkage_merge)
+@ruffus.files(partial(FileGen, 'linkage_merge'))
+@ruffus.check_if_uptodate(partial(need_to_do, 'linkage_merge'))
 @ruffus.follows('calculate_linkages')
 def merge_linkages(infiles, ofiles):
     
     AggregateLinkageData(infiles, ofiles[0], ofiles[1])
+    add_complete_files('linkage_merge', infiles, ofiles)
 
 def linkage_summarize():
     
@@ -384,48 +268,31 @@ if __name__ == '__main__':
     parser.add_argument('--circos-lanl', dest = 'lanlcircos', action = 'store_true', default = False)
 
 
-
-
     args = parser.parse_args()
     SPECIES_FILE = args.processfile
-
-    with open(SPECIES_FILE) as handle:
-        SPECIES_LIST = yaml.load(handle)
-
-
-    my_ruffus_logger = logging.getLogger('My_Ruffus_logger')
-    my_ruffus_logger.setLevel(logging.INFO)
-    
-    fhandler = logging.handlers.RotatingFileHandler(LOG_BASE)
-    my_ruffus_logger.addHandler(fhandler)
-    
-    if not args.quiet:
-        shandler = logging.StreamHandler()
-        my_ruffus_logger.addHandler(shandler)
-    
     
     DATA_DIR = args.datadir
 
-    if args.fresh:
-        touch_data()
-        FORCE_NEW = True
     WIDTHS = range(1, args.maxwidth+1)
     print WIDTHS
 
+    FileGen = partial(FileIter, SPECIES_FILE)
+
+
     if args.lanlscatter:
-        ruffus.pipeline_run([slice_scatters], logger = my_ruffus_logger, multiprocess = args.workers)
+        ruffus.pipeline_run([slice_scatters], multiprocess = args.workers)
     elif args.lanlcircos:
-        ruffus.pipeline_run([circos_figs], logger = my_ruffus_logger)        
+        ruffus.pipeline_run([circos_figs])        
     elif args.alignments:
-        ruffus.pipeline_run([make_alignments], logger = my_ruffus_logger, multiprocess = args.workers)        
+        ruffus.pipeline_run([make_alignments], multiprocess = args.workers)        
     elif args.link:
-        ruffus.pipeline_run([merge_linkages], logger = my_ruffus_logger, multiprocess = args.workers)
+        ruffus.pipeline_run([merge_linkages], multiprocess = args.workers)
     elif args.compare:
-        ruffus.pipeline_run([compare_genomes], logger = my_ruffus_logger, multiprocess = args.workers)
+        ruffus.pipeline_run([compare_genomes], multiprocess = args.workers)
     elif args.tree:
-        ruffus.pipeline_run([cons_tree], logger = my_ruffus_logger, multiprocess = args.workers)
+        ruffus.pipeline_run([cons_tree], multiprocess = args.workers)
     else:
-        ruffus.pipeline_run([top_function], logger = my_ruffus_logger, multiprocess = args.workers)
+        ruffus.pipeline_run([top_function], multiprocess = args.workers)
 
 
 
