@@ -1,9 +1,13 @@
 import sqlite3
 from types import ListType, TupleType
-from itertools import product, chain
-import os.path
-import hashlib
-
+from itertools import product, chain, repeat
+from functools import partial
+from collections import defaultdict
+from operator import contains
+import os.path, os
+import hashlib, yaml
+from GeneralUtils import safe_mkdir
+from AlignUtils import Alignment
 
 
 def hexhash(path):
@@ -82,24 +86,111 @@ def create_filedatabase():
         con.execute('create table dep (fname text, spath text, shash text, dpath text, dhash text)')
 
 
+def get_ids_dict(align_direc):
+    """Gets the IDS for each alignment in a directory."""
+    
+    aligndir = partial(os.path.join, align_direc)
+    id_dict = defaultdict(set)
+    for f in os.listdir(align_direc):
+        if f.endswith('.aln'):
+            aln = Alignment.alignment_from_file(aligndir(f))
+            id_dict[f.split('.')[0]] = set(aln.seqs.keys())
+    return id_dict
 
 
+def check_fields(species, fields):
+    """Checks to make sure the fields are present"""
 
+    for f in fields:
+        if f not in species:
+            return False
+    return True
 
+def FileIter(species_file, funcname):
+    """A large iterator for all functions in AnalysisCode"""
 
+    with open(species_file) as handle:
+        SPECIES_LIST = yaml.load(handle)
 
+    field_dict = {'alignments':('AlignmentDir', 'LinkageDir'),
+                'align_pairs':('AlignmentDir', 'LinkageDir'),
+                'tree_splitting':('TreeDir', 'AlignmentDir'),
+                'tree_run':('TreeDir',),
+                'tree_merge':('TreeDir',),
+                'linkage_merge':('LinkageDir', 'CircosDir'),
+                'compare_genomes':('CircosDir', 'ComparingGenomes')
+            }
 
+    for species in SPECIES_LIST:
+        if not check_fields(species, field_dict[funcname]):
+            continue
 
+        if funcname == 'alignments':
+            seqdir = partial(os.path.join, species['SequenceDir'])
+            aligndir = partial(os.path.join, species['AlignmentDir'])
+            for f in os.listdir(seqdir('')):
+                name = f.split('.')[0]
+                ifile = seqdir(f)
+                ofiles = [aligndir(name+'.aln.fasta'),
+                            aligndir(name+'.aln')]
+                yield ifile, ofiles
 
+        elif funcname == 'align_pairs':
+            aligndir = partial(os.path.join, species['AlignmentDir'])
+            linkdir = partial(os.path.join, species['LinkageDir'])
+            aligns = [x.split('.')[0] for x in os.listdir(aligndir('')) if x.endswith('.aln')]
+            align_ids = get_ids_dict(aligndir(''))
+            overlap = species.get('OVERLAP', 5)
+            widths = species.get('WIDTHS', range(1,5))
+            for p1, p2 in product(sorted(aligns), repeat = 2):
+                if len(align_ids[p1] & align_ids[p2]) >= overlap:
+                    a1 = aligndir(p1 + '.aln')
+                    a2 = aligndir(p2 + '.aln')
+                    d = linkdir(p1 + '--' + p2 + '.res')
+                
+                    yield (a1, a2), (d, ), widths                        
 
+        elif funcname == 'tree_splitting':
+            aligndir = partial(os.path.join, species['AlignmentDir'])
+            treedir = partial(os.path.join, species['TreeDir'])
+            numstraps = species.get('Bootstraps', 100)
+            numcols = species.get('AlignmentCols', 100)
+            ofiles = []
 
+            for ind in xrange(numstraps):
+                safe_mkdir(treedir('tree%i' % ind))
+                ofiles.append(treedir('tree%i' % ind, 'infile'))
+            ifiles = [aligndir(x) for x in os.listdir(aligndir('')) if x.endswith('.aln')]
+            
+            yield ifiles, ofiles, numcols
 
+        elif funcname == 'tree_run':
+            treedir = partial(os.path.join, species['TreeDir'])
+            numstraps = species.get('Bootstraps', 100)
+            for ind in xrange(numstraps):
+                ifile = treedir('tree%i' % ind, 'infile')
+                ofile = treedir('tree%i' % ind, 'outtree')
+                direc = treedir('tree%i' % ind)
+                yield ifile, ofile, direc
 
+        elif funcname == 'tree_merge':
+            treedir = partial(os.path.join, species['TreeDir'])
+            numstraps = species.get('Bootstraps', 100)
+            ifiles = [treedir('tree%i' % x) for x in xrange(numstraps)]
+            mergedtree = treedir('intree')
+            yield ifiles, (mergedtree, osfile)
 
+        elif funcname == 'linkage_merge':
+            linkdir = partial(os.path.join, species['LinkageDir'])
+            cirdir = partial(os.path.join, species['CircosDir'])
+            
+            ifiles = [linkdir(x) for x in os.listdir(linkdir(''))]
+            ofiles = [cirdir('FullAggregatedData.txt'),
+                        cirdir('ShortAggregatedData.txt')]
 
+            yield ifiles, ofiles
 
-
-
+                
 
 
 
