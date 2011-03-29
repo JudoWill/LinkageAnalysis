@@ -44,4 +44,19 @@ def run_phylip(direc, progtype, input_args = ['y'], capture_output = False,
         args = shlex.split(cmd)
         call(args, stdin = inbuf, stdout = out)
 
+def group_sequences(tree_file, cutoff):
+    """Loads a tree to find sequences which can be merged."""
 
+    
+    groups = []
+    done = set()
+    for t in tree.level_order_node_iter():
+        if t.edge.length >= 90:
+            lens = [x.edge.length >= 90 for x in t.level_order_iter() if not x.is_leaf()]
+            if all(lens) or not any(lens) or t.is_leaf():
+                leafs = set([str(x.taxon) for x in t.leaf_nodes()])
+                groups.append(leafs-done)
+                done |= leafs
+
+    groups = [x for x in groups if x]
+    return groups
