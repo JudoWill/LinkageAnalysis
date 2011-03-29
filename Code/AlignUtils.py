@@ -132,6 +132,18 @@ class Alignment():
             for key, seq in self.seqs.items():
                 handle.write('%s%s\n' % (key[:10].ljust(10), seq))
 
+    def write_fasta(self, fname):
+        """Writes the alignment in fasta format"""
+
+        with open(fname, 'w') as handle:
+            for key, seq in self.seqs.items():
+                iterable = iter(seq)
+                handle.write('>%s\n' % key)
+                block = take(iterable)
+                while block:
+                    handle.write(block + '\n')
+                    block = take(iterable)
+
 
     def get_slice(self, start, stop, MIN_NUM = 2):
         """Return a slice of an alignment.
