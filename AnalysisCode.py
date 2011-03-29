@@ -33,7 +33,7 @@ WIDTHS = range(1,5)
 SUBTYPE = None
 MIN_SEQS = 20
 MIN_OVERLAP = 20
-SPECIES_FILE = 'HCVSeqs/HCVProcessing.yaml'
+SPECIES_FILE = 'HIVData/HIVProcessing.yaml'
 FileGen = partial(FileIter, SPECIES_FILE)
 
 def touch(fname, times = None):
@@ -118,7 +118,7 @@ def process_trees(ifile, ofile, direc):
 @ruffus.follows('process_trees')
 def tree_merge(ifiles, ofile):
     
-    with open(ofiles[0], 'w') as ohandle:
+    with open(ofile, 'w') as ohandle:
         treefiles = [x for x in ifiles if x.endswith('outtree')]
         for f in treefiles:
             with open(f) as handle:
@@ -134,9 +134,16 @@ def cons_tree(ifile, ofile, direc):
     run_phylip(direc, 'consense')
     #add_complete_files('tree_cons', [ifile], [ofile])
 
+@ruffus.files(partial(FileGen, 'merging_sequences'))
+@ruffus.follows('cons_tree')
+def merging_sequences(ifiles, ofiles):
+
+    merge_sequences(ifiles[0], ofile[0], ifiles[1])
+
+
 @ruffus.files(partial(FileGen, 'align_pairs'))
 #@ruffus.check_if_uptodate(partial(need_to_do, 'align_pairs'))
-@ruffus.follows('make_alignments')
+@ruffus.follows('make_alignments', 'merging_sequences')
 def calculate_linkages(in_files, out_files, widths):
     print in_files
     PredictionAnalysis(in_files[0], in_files[1], out_files[0], 

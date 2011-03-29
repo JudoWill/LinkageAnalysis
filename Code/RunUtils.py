@@ -10,7 +10,6 @@ from GeneralUtils import safe_mkdir, take
 from AlignUtils import Alignment
 from memorised.decorators import memorise
 
-@memorise()
 def hexhash(path):
     """Returns the md5 hexhash of the file at the path."""
 
@@ -19,6 +18,17 @@ def hexhash(path):
         for line in handle:
             m.update(line)
     return m.hexdigest()
+
+def try_connect(fname, num_tries = 500, wait_length = 10):
+    
+    for x in xrange(num_tries):
+        try:
+            con = sqlite3.connect(fname, wait_length)
+        except sqlite3.OperationalError:
+            continue
+        return con
+    return sqlite3.connect(fname, wait_length)
+            
 
 
 def need_to_do(fname, ifiles, ofiles, *args, **kwargs):
@@ -43,13 +53,13 @@ def need_to_do(fname, ifiles, ofiles, *args, **kwargs):
         ihashes = dict()
         ihashes[ifiles] = hexhash(ifiles)
 
-    con = sqlite3.connect('filedata.sql')
+    con = try_connect('filedata.sql')
     stri = "select * from dep where fname=? and spath=? and shash=? and dpath=? and dhash=?"
     iterable = product(ihashes.iteritems(), ohashes.iteritems())
     for (spath, shash), (dpath, dhash) in iterable:
         rows = con.execute(stri, (fname, spath, shash, dpath, dhash))
         r = rows.fetchone()
-        print r
+        #print r
         if r is None:
             return True, 'Files out of date!'
     
@@ -69,14 +79,13 @@ def add_complete_files(fname, ifiles, ofiles):
     ihashes = dict([(x, hexhash(x)) for x in ifiles])
     ohashes = dict([(x, hexhash(x)) for x in ofiles])
 
-    con = sqlite3.connect('filedata.sql')
-
+    con = try_connect('filedata.sql')
     dstr = "delete from dep where fname=? and spath=? and dpath=?"
-    con.executemany(dstr, del_gen(fname, ihashes, ohashes))
-
     istr = "insert into dep values (?,?,?,?,?)"
-    con.executemany(istr, in_gen(fname, ihashes, ohashes))
-    con.commit()
+    with con:
+        con.executemany(dstr, del_gen(fname, ihashes, ohashes))
+        con.executemany(istr, in_gen(fname, ihashes, ohashes))
+
     
 
 
@@ -118,6 +127,7 @@ def FileIter(species_file, funcname):
                 'tree_splitting':('TreeDir', 'AlignmentDir'),
                 'tree_run':('TreeDir',),
                 'tree_merge':('TreeDir',),
+                'tree_cons':('TreeDir',),
                 'linkage_merge':('LinkageDir', 'CircosDir'),
                 'compare_genomes':('CircosDir', 'ComparingGenomes')
             }
@@ -137,8 +147,12 @@ def FileIter(species_file, funcname):
                 yield ifile, ofiles
 
         elif funcname == 'align_pairs':
-            aligndir = partial(os.path.join, species['AlignmentDir'])
+            if 'MergedDir' in species:
+                aligndir = partial(os.path.join, species['MergedDir'])
+            else:
+                aligndir = partial(os.path.join, species['AlignmentDir'])
             linkdir = partial(os.path.join, species['LinkageDir'])
+
             aligns = [x.split('.')[0] for x in os.listdir(aligndir('')) if x.endswith('.aln')]
             align_ids = get_ids_dict(aligndir(''))
             overlap = species.get('OVERLAP', 5)
@@ -148,8 +162,9 @@ def FileIter(species_file, funcname):
                     a1 = aligndir(p1 + '.aln')
                     a2 = aligndir(p2 + '.aln')
                     d = linkdir(p1 + '--' + p2 + '.res')
-                
-                    yield (a1, a2), (d, ), widths                        
+                    s = linkdir(p1 + '--' + p2 + '.sen')                
+
+                    yield (a1, a2), (d, s), widths                        
 
         elif funcname == 'tree_splitting':
             aligndir = partial(os.path.join, species['AlignmentDir'])
@@ -171,8 +186,9 @@ def FileIter(species_file, funcname):
             for ind in xrange(numstraps):
                 ifile = treedir('tree%i' % ind, 'infile')
                 ofile = treedir('tree%i' % ind, 'outtree')
+                osfile = treedir('tree%i' % ind, 'outtree.sen')
                 direc = treedir('tree%i' % ind)
-                yield ifile, ofile, direc
+                yield ifile, (ofile, osfile), direc
 
         elif funcname == 'tree_merge':
             treedir = partial(os.path.join, species['TreeDir'])
@@ -180,6 +196,14 @@ def FileIter(species_file, funcname):
             ifiles = [treedir('tree%i' % x, 'outtree') for x in xrange(numstraps)]
             mergedtree = treedir('intree')
             yield ifiles, mergedtree
+
+        elif funcname == 'tree_cons':
+            dfun = partial(os.path.join, species['TreeDir'])
+            mergedtree = dfun('intree')
+            otree = dfun('outtree')
+            direc = dfun('')
+            yield mergedtree, otree, direc
+            
 
         elif funcname == 'linkage_merge':
             linkdir = partial(os.path.join, species['LinkageDir'])
