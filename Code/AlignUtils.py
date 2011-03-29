@@ -139,10 +139,10 @@ class Alignment():
             for key, seq in self.seqs.items():
                 iterable = iter(seq)
                 handle.write('>%s\n' % key)
-                block = take(iterable)
+                block = take(80, iterable)
                 while block:
-                    handle.write(block + '\n')
-                    block = take(iterable)
+                    handle.write(''.join(block) + '\n')
+                    block = take(80, iterable)
 
     def write_aln(self, fname):
         """Writes the alignment in ALN format"""
@@ -214,7 +214,7 @@ class Alignment():
             cdict = defaultdict(int)            
             for s in self.seqs.values():
                 cdict[s[col]] += 1
-            cdict.pop('-')
+            #cdict.pop('-')
             m_item = max(cdict.items(), key = itemgetter(1))
             if m_item[1] > 0.6*sum(cdict.values()) and sum(cdict.values()) > 0.6*len(self.seqs):
                 seqs.append(m_item[0])

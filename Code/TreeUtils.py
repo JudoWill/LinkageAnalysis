@@ -3,6 +3,7 @@ from GeneralUtils import pushd
 from subprocess import call
 import shlex, os.path, os
 from StringIO import StringIO
+from dendropy import Tree
 
 
 
@@ -48,7 +49,7 @@ def group_sequences(tree_file, cutoff):
     """Loads a tree to find sequences which can be merged."""
 
     with open(tree_file) as handle:
-        tree = Tree.get_from_string(tree.read(), schema = 'newick')
+        tree = Tree.get_from_string(handle.read(), schema = 'newick')
 
     groups = []
     done = set()
@@ -62,3 +63,52 @@ def group_sequences(tree_file, cutoff):
 
     groups = [x for x in groups if x]
     return groups
+
+
+def merge_sequences(indirec, outdirec, tree_file, cutoff = 90):
+    """Merges sequence alignments based on a tree"""
+
+    def make_consensus(tups):
+        #print tups        
+        aln = Alignment()
+        aln.seqs = dict(tups)
+        aln.width = len(tups[0][1])
+        return aln.get_consensus()
+
+    groups = [x for x in group_sequences(tree_file, cutoff) if len(x) > 1]
+    files = [x for x in os.listdir(indirec) if x.endswith('.aln')]
+
+    for f in files:
+        original = Alignment.alignment_from_file(os.path.join(indirec, f))        
+        for group in groups:
+            tup = []
+            for key in group:
+                tup.append((key, original.seqs.pop(key)))
+            nkey = '-'.join(sorted(group))
+            original.seqs[nkey] = make_consensus(tup)
+        original.write_aln(os.path.join(outdirec, f))
+        original.write_fasta(os.path.join(outdirec, f+'.fasta'))
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
