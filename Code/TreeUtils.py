@@ -47,12 +47,14 @@ def run_phylip(direc, progtype, input_args = ['y'], capture_output = False,
 def group_sequences(tree_file, cutoff):
     """Loads a tree to find sequences which can be merged."""
 
-    
+    with open(tree_file) as handle:
+        tree = Tree.get_from_string(tree.read(), schema = 'newick')
+
     groups = []
     done = set()
     for t in tree.level_order_node_iter():
-        if t.edge.length >= 90:
-            lens = [x.edge.length >= 90 for x in t.level_order_iter() if not x.is_leaf()]
+        if t.edge.length >= cutoff:
+            lens = [x.edge.length >= cutoff for x in t.level_order_iter() if not x.is_leaf()]
             if all(lens) or not any(lens) or t.is_leaf():
                 leafs = set([str(x.taxon) for x in t.leaf_nodes()])
                 groups.append(leafs-done)
