@@ -80,16 +80,13 @@ def download_data(ifile, ofile):
 
 @ruffus.jobs_limit(1)
 @ruffus.files(partial(FileGen, 'alignments'))
-#@ruffus.check_if_uptodate(partial(need_to_do, 'alignments'))
 @ruffus.follows('download_data', 'make_dirs')
 def make_alignments(in_file, out_files):
     run_muscle(in_file, out_files[0])
     fasta2aln(out_files[0], out_files[1])
-    #add_complete_files('alignments', [in_file], out_files)
 
 
 @ruffus.files(partial(FileGen, 'tree_splitting'))
-#@ruffus.check_if_uptodate(partial(need_to_do, 'tree_splitting'))
 @ruffus.follows('make_alignments')
 def tree_split(ifiles, ofiles, numcols):
     
@@ -101,20 +98,14 @@ def tree_split(ifiles, ofiles, numcols):
     for aln, f in izip(bigaln.bootstrap_columns(len(ofiles)), ofiles):
         aln.write_phylip(f)
 
-    #add_complete_files('tree_splitting', ifiles, ofiles)
-
 
 @ruffus.files(partial(FileGen, 'tree_run'))
-#@ruffus.check_if_uptodate(partial(need_to_do, 'tree_run'))
 @ruffus.follows('tree_split')
 def process_trees(ifile, ofile, direc):
-    
     run_phylip(direc, 'proml')
     touch(ofile[1])
-    #add_complete_files('tree_run', [ifile], [ofile])
 
 @ruffus.files(partial(FileGen, 'tree_merge'))
-#@ruffus.check_if_uptodate(partial(need_to_do, 'tree_merge'))
 @ruffus.follows('process_trees')
 def tree_merge(ifiles, ofile):
     
@@ -123,26 +114,20 @@ def tree_merge(ifiles, ofile):
         for f in treefiles:
             with open(f) as handle:
                 ohandle.write(handle.read())
-    #add_complete_files('tree_merge', ifiles, [ofile])
     
 
 @ruffus.files(partial(FileGen, 'tree_cons'))
-#@ruffus.check_if_uptodate(partial(need_to_do, 'tree_cons'))
 @ruffus.follows('tree_merge')
 def cons_tree(ifile, ofile, direc):
-    
     run_phylip(direc, 'consense')
-    #add_complete_files('tree_cons', [ifile], [ofile])
 
 @ruffus.files(partial(FileGen, 'merging_sequences'))
 @ruffus.follows('cons_tree')
 def merging_sequences(ifiles, ofiles):
-
     merge_sequences(ifiles[0], ofile[0], ifiles[1])
 
 
 @ruffus.files(partial(FileGen, 'align_pairs'))
-#@ruffus.check_if_uptodate(partial(need_to_do, 'align_pairs'))
 @ruffus.follows('make_alignments', 'merging_sequences')
 def calculate_linkages(in_files, out_files, widths):
     print in_files
@@ -150,15 +135,11 @@ def calculate_linkages(in_files, out_files, widths):
                         same = in_files[0] == in_files[1],
                         widths = widths)
     touch(out_files[1])
-    #add_complete_files('align_pairs', in_files, [out_files])
 
 @ruffus.files(partial(FileGen, 'linkage_merge'))
-#@ruffus.check_if_uptodate(partial(need_to_do, 'linkage_merge'))
 @ruffus.follows('calculate_linkages')
 def merge_linkages(infiles, ofiles):
-    
     AggregateLinkageData(infiles, ofiles[0], ofiles[1])
-    #add_complete_files('linkage_merge', infiles, ofiles)
 
 def linkage_summarize():
     
