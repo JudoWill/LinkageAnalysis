@@ -144,6 +144,13 @@ class Alignment():
                     handle.write(block + '\n')
                     block = take(iterable)
 
+    def write_aln(self, fname):
+        """Writes the alignment in ALN format"""
+
+        with open(fname, 'w') as handle:
+            for key, seq in self.seqs.items():
+                handle.write('%s\t%s\n' % (key, seq))            
+
 
     def get_slice(self, start, stop, MIN_NUM = 2):
         """Return a slice of an alignment.
