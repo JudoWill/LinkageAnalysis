@@ -151,11 +151,12 @@ def FileIter(species_file, funcname):
             seqdir = partial(os.path.join, species['SequenceDir'])
             aligndir = partial(os.path.join, species['AlignmentDir'])
             for f in sorted(os.listdir(seqdir(''))):
-                name = f.split('.')[0]
-                ifile = seqdir(f)
-                ofiles = [aligndir(name+'.aln.fasta'),
-                            aligndir(name+'.aln')]
-                yield ifile, ofiles
+                if not f.endswith('skip'):
+                    name = f.split('.')[0]
+                    ifile = seqdir(f)
+                    ofiles = [aligndir(name+'.aln.fasta'),
+                                aligndir(name+'.aln')]
+                    yield ifile, ofiles
         
         elif funcname == 'merging_sequences':
             aligndir = partial(os.path.join, species['AlignmentDir'])

@@ -23,20 +23,6 @@ from operator import itemgetter
 from collections import defaultdict
 
 DATA_DIR = 'Data'
-OUT_DIR = 'Results'
-FORCE_NEW = False
-POOL_WORKERS = 3
-WIN_SIZE = 50
-WIN_OVERLAP = 25
-LOG_BASE = os.path.join('logs', 'pipeline.log')
-WIDTHS = range(1,5)
-SUBTYPE = None
-MIN_SEQS = 20
-MIN_OVERLAP = 20
-#SPECIES_FILE = 'HIVData/HIVProcessing.yaml'
-#FileGen = partial(FileIter, SPECIES_FILE)
-TOUCH_ONLY = False
-
 
 if __name__ == '__main__':
 
@@ -130,7 +116,10 @@ def make_alignments(in_file, out_files):
         return
 
     run_muscle(in_file, out_files[0])
-    fasta2aln(out_files[0], out_files[1])
+    if os.path.exists(out_files[0]):
+        fasta2aln(out_files[0], out_files[1])
+    else:
+        shutil.move(in_file, in_file+'.skip')
 
 
 @ruffus.files(partial(FileGen, 'tree_splitting'))
