@@ -192,13 +192,13 @@ def cons_tree(ifile, ofile, direc):
 
 @ruffus.files(partial(FileGen, 'merging_sequences'))
 @ruffus.follows('cons_tree')
-def merging_sequences(ifiles, ofiles):
+def merging_sequences(ifiles, ofiles, excluded):
 
     if TOUCH_ONLY:
         touch_existing(ofiles)
         return
 
-    merge_sequences(ifiles[0], ofile[0], ifiles[1])
+    merge_sequences(ifiles[0], ofile[0], ifiles[1], excluded = excluded)
 
 
 @ruffus.files(partial(FileGen, 'align_pairs'))

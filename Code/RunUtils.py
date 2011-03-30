@@ -162,10 +162,11 @@ def FileIter(species_file, funcname):
         elif funcname == 'merging_sequences':
             aligndir = partial(os.path.join, species['AlignmentDir'])
             mergedir = partial(os.path.join, species['MergedDir'])
+            refgenome = species.get('RefGenome', None)
             tfile = os.path.join(species['TreeDir'], 'outtree')
             files = sorted([x for x in os.listdir(aligndir('')) if x.endswith('.aln')])
             for f in files:
-                yield [aligndir(f), tfile], [mergedir(f), mergedir(f+'.fasta')]
+                yield [aligndir(f), tfile], [mergedir(f), mergedir(f+'.fasta')], [ref_genome]
 
         elif funcname == 'align_pairs':
             if 'MergedDir' in species:
