@@ -65,7 +65,7 @@ def group_sequences(tree_file, cutoff):
     return groups
 
 
-def merge_sequences(ifile, ofile, tree_file, cutoff = 90):
+def merge_sequences(ifile, ofile, tree_file, cutoff = 70):
     """Merges sequence alignments based on a tree"""
 
     def make_consensus(tups):
