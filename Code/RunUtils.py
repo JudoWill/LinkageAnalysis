@@ -243,7 +243,7 @@ def FileIter(species_file, funcname):
             linkdir = partial(os.path.join, species['LinkageDir'])
             cirdir = partial(os.path.join, species['CircosDir'])
             
-            ifiles = [linkdir(x) for x in os.listdir(linkdir(''))]
+            ifiles = [linkdir(x) for x in os.listdir(linkdir('')) if x.endswith('.conv')]
             ofiles = [cirdir('FullAggregatedData.txt'),
                         cirdir('ShortAggregatedData.txt')]
 
