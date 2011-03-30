@@ -45,14 +45,14 @@ def run_phylip(direc, progtype, input_args = ['y'], capture_output = False,
         args = shlex.split(cmd)
         call(args, stdin = inbuf, stdout = out)
 
-def group_sequences(tree_file, cutoff):
+def group_sequences(tree_file, cutoff, exlcuded):
     """Loads a tree to find sequences which can be merged."""
 
     with open(tree_file) as handle:
         tree = Tree.get_from_string(handle.read(), schema = 'newick')
 
     groups = []
-    done = set()
+    done = set(excluded)
     for t in tree.level_order_node_iter():
         if t.edge.length >= cutoff:
             lens = [x.edge.length >= cutoff for x in t.level_order_iter() if not x.is_leaf()]
@@ -65,7 +65,7 @@ def group_sequences(tree_file, cutoff):
     return groups
 
 
-def merge_sequences(ifile, ofile, tree_file, cutoff = 70):
+def merge_sequences(ifile, ofile, tree_file, cutoff = 70, exluded = None):
     """Merges sequence alignments based on a tree"""
 
     def make_consensus(tups):
@@ -74,7 +74,7 @@ def merge_sequences(ifile, ofile, tree_file, cutoff = 70):
         aln.width = len(tups[0][1])
         return aln.get_consensus()
 
-    groups = [x for x in group_sequences(tree_file, cutoff) if len(x) > 1]
+    groups = [x for x in group_sequences(tree_file, cutoff, excluded) if len(x) > 1]
 
     original = Alignment.alignment_from_file(ifile)        
     for group in groups:
