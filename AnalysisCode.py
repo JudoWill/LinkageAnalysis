@@ -224,7 +224,7 @@ def fix_numbering(ifiles, ofiles, ref_genome):
         touch_existing(out_files)
         return
     
-    convert_numbering(*ifiles, ofiles[0], ref_genome)
+    convert_numbering(ifiles[0], ifiles[1], ifiles[2], ofiles[0], ref_genome)
     touch(ofiles[1])
 
 
