@@ -6,6 +6,8 @@ from itertools import islice, groupby, imap, starmap, repeat, dropwhile
 from operator import itemgetter
 from functools import partial
 
+from AlignUtils import Alignment
+
 def AggregateLinkageData(files, full_file, short_file, mode = 'w', short_cut = 0.9):
     """Aggregates linkage data into to files for easier processing.
     
@@ -70,6 +72,42 @@ def AggregateLinkageData(files, full_file, short_file, mode = 'w', short_cut = 0
                     sync_handle(shandle)
                 sync_handle(fhandle)
                 
+
+def convert_numbering(afile1, afile2, link_file, out_file, ref_genome):
+    """Converts the numbering in a linkage file to the numbering in the reference genome."""
+
+    aln1 = Alignment.alignment_from_file(afile1)
+    _, a1_numbering = aln1.convert_numbering(ref_genome)
+    aln2 = Alignment.alignment_from_file(afile2)
+    _, a2_numbering = aln2.convert_numbering(ref_genome)
+
+    a1_mapping = dict(zip(range(len(a1_numbering)), a1_numbering))
+    a2_mapping = dict(zip(range(len(a2_numbering)), a2_numbering))
+
+    #fall back numbers when we fall out of range
+    fb1 = len(a1_numbering)
+    fb2 = len(a2_numbering)
+
+    conv_fields = (('Source-Start', a1_mapping, len(a1_numbering)),
+                    ('Source-End', a1_mapping, len(a1_numbering)),
+                    ('Target-Start', a2_mapping, len(a2_numbering)), 
+                    ('Target-End', a2_mapping, len(a2_numbering)))
+
+
+    with open(link_file) as handle:
+        fields = handle.next().split('\t')
+
+    with open(link_file) as handle:
+        reader = csv.DictReader(handle, delimiter = '\t')
+        with open(out_file, 'w') as handle:
+            writer = csv.DictWriter(handle, fields, delimiter = '\t', extrasaction = 'ignore')
+            writer.writerow(dict(zip(fields, fields)))
+            for row in reader:
+                for field, mapping, fb in conv_fields:
+                    row[field] = mapping.get(int(row[field]), fb)
+                writer.writerow(row)
+
+
 
 def touch_existing(fnames, times = None):
     """Touches existing files."""
