@@ -35,6 +35,7 @@ MIN_SEQS = 20
 MIN_OVERLAP = 20
 SPECIES_FILE = 'HIVData/HIVProcessing.yaml'
 FileGen = partial(FileIter, SPECIES_FILE)
+TOUCH_ONLY = False
 
 def touch(fname, times = None):
     with file(fname, 'a'):
@@ -82,6 +83,11 @@ def download_data(ifile, ofile):
 @ruffus.files(partial(FileGen, 'alignments'))
 @ruffus.follows('download_data', 'make_dirs')
 def make_alignments(in_file, out_files):
+
+    if TOUCH_ONLY:
+        touch_existing(out_files)
+        return
+
     run_muscle(in_file, out_files[0])
     fasta2aln(out_files[0], out_files[1])
 
@@ -89,6 +95,10 @@ def make_alignments(in_file, out_files):
 @ruffus.files(partial(FileGen, 'tree_splitting'))
 @ruffus.follows('make_alignments')
 def tree_split(ifiles, ofiles, numcols):
+
+    if TOUCH_ONLY:
+        touch_existing(ofiles)
+        return
     
     bigaln = Alignment.alignment_from_file(ifiles[0])
     for f in ifiles[1:]:
@@ -102,12 +112,21 @@ def tree_split(ifiles, ofiles, numcols):
 @ruffus.files(partial(FileGen, 'tree_run'))
 @ruffus.follows('tree_split')
 def process_trees(ifile, ofile, direc):
+
+    if TOUCH_ONLY:
+        touch_existing(ofile)
+        return
+
     run_phylip(direc, 'proml')
     touch(ofile[1])
 
 @ruffus.files(partial(FileGen, 'tree_merge'))
 @ruffus.follows('process_trees')
 def tree_merge(ifiles, ofile):
+
+    if TOUCH_ONLY:
+        touch_existing(ofile)
+        return
     
     with open(ofile, 'w') as ohandle:
         treefiles = [x for x in ifiles if x.endswith('outtree')]
@@ -119,17 +138,32 @@ def tree_merge(ifiles, ofile):
 @ruffus.files(partial(FileGen, 'tree_cons'))
 @ruffus.follows('tree_merge')
 def cons_tree(ifile, ofile, direc):
+
+    if TOUCH_ONLY:
+        touch_existing(ofile)
+        return
+
     run_phylip(direc, 'consense')
 
 @ruffus.files(partial(FileGen, 'merging_sequences'))
 @ruffus.follows('cons_tree')
 def merging_sequences(ifiles, ofiles):
+
+    if TOUCH_ONLY:
+        touch_existing(ofiles)
+        return
+
     merge_sequences(ifiles[0], ofile[0], ifiles[1])
 
 
 @ruffus.files(partial(FileGen, 'align_pairs'))
 @ruffus.follows('make_alignments', 'merging_sequences')
 def calculate_linkages(in_files, out_files, widths):
+
+    if TOUCH_ONLY:
+        touch_existing(out_files)
+        return
+
     print in_files
     PredictionAnalysis(in_files[0], in_files[1], out_files[0], 
                         same = in_files[0] == in_files[1],
@@ -139,6 +173,11 @@ def calculate_linkages(in_files, out_files, widths):
 @ruffus.files(partial(FileGen, 'linkage_merge'))
 @ruffus.follows('calculate_linkages')
 def merge_linkages(infiles, ofiles):
+
+    if TOUCH_ONLY:
+        touch_existing(ofiles)
+        return
+
     AggregateLinkageData(infiles, ofiles[0], ofiles[1])
 
 def linkage_summarize():
@@ -159,6 +198,10 @@ def linkage_summarize():
 @ruffus.follows('merge_linkages')
 def compare_genomes(infiles, outfiles, orgnames):
     
+    if TOUCH_ONLY:
+        touch_existing(outfiles)
+        return
+
     compare_linkages(infiles, orgnames, outfiles)
     
     
@@ -274,6 +317,7 @@ if __name__ == '__main__':
     print WIDTHS
 
     FileGen = partial(FileIter, SPECIES_FILE)
+    TOUCH_ONLY = args.fresh
 
 
     if args.lanlscatter:
