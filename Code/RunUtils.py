@@ -129,14 +129,25 @@ def FileIter(species_file, funcname):
                 'tree_merge':('TreeDir',),
                 'tree_cons':('TreeDir',),
                 'linkage_merge':('LinkageDir', 'CircosDir'),
-                'compare_genomes':('CircosDir', 'ComparingGenomes')
+                'compare_genomes':('CircosDir', 'ComparingGenomes'),
+                'merging_sequences': ('AlignmentDir', 'TreeDir', 'MergedDir'),
+                'make_dirs':tuple(),
+                'download_data':tuple()
             }
 
     for species in SPECIES_LIST:
         if not check_fields(species, field_dict[funcname]):
             continue
 
-        if funcname == 'alignments':
+        if funcname == 'make_dirs':
+            yield species_file, species_file + '.sen'
+            break #this only needs to be run once for each file!
+
+        elif funcname == 'download_data':
+            yield species_file, species_file + '.downloaded'
+            break #this only needs to be run once for each file!
+
+        elif funcname == 'alignments':
             seqdir = partial(os.path.join, species['SequenceDir'])
             aligndir = partial(os.path.join, species['AlignmentDir'])
             for f in sorted(os.listdir(seqdir(''))):
@@ -145,6 +156,14 @@ def FileIter(species_file, funcname):
                 ofiles = [aligndir(name+'.aln.fasta'),
                             aligndir(name+'.aln')]
                 yield ifile, ofiles
+        
+        elif funcname == 'merging_sequences':
+            aligndir = partial(os.path.join, species['AlignmentDir'])
+            mergedir = partial(os.path.join, species['MergedDir'])
+            tfile = os.path.join(species['TreeDir'], 'outtree')
+            files = sorted([x for x in os.listdir(aligndir('')) if x.endswith('.aln')])
+            for f in files:
+                yield [aligndir(f), tfile], [mergedir(f), mergedir(f+'.fasta')]
 
         elif funcname == 'align_pairs':
             if 'MergedDir' in species:

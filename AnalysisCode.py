@@ -33,15 +33,56 @@ WIDTHS = range(1,5)
 SUBTYPE = None
 MIN_SEQS = 20
 MIN_OVERLAP = 20
-SPECIES_FILE = 'HIVData/HIVProcessing.yaml'
-FileGen = partial(FileIter, SPECIES_FILE)
+#SPECIES_FILE = 'HIVData/HIVProcessing.yaml'
+#FileGen = partial(FileIter, SPECIES_FILE)
 TOUCH_ONLY = False
+
+
+if __name__ == '__main__':
+
+
+    parser = argparse.ArgumentParser(description='Linkage Analysis Code')
+    parser.add_argument('--fresh', dest = 'fresh', action = 'store_true',
+                         default = False)
+    parser.add_argument('--make-mapping', dest = 'makemapping', action = 'store_true',
+                        default = False)
+    parser.add_argument('--workers', dest = 'workers', default = 3,
+                        action = 'store', type = int)
+    parser.add_argument('--max-width', dest = 'maxwidth', default = 1, action = 'store',
+                        type = int)
+    parser.add_argument('--data-dir', dest = 'datadir', default = 'OtherData', action = 'store')
+    parser.add_argument('--processing-file', dest = 'processfile', default = None, action = 'store')
+    parser.add_argument('--quiet', dest = 'quiet', action = 'store_true', default = False)
+    parser.add_argument('--parse-align', dest = 'parsealign', action = 'store_true',
+                        default = False)
+    parser.add_argument('--link', dest = 'link', action = 'store_true', default = False)
+    parser.add_argument('--tree', dest = 'tree', action = 'store_true', default = False)
+    parser.add_argument('--align', dest = 'alignments', action = 'store_true', default = False)
+    parser.add_argument('--compare', dest = 'compare', action = 'store_true', default = False)
+    parser.add_argument('--scatter-lanl', dest = 'lanlscatter', action = 'store_true', default = False)
+    parser.add_argument('--circos-lanl', dest = 'lanlcircos', action = 'store_true', default = False)
+
+
+    args = parser.parse_args()
+    SPECIES_FILE = args.processfile
+    
+    DATA_DIR = args.datadir
+
+    WIDTHS = range(1, args.maxwidth+1)
+    print WIDTHS
+
+    FileGen = partial(FileIter, SPECIES_FILE)
+    TOUCH_ONLY = args.fresh
+
+
+
+
 
 def touch(fname, times = None):
     with file(fname, 'a'):
         os.utime(fname, times)
 
-@ruffus.files(SPECIES_FILE, SPECIES_FILE + '.sen')
+@ruffus.files(partial(FileGen, 'make_dirs'))
 def make_dirs(ifile, ofile):
     """Make all directories in the species list."""
 
@@ -54,7 +95,7 @@ def make_dirs(ifile, ofile):
                 safe_mkdir(val)
     touch(ofile)
 
-@ruffus.files(SPECIES_FILE, SPECIES_FILE + '.downloaded')
+@ruffus.files(partial(FileGen, 'download_data'))
 @ruffus.follows('make_dirs')
 def download_data(ifile, ofile):    
 
@@ -278,46 +319,7 @@ def circos_figs(ifile, ofile):
         graph.make_figure(path, link_key = sort_fun, link_filter = filter_fun)
     
     
-    
-        
-
-  
-
 if __name__ == '__main__':
-
-
-    parser = argparse.ArgumentParser(description='Linkage Analysis Code')
-    parser.add_argument('--fresh', dest = 'fresh', action = 'store_true',
-                         default = False)
-    parser.add_argument('--make-mapping', dest = 'makemapping', action = 'store_true',
-                        default = False)
-    parser.add_argument('--workers', dest = 'workers', default = 3,
-                        action = 'store', type = int)
-    parser.add_argument('--max-width', dest = 'maxwidth', default = 1, action = 'store',
-                        type = int)
-    parser.add_argument('--data-dir', dest = 'datadir', default = 'OtherData', action = 'store')
-    parser.add_argument('--processing-file', dest = 'processfile', default = None, action = 'store')
-    parser.add_argument('--quiet', dest = 'quiet', action = 'store_true', default = False)
-    parser.add_argument('--parse-align', dest = 'parsealign', action = 'store_true',
-                        default = False)
-    parser.add_argument('--link', dest = 'link', action = 'store_true', default = False)
-    parser.add_argument('--tree', dest = 'tree', action = 'store_true', default = False)
-    parser.add_argument('--align', dest = 'alignments', action = 'store_true', default = False)
-    parser.add_argument('--compare', dest = 'compare', action = 'store_true', default = False)
-    parser.add_argument('--scatter-lanl', dest = 'lanlscatter', action = 'store_true', default = False)
-    parser.add_argument('--circos-lanl', dest = 'lanlcircos', action = 'store_true', default = False)
-
-
-    args = parser.parse_args()
-    SPECIES_FILE = args.processfile
-    
-    DATA_DIR = args.datadir
-
-    WIDTHS = range(1, args.maxwidth+1)
-    print WIDTHS
-
-    FileGen = partial(FileIter, SPECIES_FILE)
-    TOUCH_ONLY = args.fresh
 
 
     if args.lanlscatter:
@@ -334,6 +336,15 @@ if __name__ == '__main__':
         ruffus.pipeline_run([cons_tree], multiprocess = args.workers)
     else:
         ruffus.pipeline_run([top_function], multiprocess = args.workers)
+
+
+
+
+    
+        
+
+  
+
 
 
 
