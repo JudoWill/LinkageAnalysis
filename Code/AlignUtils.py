@@ -34,6 +34,10 @@ except ImportError:
         def __get__(self, obj, objtype):
             return partial(self.__call__, obj)
         
+def take(N, iterable):
+    """Takes N items from an iterable."""
+    return list(islice(iterable, N))
+
 
 def calculate_entropy(seq):
     """calculates the Shannon Entropy of any sequence."""

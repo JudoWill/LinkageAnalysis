@@ -198,7 +198,7 @@ def merging_sequences(ifiles, ofiles, excluded):
         touch_existing(ofiles)
         return
 
-    merge_sequences(ifiles[0], ofile[0], ifiles[1], excluded = excluded)
+    merge_sequences(ifiles[0], ofiles[0], ifiles[1], excluded = excluded)
 
 
 @ruffus.files(partial(FileGen, 'align_pairs'))

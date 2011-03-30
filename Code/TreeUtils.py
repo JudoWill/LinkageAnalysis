@@ -1,5 +1,5 @@
 from AlignUtils import Alignment
-from GeneralUtils import pushd
+from GeneralUtils import pushd, take
 from subprocess import call
 import shlex, os.path, os
 from StringIO import StringIO
@@ -45,7 +45,7 @@ def run_phylip(direc, progtype, input_args = ['y'], capture_output = False,
         args = shlex.split(cmd)
         call(args, stdin = inbuf, stdout = out)
 
-def group_sequences(tree_file, cutoff, exlcuded):
+def group_sequences(tree_file, cutoff, excluded):
     """Loads a tree to find sequences which can be merged."""
 
     with open(tree_file) as handle:
@@ -65,7 +65,7 @@ def group_sequences(tree_file, cutoff, exlcuded):
     return groups
 
 
-def merge_sequences(ifile, ofile, tree_file, cutoff = 70, exluded = None):
+def merge_sequences(ifile, ofile, tree_file, cutoff = 70, excluded = None):
     """Merges sequence alignments based on a tree"""
 
     def make_consensus(tups):

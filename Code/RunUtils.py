@@ -166,7 +166,7 @@ def FileIter(species_file, funcname):
             tfile = os.path.join(species['TreeDir'], 'outtree')
             files = sorted([x for x in os.listdir(aligndir('')) if x.endswith('.aln')])
             for f in files:
-                yield [aligndir(f), tfile], [mergedir(f), mergedir(f+'.fasta')], [ref_genome]
+                yield [aligndir(f), tfile], [mergedir(f), mergedir(f+'.fasta')], [refgenome]
 
         elif funcname == 'align_pairs':
             if 'MergedDir' in species:
@@ -193,9 +193,9 @@ def FileIter(species_file, funcname):
             ref_genome = species['RefGenome']
             for (a1, a2), (link_file, _), _ in FileIter(species_file, 'align_pairs'):
                 out_file = link_file+'.conv'
-                sen_file = link_file+'.conv.sen'                
-
-                yield (a1, a2, link_file), (out_file, sen_file), ref_genome
+                sen_file = link_file+'.conv.sen'
+                if os.path.exists(link_file):
+                    yield (a1, a2, link_file), (out_file, sen_file), ref_genome
 
 
 
