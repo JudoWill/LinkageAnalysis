@@ -191,7 +191,7 @@ def FileIter(species_file, funcname):
         elif funcname == 'convert_linkages':
 
             ref_genome = species['RefGenome']
-            for (a1, a2), (link_file, _) _ in FileIter(species_file, 'align_pairs'):
+            for (a1, a2), (link_file, _), _ in FileIter(species_file, 'align_pairs'):
                 out_file = link_file+'.conv'
                 sen_file = link_file+'.conv.sen'                
 
