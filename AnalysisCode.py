@@ -1,4 +1,4 @@
-import csv, os, os.path
+import csv, os, os.path, sys
 import ruffus
 from ruffus.proxy_logger import *
 import urllib2, re, logging
@@ -48,6 +48,8 @@ if __name__ == '__main__':
     parser.add_argument('--scatter-lanl', dest = 'lanlscatter', action = 'store_true', default = False)
     parser.add_argument('--circos-lanl', dest = 'lanlcircos', action = 'store_true', default = False)
 
+    parser.add_argument('--do-all', dest = 'doall', action = 'store_true', default = False)
+
 
     args = parser.parse_args()
     SPECIES_FILE = args.processfile
@@ -60,7 +62,20 @@ if __name__ == '__main__':
     FileGen = partial(FileIter, SPECIES_FILE)
     TOUCH_ONLY = args.fresh
 
+    if args.doall:
+        current_species_files = ('HIVData/HIVProcessing.yaml',
+                                'HCVSeqs/HCVProcessing.yaml',
+                                'BacterialData/BacterialProcessing.yaml',
+                                'HIVData/HIVProcessing_long.yaml')
+        
+        for f in current_species_files:
+            inargs = shlex.split('python '+' '.join(sys.argv) + ' --processing-file ' + f)
+            inargs = [x for x in inargs if x != '--do-all']
+            call(inargs)
 
+        raise SystemExit
+
+    
 
 
 
