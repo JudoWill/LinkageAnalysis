@@ -217,7 +217,7 @@ def calculate_linkages(in_files, out_files, widths):
 
 
 @ruffus.files(partial(FileGen, 'convert_linkages'))
-@ruffus.follows('alculate_linkages')
+@ruffus.follows('calculate_linkages')
 def fix_numbering(ifiles, ofiles, ref_genome):
 
     if TOUCH_ONLY:
@@ -229,7 +229,7 @@ def fix_numbering(ifiles, ofiles, ref_genome):
 
 
 @ruffus.files(partial(FileGen, 'linkage_merge'))
-@ruffus.follows('calculate_linkages')
+@ruffus.follows('fix_numbering')
 def merge_linkages(infiles, ofiles):
 
     if TOUCH_ONLY:
