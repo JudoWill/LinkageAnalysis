@@ -215,6 +215,19 @@ def calculate_linkages(in_files, out_files, widths):
                         widths = widths)
     touch(out_files[1])
 
+
+@ruffus.files(partial(FileGen, 'convert_linkages'))
+@ruffus.follows('alculate_linkages')
+def fix_numbering(ifiles, ofiles, ref_genome):
+
+    if TOUCH_ONLY:
+        touch_existing(out_files)
+        return
+    
+    convert_numbering(*ifiles, ofiles[0], ref_genome)
+    touch(ofiles[1])
+
+
 @ruffus.files(partial(FileGen, 'linkage_merge'))
 @ruffus.follows('calculate_linkages')
 def merge_linkages(infiles, ofiles):

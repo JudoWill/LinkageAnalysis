@@ -132,7 +132,8 @@ def FileIter(species_file, funcname):
                 'compare_genomes':('CircosDir', 'ComparingGenomes'),
                 'merging_sequences': ('AlignmentDir', 'TreeDir', 'MergedDir'),
                 'make_dirs':tuple(),
-                'download_data':tuple()
+                'download_data':tuple(),
+                'convert_linkages':('RefGenome', 'LinkageDir', 'AlignmentDir')
             }
 
     for species in SPECIES_LIST:
@@ -184,7 +185,19 @@ def FileIter(species_file, funcname):
                     d = linkdir(p1 + '--' + p2 + '.res')
                     s = linkdir(p1 + '--' + p2 + '.sen')                
 
-                    yield (a1, a2), (d, s), widths                        
+                    yield (a1, a2), (d, s), widths
+
+        elif funcname == 'convert_linkages':
+
+            ref_genome = species['RefGenome']
+            for (a1, a2), (link_file, _) _ in FileIter(species_file, 'align_pairs'):
+                out_file = link_file+'.conv'
+                sen_file = link_file+'.conv.sen'                
+
+                yield (a1, a2, link_file), (out_file, sen_file), ref_genome
+
+
+
 
         elif funcname == 'tree_splitting':
             aligndir = partial(os.path.join, species['AlignmentDir'])
