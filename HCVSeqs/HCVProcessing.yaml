@@ -10,6 +10,7 @@ CircosDir: HCVSeqs/Any/CircosDir/,
 OVERLAP: 2000,
 WIDTHS: [1,2,3,4,5],
 DOWNLOAD: false,
+RefGenome: NC_004102,
 }
 - {
 SpeciesName: Subtype1,
@@ -23,6 +24,7 @@ CircosDir: HCVSeqs/Subtype1/CircosDir/,
 OVERLAP: 2000,
 WIDTHS: [1,2,3,4,5],
 DOWNLOAD: false,
+RefGenome: NC_004102,
 }
 - {
 SpeciesName: Subtype2,
@@ -36,6 +38,7 @@ CircosDir: HCVSeqs/Subtype2/CircosDir/,
 OVERLAP: 90,
 WIDTHS: [1,2,3,4,5],
 DOWNLOAD: false,
+RefGenome: NC_004102,
 }
 - {
 SpeciesName: Subtype3,
@@ -49,6 +52,7 @@ CircosDir: HCVSeqs/Subtype3/CircosDir/,
 OVERLAP: 150,
 WIDTHS: [1,2,3,4,5],
 DOWNLOAD: false,
+RefGenome: NC_004102,
 }
 - {
 SpeciesName: Subtype4,
@@ -61,4 +65,5 @@ CircosDir: HCVSeqs/Subtype4/CircosDir/,
 OVERLAP: 30,
 WIDTHS: [1,2,3,4,5],
 DOWNLOAD: false,
+RefGenome: NC_004102,
 }

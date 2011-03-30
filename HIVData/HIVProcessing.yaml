@@ -6,10 +6,11 @@ AlignmentDir: HIVData/SubtypeB/Alignments/,
 TreeDir: HIVData/SubtypeB/Tree/,
 LinkageDir: HIVData/SubtypeB/LinkageResults/,
 CircosDir: HIVData/SubtypeB/CircosDir/,
+MergedDir: HIVData/SubtypeB/MergedDir/,
 OVERLAP: 500,
 WIDTHS: [1,2,3,4,5],
 DOWNLOAD: false,
-REFGenome: K03455,
+RefGenome: K03455,
 }
 - {
 SpeciesName: IndB,
@@ -21,7 +22,7 @@ CircosDir: HIVData/IndB/CircosDir/,
 OVERLAP: 1000,
 WIDTHS: [1,2,3,4,5],
 DOWNLOAD: false,
-REFGenome: K03455,
+RefGenome: K03455,
 }
 
 
