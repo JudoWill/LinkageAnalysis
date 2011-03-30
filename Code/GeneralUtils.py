@@ -1,7 +1,7 @@
 import csv
 import os, os.path
 from collections import deque
-from types import ListType, TupleType
+from types import ListType, TupleType, StringType
 from itertools import islice, groupby, imap, starmap, repeat, dropwhile
 from operator import itemgetter
 from functools import partial
@@ -70,7 +70,19 @@ def AggregateLinkageData(files, full_file, short_file, mode = 'w', short_cut = 0
                     sync_handle(shandle)
                 sync_handle(fhandle)
                 
-            
+
+def touch_existing(fnames, times = None):
+    """Touches existing files."""
+
+    if type(fnames) == StringType:
+        fnames = [fnames]
+
+    for fname in fnames:
+        if os.path.exists(fname):
+            with file(fname, 'a'):
+                os.utime(fname, times)
+
+
             
 def sync_handle(fhandle):
     """Helper function for syncing filehandles to disk."""
