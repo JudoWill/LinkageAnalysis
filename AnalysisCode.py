@@ -221,7 +221,7 @@ def calculate_linkages(in_files, out_files, widths):
 def fix_numbering(ifiles, ofiles, ref_genome):
 
     if TOUCH_ONLY:
-        touch_existing(out_files)
+        touch_existing(ofiles)
         return
     
     convert_numbering(ifiles[0], ifiles[1], ifiles[2], ofiles[0], ref_genome)
