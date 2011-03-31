@@ -50,9 +50,14 @@ def group_sequences(tree_file, cutoff, excluded):
 
     with open(tree_file) as handle:
         tree = Tree.get_from_string(handle.read(), schema = 'newick')
-
-    groups = []
-    done = set(excluded)
+    
+    if excluded is None:
+        groups = []
+        done = set()
+    else:
+        groups = excluded
+        done = set(excluded)
+    
     for t in tree.level_order_node_iter():
         if t.edge.length >= cutoff:
             lens = [x.edge.length >= cutoff for x in t.level_order_iter() if not x.is_leaf()]
