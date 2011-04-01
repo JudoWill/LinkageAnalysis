@@ -145,7 +145,6 @@ def make_alignments(ifile, ofiles):
     Arguments:
     ifile -- An input fasta file.
     ofiles -- A tuple of output files: (fasta-file, tab-delimited-file)
-    
     """
 
     if TOUCH_ONLY:
