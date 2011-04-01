@@ -45,6 +45,7 @@ def test_join_alignments_joining_sequences():
     
     aln1.append_alignment(aln2)
     nose.tools.eq_(aln1.width, 10)
+    nose.tools.eq_(len(aln1.seqs), 2)
     
     for key, seq in indata:
         nose.tools.eq_(aln1.seqs[key], seq+seq)    
