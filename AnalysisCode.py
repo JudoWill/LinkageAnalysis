@@ -351,13 +351,13 @@ def linkage_summarize():
 
 @ruffus.files(linkage_summarize)
 @ruffus.follows('merge_linkages')
-def compare_genomes(infiles, outfiles, orgnames):
+def compare_genomes(ifiles, ofiles, orgnames):
     
     if TOUCH_ONLY:
-        touch_existing(outfiles)
+        touch_existing(ofiles)
         return
 
-    compare_linkages(infiles, orgnames, outfiles)
+    compare_linkages(ifiles, orgnames, ofiles)
     
     
 
