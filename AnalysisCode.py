@@ -136,27 +136,27 @@ def download_data(ifile, ofile):
 @ruffus.jobs_limit(1)
 @ruffus.files(partial(FileGen, 'alignments'))
 @ruffus.follows('download_data', 'make_dirs')
-def make_alignments(in_file, out_files):
+def make_alignments(ifile, ofiles):
     """Align sequences.
     
     Uses the muscle program to create multiple alignments from input fasta 
     files.
     
     Arguments:
-    in_file -- An input fasta file.
-    out_files -- A tuple of output files: (fasta-file, tab-delimited-file)
+    ifile -- An input fasta file.
+    ofiles -- A tuple of output files: (fasta-file, tab-delimited-file)
     
     """
 
     if TOUCH_ONLY:
-        touch_existing(out_files)
+        touch_existing(ofiles)
         return
 
-    run_muscle(in_file, out_files[0])
-    if os.path.exists(out_files[0]):
-        fasta2aln(out_files[0], out_files[1])
+    run_muscle(ifile, ofiles[0])
+    if os.path.exists(ofiles[0]):
+        fasta2aln(ofiles[0], ofiles[1])
     else:
-        shutil.move(in_file, in_file+'.skip')
+        shutil.move(ifile, ifile+'.skip')
 
 
 @ruffus.files(partial(FileGen, 'tree_splitting'))
