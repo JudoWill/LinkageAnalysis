@@ -85,7 +85,12 @@ def touch(fname, times = None):
 
 @ruffus.files(partial(FileGen, 'make_dirs'))
 def make_dirs(ifile, ofile):
-    """Make all directories in the species list."""
+    """Make all directories in the species list.
+    
+    Arguments:
+    ifile -- Input yaml species file
+    ofile -- Directory sentinal
+    """
 
     with open(ifile) as handle:
         SPECIES_LIST = yaml.load(handle)
@@ -99,7 +104,14 @@ def make_dirs(ifile, ofile):
 @ruffus.files(partial(FileGen, 'download_data'))
 @ruffus.follows('make_dirs')
 def download_data(ifile, ofile):    
-
+    """Downloads data from NCBI.
+    
+    Arguments:
+    ifile -- Input yaml species file
+    ofile -- Download sentinal
+    """
+    
+    
     with open(ifile) as handle:
         SPECIES_LIST = yaml.load(handle)
 
@@ -124,22 +136,45 @@ def download_data(ifile, ofile):
 @ruffus.jobs_limit(1)
 @ruffus.files(partial(FileGen, 'alignments'))
 @ruffus.follows('download_data', 'make_dirs')
-def make_alignments(in_file, out_files):
+def make_alignments(ifile, ofiles):
+    """Align sequences.
+    
+    Uses the muscle program to create multiple alignments from input fasta 
+    files.
+    
+    Arguments:
+    ifile -- An input fasta file.
+    ofiles -- A tuple of output files: (fasta-file, tab-delimited-file)
+    """
 
     if TOUCH_ONLY:
-        touch_existing(out_files)
+        touch_existing(ofiles)
         return
 
-    run_muscle(in_file, out_files[0])
-    if os.path.exists(out_files[0]):
-        fasta2aln(out_files[0], out_files[1])
+    run_muscle(ifile, ofiles[0])
+    if os.path.exists(ofiles[0]):
+        fasta2aln(ofiles[0], ofiles[1])
     else:
-        shutil.move(in_file, in_file+'.skip')
+        shutil.move(ifile, ifile+'.skip')
 
 
 @ruffus.files(partial(FileGen, 'tree_splitting'))
 @ruffus.follows('make_alignments')
 def tree_split(ifiles, ofiles, numcols):
+    """Joins alignments and then finds columns for tree generation.
+    
+    This implements the bootstraping algorithm for generating trees. All 
+    input alignments are joined based on thier key-values and then the highest
+    entropy columns are put into a single alignment. These are then selected 
+    WITH REPLACEMENT and split into multiple files for parallel processing.
+    
+    Arguments:
+    ifiles -- A list of tab-delimited input files to join.
+    ofiles -- A list of input files to create ... this should be the number of 
+                bootstraps to perform.
+    numcols -- An integer indicating the number of columns to including in each
+                bootstrap.
+    """
 
     if TOUCH_ONLY:
         touch_existing(ofiles)
@@ -157,6 +192,13 @@ def tree_split(ifiles, ofiles, numcols):
 @ruffus.files(partial(FileGen, 'tree_run'))
 @ruffus.follows('tree_split')
 def process_trees(ifile, ofile, direc):
+    """Run phylip proml on a tree.
+    
+    Arguments:
+    ifile -- The phylip-formatted alignment to process
+    ofiles -- A tuple of files to create (tree-file, sentinal-file)
+    direc -- The directory which contains the input files.
+    """
 
     if TOUCH_ONLY:
         touch_existing(ofile)
@@ -168,6 +210,16 @@ def process_trees(ifile, ofile, direc):
 @ruffus.files(partial(FileGen, 'tree_merge'))
 @ruffus.follows('process_trees')
 def tree_merge(ifiles, ofile):
+    """Merge a set of trees into one file.
+    
+    This step is needed because the consensus program requires that all trees
+    be in one file but in the previous step we split them to achieve parallel 
+    execution.
+    
+    Arguments:
+    ifiles -- A list of tree files to join.
+    ofile -- The output file to create.
+    """
 
     if TOUCH_ONLY:
         touch_existing(ofile)
@@ -183,6 +235,13 @@ def tree_merge(ifiles, ofile):
 @ruffus.files(partial(FileGen, 'tree_cons'))
 @ruffus.follows('tree_merge')
 def cons_tree(ifile, ofile, direc):
+    """Run the phylip consensus program.
+    
+    Arguments:
+    ifile -- The input JOINED tree file.
+    ofile -- The consensus tree produced.
+    """
+    
 
     if TOUCH_ONLY:
         touch_existing(ofile)
@@ -193,6 +252,18 @@ def cons_tree(ifile, ofile, direc):
 @ruffus.files(partial(FileGen, 'merging_sequences'))
 @ruffus.follows('cons_tree')
 def merging_sequences(ifiles, ofiles, excluded):
+    """Merges similar sequences based on an input tree.
+    
+    This is needed for the "phylogentic correction" step. This algorithm
+    joins sequences which are determined to be similar by thier bootstrap 
+    values in a phylogenetic tree. It creates a new alignment file.
+    
+    Arguments:
+    ifiles -- A tuple (alignment-file, tree-file)
+    ofiles -- A tuple (tab-delimited alingment-file, fasta-formated alignment)
+    excluded -- A list of sequences to NEVER merge. This is usually just the 
+                reference sequence since it will be needed in later steps.
+    """
 
     if TOUCH_ONLY:
         touch_existing(ofiles)
@@ -203,10 +274,18 @@ def merging_sequences(ifiles, ofiles, excluded):
 
 @ruffus.files(partial(FileGen, 'align_pairs'))
 @ruffus.follows('make_alignments', 'merging_sequences')
-def calculate_linkages(in_files, out_files, widths):
+def calculate_linkages(ifiles, ofiles, widths):
+    """Calculate linkages based on a pair of input files.
+    
+    Arguments:
+    ifiles -- A tuple of alignment files to compare.
+    ofiles -- A tuple (output-linkages, sentinal-file)
+    widths -- A list of widths to check ... traditionally this is [1,2,3,4,5]
+    """
+
 
     if TOUCH_ONLY:
-        touch_existing(out_files)
+        touch_existing(ofiles)
         return
 
     print in_files
@@ -216,10 +295,21 @@ def calculate_linkages(in_files, out_files, widths):
     touch(out_files[1])
 
 
+
 @ruffus.files(partial(FileGen, 'convert_linkages'))
 @ruffus.follows('calculate_linkages')
 def fix_numbering(ifiles, ofiles, ref_genome):
-
+    """Converts the numbering from "alignment-space" to "sequence-space"
+    
+    Since the numbering in the linkage results are dependant on the exact 
+    MSA used it needs to be converted into something that is more consistent.
+    
+    Arguments:
+    ifiles -- A tuple of input files:
+            (Source Alignment, Target Aligment, linkage-file)
+    ofiles -- A tuple of output files:
+            (Output-linkage-file, sentinal-file)
+    """
     if TOUCH_ONLY:
         touch_existing(ofiles)
         return
@@ -231,6 +321,13 @@ def fix_numbering(ifiles, ofiles, ref_genome):
 @ruffus.files(partial(FileGen, 'linkage_merge'))
 @ruffus.follows('fix_numbering')
 def merge_linkages(infiles, ofiles):
+    """Merges linkage files into one summary file.
+    
+    Arguments:
+    infiles -- A list of linkage files to merge.
+    ofiles -- A tuple of output files:
+        (Full-Linkage, Short-Linkage)
+    """
 
     if TOUCH_ONLY:
         touch_existing(ofiles)
@@ -254,13 +351,13 @@ def linkage_summarize():
 
 @ruffus.files(linkage_summarize)
 @ruffus.follows('merge_linkages')
-def compare_genomes(infiles, outfiles, orgnames):
+def compare_genomes(ifiles, ofiles, orgnames):
     
     if TOUCH_ONLY:
-        touch_existing(outfiles)
+        touch_existing(ofiles)
         return
 
-    compare_linkages(infiles, orgnames, outfiles)
+    compare_linkages(ifiles, orgnames, ofiles)
     
     
 

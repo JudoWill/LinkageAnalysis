@@ -6,7 +6,7 @@ from itertools import islice, groupby, imap, starmap, repeat, dropwhile
 from operator import itemgetter
 from functools import partial
 
-from AlignUtils import Alignment
+import AlignUtils
 
 def AggregateLinkageData(files, full_file, short_file, mode = 'w', short_cut = 0.9):
     """Aggregates linkage data into to files for easier processing.
@@ -76,9 +76,9 @@ def AggregateLinkageData(files, full_file, short_file, mode = 'w', short_cut = 0
 def convert_numbering(afile1, afile2, link_file, out_file, ref_genome):
     """Converts the numbering in a linkage file to the numbering in the reference genome."""
 
-    aln1 = Alignment.alignment_from_file(afile1)
+    aln1 = AlignUtils.Alignment.alignment_from_file(afile1)
     _, a1_numbering = aln1.convert_numbering(ref_genome)
-    aln2 = Alignment.alignment_from_file(afile2)
+    aln2 = AlignUtils.Alignment.alignment_from_file(afile2)
     _, a2_numbering = aln2.convert_numbering(ref_genome)
 
     a1_mapping = dict(zip(range(len(a1_numbering)), a1_numbering))
