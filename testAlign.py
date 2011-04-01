@@ -78,5 +78,18 @@ def test_getting_none_alignment_slice():
     new_aln = aln.get_slice(3,5)
     nose.tools.eq_(new_aln, None)
         
-        
+@nose.tools.with_setup(aln_write_fun, aln_delete)        
+def test_signal_function():
+    
+    aln = AlignUtils.Alignment.alignment_from_file(ALNFILE)
+    signal, mapping = aln.get_signal(('key1', 'key2', 'key3'))
+    
+    nose.tools.eq_(signal, range(1,len(ALNDATA)+1))
+    rmapping = {}
+    for (_, seq), num in zip(ALNDATA, range(1,len(ALNDATA)+1)):
+        rmapping[seq] = num
+    nose.tools.eq_(mapping, rmapping)
+    
+    
+    
         
