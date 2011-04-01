@@ -252,13 +252,13 @@ class Alignment():
                       sequence."""
         
         seq_count = -1
-        dest_nums = [] #same length as sequence and tells which column the reference belongs too
-        align_nums = [] #same length as alignment and tells the position in the reference
+        align_nums = [] #same length as sequence and tells which column the reference belongs too
+        dest_nums = [] #same length as alignment and tells the position in the reference
         for num, let in enumerate(self.seqs[dest_key]):
             if let != '-':
                 seq_count += 1
-                dest_nums.append(num-1)
-            align_nums.append(seq_count)
+                align_nums.append(num)
+            dest_nums.append(seq_count)
             
         return dest_nums, align_nums
 
