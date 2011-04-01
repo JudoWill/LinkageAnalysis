@@ -2,7 +2,7 @@ import nose
 from Code import AlignUtils
 import os, os.path
 
-ALNDATA = (('key1', 'AACAA'), ('key2', 'A-CAA'))
+ALNDATA = (('key1', 'AACAA'), ('key2', 'A-CAA'), ('key3', 'TA-AA'))
 ALNFILE = os.path.join(os.environ['TMPDIR'], 'tmp.aln')
 
 def aln_write_fun():
@@ -60,8 +60,15 @@ def test_join_alignments_limiting_sequences():
         
     nose.tools.eq_(len(aln1.seqs), len(ALNDATA))
         
-        
-        
+@nose.tools.with_setup(aln_write_fun, aln_delete)        
+def test_getting_alignment_slice():
+    
+    aln = AlignUtils.Alignment.alignment_from_file(ALNFILE)
+    
+    new_aln = aln.get_slice(1,3)
+    print new_aln.seqs
+    for key, seq in ALNDATA:
+        nose.tools.eq_(new_aln.seqs[key], seq[1:3])      
         
         
         
