@@ -140,7 +140,7 @@ def test_get_consensus():
     nose.tools.eq_(seq, 'AACAA')       
 
 @nose.tools.with_setup(aln_write_fun, aln_delete)    
-def test_get_consensus():
+def test_get_reference_numbering():
     
     aln = AlignUtils.Alignment.alignment_from_file(ALNFILE)
     
