@@ -3,7 +3,7 @@ from Code import AlignUtils
 import os, os.path
 
 ALNDATA = (('key1', 'AACAA'), ('key2', 'A-CAA'), ('key3', 'TA-AA'))
-ALNFILE = os.path.join(os.environ['TMPDIR'], 'tmp.aln')
+ALNFILE = os.path.join(os.environ.get('TMPDIR', '/tmp/'), 'tmp.aln')
 
 def aln_write_fun():
     
@@ -96,7 +96,7 @@ def test_write_fasta():
     
     aln = AlignUtils.Alignment.alignment_from_file(ALNFILE)
     
-    tfile = os.path.join(os.environ['TMPDIR'], 'ntmp.aln')
+    tfile = os.path.join(os.environ.get('TMPDIR', '/tmp/'), 'ntmp.aln')
     try:
         aln.write_fasta(tfile)
         with open(tfile) as handle:
@@ -115,7 +115,7 @@ def test_write_phylip():
     aln = AlignUtils.Alignment.alignment_from_file(ALNFILE)        
     aln.seqs['reallylongkeynamethatshouldbeshortened'] = 'ATCTG'
 
-    tfile = os.path.join(os.environ['TMPDIR'], 'ntmp.aln')
+    tfile = os.path.join(os.environ.get('TMPDIR', '/tmp/'), 'ntmp.aln')
     try:
         aln.write_phylip(tfile)
         with open(tfile) as handle:

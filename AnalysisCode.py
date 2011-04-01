@@ -71,7 +71,7 @@ if __name__ == '__main__':
         for f in current_species_files:
             inargs = shlex.split('python '+' '.join(sys.argv) + ' --processing-file ' + f)
             inargs = [x for x in inargs if x != '--do-all']
-            call(inargs)
+            check_call(inargs)
 
         raise SystemExit
 
@@ -289,8 +289,8 @@ def calculate_linkages(ifiles, ofiles, widths):
         return
 
     print in_files
-    PredictionAnalysis(in_files[0], in_files[1], out_files[0], 
-                        same = in_files[0] == in_files[1],
+    PredictionAnalysis(ifiles[0], ifiles[1], ofiles[0], 
+                        same = ifiles[0] == ifiles[1],
                         widths = min(widths, WIDTHS, key = len))
     touch(out_files[1])
 
