@@ -69,8 +69,14 @@ def test_getting_alignment_slice():
     print new_aln.seqs
     for key, seq in ALNDATA:
         nose.tools.eq_(new_aln.seqs[key], seq[1:3])      
-        
-        
+
+@nose.tools.with_setup(aln_write_fun, aln_delete)        
+def test_getting_none_alignment_slice():
+    
+    aln = AlignUtils.Alignment.alignment_from_file(ALNFILE)
+    
+    new_aln = aln.get_slice(3,5)
+    nose.tools.eq_(new_aln, None)
         
         
         
