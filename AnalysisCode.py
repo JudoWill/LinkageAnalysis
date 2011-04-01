@@ -281,6 +281,7 @@ def calculate_linkages(ifiles, ofiles, widths):
     Arguments:
     ifiles -- A tuple of alignment files to compare.
     ofiles -- A tuple (output-linkages, sentinal-file)
+    widths -- A list of widths to check ... traditionally this is [1,2,3,4,5]
     """
 
 
