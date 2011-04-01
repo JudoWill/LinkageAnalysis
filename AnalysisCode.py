@@ -288,11 +288,11 @@ def calculate_linkages(ifiles, ofiles, widths):
         touch_existing(ofiles)
         return
 
-    print in_files
+    print ifiles
     PredictionAnalysis(ifiles[0], ifiles[1], ofiles[0], 
                         same = ifiles[0] == ifiles[1],
                         widths = min(widths, WIDTHS, key = len))
-    touch(out_files[1])
+    touch(ofiles[1])
 
 
 
