@@ -40,7 +40,14 @@ def take(N, iterable):
 
 
 def calculate_entropy(seq):
-    """calculates the Shannon Entropy of any sequence."""
+    """Salculates the Shannon Entropy of any sequence.
+    
+    Arguements:
+    seq -- Any interable sequence.
+    
+    Returns:
+    float -- entropy of the sequence.
+    """
 
     counts = defaultdict(int)
     for v in seq:
