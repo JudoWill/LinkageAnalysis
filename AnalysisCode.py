@@ -310,7 +310,7 @@ def fix_numbering(ifiles, ofiles, ref_genome):
             (Output-linkage-file, sentinal-file)
     """
     if TOUCH_ONLY:
-        touch_existing(out_files)
+        touch_existing(ofiles)
         return
     
     convert_numbering(ifiles[0], ifiles[1], ifiles[2], ofiles[0], ref_genome)
