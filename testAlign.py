@@ -138,3 +138,12 @@ def test_get_consensus():
     
     seq = aln.get_consensus()
     nose.tools.eq_(seq, 'AACAA')       
+
+@nose.tools.with_setup(aln_write_fun, aln_delete)    
+def test_get_consensus():
+    
+    aln = AlignUtils.Alignment.alignment_from_file(ALNFILE)
+    
+    (dest_nums, align_nums) = aln.convert_numbering('key2')
+    nose.tools.eq_(dest_nums, [0,0,1,2,3])
+    nose.tools.eq_(align_nums, [0,2,3,4])
