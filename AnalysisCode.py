@@ -275,24 +275,24 @@ def merging_sequences(ifiles, ofiles, excluded):
 
 @ruffus.files(partial(FileGen, 'align_pairs'))
 @ruffus.follows('make_alignments', 'merging_sequences')
-def calculate_linkages(in_files, out_files, widths):
+def calculate_linkages(ifiles, ofiles, widths):
     """Calculate linkages based on a pair of input files.
     
     Arguments:
-    in_files -- A tuple of alignment files to compare.
-    out_files -- A tuple (output-linkages, sentinal-file)
+    ifiles -- A tuple of alignment files to compare.
+    ofiles -- A tuple (output-linkages, sentinal-file)
     """
 
 
     if TOUCH_ONLY:
-        touch_existing(out_files)
+        touch_existing(ofiles)
         return
 
     print in_files
-    PredictionAnalysis(in_files[0], in_files[1], out_files[0], 
-                        same = in_files[0] == in_files[1],
+    PredictionAnalysis(ifiles[0], ifiles[1], ofiles[0], 
+                        same = ifiles[0] == ifiles[1],
                         widths = widths)
-    touch(out_files[1])
+    touch(ofiles[1])
 
 
 @ruffus.files(partial(FileGen, 'convert_linkages'))
