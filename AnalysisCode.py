@@ -212,7 +212,7 @@ def calculate_linkages(in_files, out_files, widths):
     print in_files
     PredictionAnalysis(in_files[0], in_files[1], out_files[0], 
                         same = in_files[0] == in_files[1],
-                        widths = widths)
+                        widths = min(widths, WIDTHS, key = len))
     touch(out_files[1])
 
 
