@@ -130,3 +130,11 @@ def test_write_phylip():
         
     finally:
         os.remove(tfile)
+        
+@nose.tools.with_setup(aln_write_fun, aln_delete)    
+def test_get_consensus():
+    
+    aln = AlignUtils.Alignment.alignment_from_file(ALNFILE)
+    
+    seq = aln.get_consensus()
+    nose.tools.eq_(seq, 'AACAA')       
