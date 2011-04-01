@@ -108,3 +108,25 @@ def test_write_fasta():
         
     finally:
         os.remove(tfile)
+        
+@nose.tools.with_setup(aln_write_fun, aln_delete)    
+def test_write_phylip():
+    
+    aln = AlignUtils.Alignment.alignment_from_file(ALNFILE)        
+    aln.seqs['reallylongkeynamethatshouldbeshortened'] = 'ATCTG'
+
+    tfile = os.path.join(os.environ['TMPDIR'], 'ntmp.aln')
+    try:
+        aln.write_phylip(tfile)
+        with open(tfile) as handle:
+            fline = handle.next()
+            indata = ''.join([line for line in handle])
+        cline = '%i %i\n' % (len(aln.seqs), aln.width)
+        nose.tools.eq_(fline, cline)
+        
+        for key, seq in aln.seqs.items():
+            assert '%s' % key[:10] in indata
+            assert seq+'\n' in indata
+        
+    finally:
+        os.remove(tfile)
