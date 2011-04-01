@@ -82,14 +82,29 @@ def test_getting_none_alignment_slice():
 def test_signal_function():
     
     aln = AlignUtils.Alignment.alignment_from_file(ALNFILE)
-    signal, mapping = aln.get_signal(('key1', 'key2', 'key3'))
+    wanted_keys = ('key1', 'key2', 'key3')
+    signal, mapping = aln.get_signal(wanted_keys)
     
-    nose.tools.eq_(signal, range(1,len(ALNDATA)+1))
+    nose.tools.eq_(signal, range(1,len(wanted_keys)+1))
     rmapping = {}
-    for (_, seq), num in zip(ALNDATA, range(1,len(ALNDATA)+1)):
+    for (_, seq), num in zip(ALNDATA, range(1,len(wanted_keys)+1)):
         rmapping[seq] = num
     nose.tools.eq_(mapping, rmapping)
+
+@nose.tools.with_setup(aln_write_fun, aln_delete)    
+def test_write_fasta():
     
+    aln = AlignUtils.Alignment.alignment_from_file(ALNFILE)
     
-    
+    tfile = os.path.join(os.environ['TMPDIR'], 'ntmp.aln')
+    try:
+        aln.write_fasta(tfile)
+        with open(tfile) as handle:
+            indata = handle.read()
         
+        for key, seq in ALNDATA:
+            assert '>%s\n' % key in indata
+            assert seq+'\n' in indata
+        
+    finally:
+        os.remove(tfile)
