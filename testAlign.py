@@ -34,9 +34,20 @@ def test_load_alignment_from_file():
     indata = (('key1', 'AACAA'), ('key2', 'A-CAA'))
     for key, seq in indata:
         nose.tools.eq_(aln.seqs[key], seq)
-            
-        
-        
+
+@nose.tools.with_setup(aln_write_fun, aln_delete)            
+def test_join_alignments_joining_sequences():
+    
+    tfile = os.path.join(os.environ['TMPDIR'], 'tmp.aln')
+    aln1 = AlignUtils.Alignment.alignment_from_file(tfile)
+    aln2 = AlignUtils.Alignment.alignment_from_file(tfile) 
+    indata = (('key1', 'AACAA'), ('key2', 'A-CAA'))
+    
+    aln1.append_alignment(aln2)
+    nose.tools.eq_(aln1.width, 10)
+    
+    for key, seq in indata:
+        nose.tools.eq_(aln1.seqs[key], seq+seq)    
         
         
         
