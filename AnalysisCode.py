@@ -191,6 +191,7 @@ def tree_split(ifiles, ofiles, numcols):
 
 @ruffus.files(partial(FileGen, 'tree_run'))
 @ruffus.follows('tree_split')
+@ruffus.jobs_limit(3)
 def process_trees(ifile, ofile, direc):
     """Run phylip proml on a tree.
     
@@ -288,7 +289,7 @@ def calculate_linkages(ifiles, ofiles, widths):
         touch_existing(ofiles)
         return
 
-    print ifiles
+    print ifiles,  min(widths, WIDTHS, key = len)
     PredictionAnalysis(ifiles[0], ifiles[1], ofiles[0], 
                         same = ifiles[0] == ifiles[1],
                         widths = min(widths, WIDTHS, key = len))

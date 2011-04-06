@@ -51,11 +51,10 @@ def group_sequences(tree_file, cutoff, excluded):
     with open(tree_file) as handle:
         tree = Tree.get_from_string(handle.read(), schema = 'newick')
     
-    if excluded is None:
-        groups = []
-        done = set()
-    else:
-        groups = excluded
+    groups = []
+    done = set()
+    if excluded is not None:
+        groups.append(set(excluded))
         done = set(excluded)
     
     for t in tree.level_order_node_iter():
@@ -80,12 +79,14 @@ def merge_sequences(ifile, ofile, tree_file, cutoff = 70, excluded = None):
         return aln.get_consensus()
 
     groups = [x for x in group_sequences(tree_file, cutoff, excluded) if len(x) > 1]
-
     original = Alignment.alignment_from_file(ifile)        
     for group in groups:
         tup = []
         for key in group:
-            tup.append((key, original.seqs.pop(key)))
+            try:
+                tup.append((key, original.seqs.pop(key)))
+            except KeyError:
+                pass
         nkey = '-'.join(sorted(group))
         original.seqs[nkey] = make_consensus(tup)
     original.write_aln(ofile)

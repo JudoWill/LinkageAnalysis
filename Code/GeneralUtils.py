@@ -36,7 +36,7 @@ def AggregateLinkageData(files, full_file, short_file, mode = 'w', short_cut = 0
                      'Source-End', 'Target-Start','Target-End')
     
     if mode == 'w':
-        item_iter = multi_file_iterator(files, in_direc)
+        item_iter = multi_file_iterator(files)
     elif mode == 'a':
         with open(full_file) as handle:
             reader = csv.DictReader(handle, delimiter='\t')
@@ -47,7 +47,7 @@ def AggregateLinkageData(files, full_file, short_file, mode = 'w', short_cut = 0
                 item_iter = dropwhile(lambda x: pred(x) <= lvals, 
                                         multi_file_iterator(files, in_direc))
             except IndexError:
-                item_iter = multi_file_iterator(files, in_direc)
+                item_iter = multi_file_iterator(files)
     
     total_getter = itemgetter('Total-Num')
     
@@ -103,9 +103,15 @@ def convert_numbering(afile1, afile2, link_file, out_file, ref_genome):
             writer = csv.DictWriter(handle, fields, delimiter = '\t', extrasaction = 'ignore')
             writer.writerow(dict(zip(fields, fields)))
             for row in reader:
+                skip = False
                 for field, mapping, fb in conv_fields:
-                    row[field] = mapping.get(int(row[field]), fb)
-                writer.writerow(row)
+                    try:
+                        row[field] = mapping.get(int(row[field]), fb)
+                    except ValueError:
+                        skip = True
+                        break
+                if not skip:
+                    writer.writerow(row)
 
 
 
