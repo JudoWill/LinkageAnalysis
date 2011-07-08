@@ -516,7 +516,7 @@ def get_last(iterable):
     return (sw, tw, ss, ts)
     
 
-def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False, mode = 'a', cons_cut = 0.8, calc_pval = False):
+def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False, mode = 'a', cons_cut = 0.8, calc_pval = False, short_linkage_format = False):
     """Analyzes the linkages between 2 alignments.
     
     A controller function which calculates the Linkage between columns in 
@@ -570,14 +570,14 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
                     
                     
 
-        
+    print 'widths!', widths    
     def make_counts(signal):
         cdict = defaultdict(int)
         for s in signal:
             cdict[s] += 1
         return cdict
 
-
+    line_count = 0
     a1 = Alignment.alignment_from_file(align1)
     a2 = Alignment.alignment_from_file(align2)
 
@@ -588,6 +588,7 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
     target_skip = set()
     
     if mode == 'a' and os.path.exists(outfile):
+        print 'trying to get last line!'
         with open(outfile) as handle:
             last = get_last(csv.DictReader(handle, delimiter = '\t'))
     else:
@@ -606,7 +607,8 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
                             'This-Score': 0,
                             'P-val':None})
                 #print 'few %(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i' % loc
-                #writer.writerow(loc)
+                if not short_linkage_format:                
+                    writer.writerow(loc)
                 continue
                           
             s1, m1 = slice1.get_signal(seqs)
@@ -627,7 +629,8 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
                                 'Total-Num':'too conserved',
                                 'This-Score': 0,
                                 'P-val':None})
-                #writer.writerow(loc)
+                if not short_linkage_format:
+                    writer.writerow(loc)
                 #print 'conserved %(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i' % loc
                 if any([x/len(s1) > cons_cut for x in c1.values()]):
                     source_skip.add((loc['Source-Start'], loc['Source-End']))
@@ -646,6 +649,7 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
             else:
                 pval = None
             #print '%(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i, %(Total-Score)f' % loc
+            line_count += 1
             for mapping in mappings:
                 loc.update({'Source-Seq':rm1[mapping[0]],
                                 'Target-Seq':rm2[mapping[1]],
@@ -656,7 +660,7 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
                 writer.writerow(loc)
             handle.flush()
             os.fsync(handle.fileno())
-
+    return line_count
 
 
 

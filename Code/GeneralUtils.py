@@ -5,10 +5,11 @@ from types import ListType, TupleType, StringType
 from itertools import islice, groupby, imap, starmap, repeat, dropwhile
 from operator import itemgetter
 from functools import partial
+from multiprocessing import Lock
 
 import AlignUtils
 
-def AggregateLinkageData(files, full_file, short_file, mode = 'w', short_cut = 0.9):
+def AggregateLinkageData(files, full_file, short_file, mode = 'w', short_cut = 0.8):
     """Aggregates linkage data into to files for easier processing.
     
     Inputs:
@@ -21,7 +22,7 @@ def AggregateLinkageData(files, full_file, short_file, mode = 'w', short_cut = 0
         for f in files:
             fpart = f.split(os.sep)[-1]
             sprot, tprot = fpart.split('.')[0].split('--')
-            with open(os.path.join(in_direc,f)) as handle:
+            with open(f) as handle:
                 for row in csv.DictReader(handle, delimiter = '\t'):
                     if not row['Total-Num'].startswith('too') and row['Total-Num'] != 'Total-Num':
                         row['Source-Prot'] = sprot
@@ -45,53 +46,56 @@ def AggregateLinkageData(files, full_file, short_file, mode = 'w', short_cut = 0
                 last_item = items.pop()
                 lvals = pred(last_item)
                 item_iter = dropwhile(lambda x: pred(x) <= lvals, 
-                                        multi_file_iterator(files, in_direc))
+                                        multi_file_iterator(files))
             except IndexError:
                 item_iter = multi_file_iterator(files)
     
     total_getter = itemgetter('Total-Num')
     
     with open(full_file, mode) as fhandle:
-        fwriter = csv.DictWriter(fhandle, outfields, delimiter = '\t')
+        fwriter = csv.DictWriter(fhandle, outfields, delimiter = '\t', extrasaction = 'ignore')
         if mode == 'w':
             fwriter.writerow(dict(zip(outfields, outfields)))
         with open(short_file, mode) as shandle:
-            swriter = csv.DictWriter(shandle, outfields, delimiter = '\t')
+            swriter = csv.DictWriter(shandle, outfields, delimiter = '\t', extrasaction = 'ignore')
             if mode == 'w':
                 swriter.writerow(dict(zip(outfields, outfields)))
             
             for key, group in groupby(item_iter, pred):
                 lgroup = list(group)
-                fwriter.writerows(lgroup)
+                
                 if float(lgroup[0]['Total-Score']) >= short_cut:
+                    fwriter.writerows(lgroup)
                     total_seqs = sum((int(x['Total-Num']) for x in lgroup))
                     total_correct = sum((int(x['Correct-Num']) for x in lgroup))
                     lgroup[0]['Total-Num'] = total_seqs
                     lgroup[0]['Correct-Num'] = total_correct
                     swriter.writerow(lgroup[0])
                     sync_handle(shandle)
-                sync_handle(fhandle)
+                    sync_handle(fhandle)
                 
 
 def convert_numbering(afile1, afile2, link_file, out_file, ref_genome):
     """Converts the numbering in a linkage file to the numbering in the reference genome."""
 
     aln1 = AlignUtils.Alignment.alignment_from_file(afile1)
-    _, a1_numbering = aln1.convert_numbering(ref_genome)
+    a1_mapping, _ = aln1.convert_numbering(ref_genome)
+    #print len(_), len(a1_numbering)
+    #raise KeyError
     aln2 = AlignUtils.Alignment.alignment_from_file(afile2)
-    _, a2_numbering = aln2.convert_numbering(ref_genome)
+    a2_mapping, _ = aln2.convert_numbering(ref_genome)
 
-    a1_mapping = dict(zip(range(len(a1_numbering)), a1_numbering))
-    a2_mapping = dict(zip(range(len(a2_numbering)), a2_numbering))
+    #a1_mapping = dict(zip(range(len(a1_numbering)), a1_numbering))
+    #a2_mapping = dict(zip(range(len(a2_numbering)), a2_numbering))
 
     #fall back numbers when we fall out of range
-    fb1 = len(a1_numbering)
-    fb2 = len(a2_numbering)
+    fb1 = max(a1_mapping)
+    fb2 = max(a2_mapping)
 
-    conv_fields = (('Source-Start', a1_mapping, len(a1_numbering)),
-                    ('Source-End', a1_mapping, len(a1_numbering)),
-                    ('Target-Start', a2_mapping, len(a2_numbering)), 
-                    ('Target-End', a2_mapping, len(a2_numbering)))
+    conv_fields = (('Source-Start', a1_mapping, max(a1_mapping)),
+                    ('Source-End', a1_mapping, max(a1_mapping)),
+                    ('Target-Start', a2_mapping, max(a2_mapping)), 
+                    ('Target-End', a2_mapping, max(a2_mapping)))
 
 
     with open(link_file) as handle:
@@ -106,13 +110,35 @@ def convert_numbering(afile1, afile2, link_file, out_file, ref_genome):
                 skip = False
                 for field, mapping, fb in conv_fields:
                     try:
-                        row[field] = mapping.get(int(row[field]), fb)
+                        row[field] = mapping[int(row[field])]
                     except ValueError:
                         skip = True
                         break
+                    except IndexError:
+                        print 'too large', int(row[field]), len(mapping)
+                        row[field] = fb
                 if not skip:
                     writer.writerow(row)
 
+
+def greatest_line(filename):
+    
+    with open(filename) as handle:
+        greatest = None
+        for line in handle:
+            if line > greatest:
+                greatest = line
+    return greatest
+
+
+class LockedFile(file):
+    def __init__(self,name,mode):
+        self.lock = Lock()
+        file.__init__(self,name,mode)
+
+    def safe_write(self, *args, **kwargs):
+        with self.lock:
+            self.write(*args, **kwargs)
 
 
 def touch_existing(fnames, times = None):

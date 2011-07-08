@@ -7,3 +7,9 @@ biopython
 memorised
 python-memcached
 mpmath
+pyyaml
+BeautifulSoup
+suds
+nwalign
+matplotlib
+dendropy

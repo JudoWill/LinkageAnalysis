@@ -1,12 +1,12 @@
 import sqlite3
 from types import ListType, TupleType, StringType
-from itertools import product, chain, repeat
+from itertools import product, chain, repeat, dropwhile
 from functools import partial
 from collections import defaultdict
-from operator import contains, itemgetter
+from operator import contains, itemgetter, ge
 import os.path, os
 import hashlib, yaml
-from GeneralUtils import safe_mkdir, take
+from GeneralUtils import safe_mkdir, take, LockedFile, greatest_line
 from AlignUtils import Alignment
 from memorised.decorators import memorise
 
@@ -136,6 +136,7 @@ def FileIter(species_file, funcname):
                 'convert_linkages':('RefGenome', 'LinkageDir', 'AlignmentDir')
             }
 
+    print funcname
     for species in SPECIES_LIST:
         if not check_fields(species, field_dict[funcname]):
             continue
@@ -174,24 +175,27 @@ def FileIter(species_file, funcname):
             else:
                 aligndir = partial(os.path.join, species['AlignmentDir'])
             linkdir = partial(os.path.join, species['LinkageDir'])
+                    
+            aligns = sorted([x.split('.')[0] for x in os.listdir(aligndir('')) if x.endswith('.aln')])
+            align_iter = product(aligns, repeat = 2)
+            done_file = linkdir('EmptyFile.list')
 
-            aligns = [x.split('.')[0] for x in os.listdir(aligndir('')) if x.endswith('.aln')]
             align_ids = get_ids_dict(aligndir(''))
             overlap = species.get('OVERLAP', 5)
             widths = species.get('WIDTHS', range(1,5))
-            for p1, p2 in product(sorted(aligns), repeat = 2):
-                if len(align_ids[p1] & align_ids[p2]) >= overlap:
-                    a1 = aligndir(p1 + '.aln')
-                    a2 = aligndir(p2 + '.aln')
-                    d = linkdir(p1 + '--' + p2 + '.res')
-                    s = linkdir(p1 + '--' + p2 + '.sen')                
+            for p1, p2 in align_iter:
+                #print p1, p2
+                a1 = aligndir(p1 + '.aln')
+                a2 = aligndir(p2 + '.aln')
+                d = linkdir(p1 + '--' + p2 + '.res')
+                s = linkdir(p1 + '--' + p2 + '.sen')                
 
-                    yield (a1, a2), (d, s), widths
+                yield (a1, a2), (d, s), widths, done_file
 
         elif funcname == 'convert_linkages':
 
             ref_genome = species['RefGenome']
-            for (a1, a2), (link_file, _), _ in FileIter(species_file, 'align_pairs'):
+            for (a1, a2), (link_file, _), _, _ in FileIter(species_file, 'align_pairs'):
                 out_file = link_file+'.conv'
                 sen_file = link_file+'.conv.sen'
                 if os.path.exists(link_file):
@@ -245,7 +249,8 @@ def FileIter(species_file, funcname):
             
             ifiles = [linkdir(x) for x in os.listdir(linkdir('')) if x.endswith('.conv')]
             ofiles = [cirdir('FullAggregatedData.txt'),
-                        cirdir('ShortAggregatedData.txt')]
+                        cirdir('ShortAggregatedData.txt'),
+                        cirdir('AggregatedData.sen')]
 
             yield ifiles, ofiles
 

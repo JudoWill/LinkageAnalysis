@@ -41,6 +41,7 @@ if __name__ == '__main__':
     parser.add_argument('--quiet', dest = 'quiet', action = 'store_true', default = False)
     parser.add_argument('--parse-align', dest = 'parsealign', action = 'store_true',
                         default = False)
+    parser.add_argument('--short-link', dest = 'shortlink', default = False, action = 'store_true')
     parser.add_argument('--link', dest = 'link', action = 'store_true', default = False)
     parser.add_argument('--tree', dest = 'tree', action = 'store_true', default = False)
     parser.add_argument('--align', dest = 'alignments', action = 'store_true', default = False)
@@ -53,6 +54,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     SPECIES_FILE = args.processfile
+    SHORT_LINKAGE = args.shortlink
     
     DATA_DIR = args.datadir
 
@@ -273,9 +275,22 @@ def merging_sequences(ifiles, ofiles, excluded):
     merge_sequences(ifiles[0], ofiles[0], ifiles[1], excluded = excluded)
 
 
+def check_linkages(ifiles, ofiles, *args, **kwargs):
+    #print 'checking', ofiles[1]
+    if all(os.path.exists(x) for x in ofiles):
+        return False, 'Files present'
+    parts = ofiles[0].split(os.sep)[-1].split('.')[0].split('--')
+    wanted_line = '%s\t%s\n' % (parts[0], parts[1])
+    with open(args[-1]) as handle:
+        for line in handle:
+            if line == wanted_line:
+                return False, 'Already precalulated'
+    return True, 'Need to continue calculating'
+
+#@ruffus.check_if_uptodate(check_linkages)
 @ruffus.files(partial(FileGen, 'align_pairs'))
 @ruffus.follows('make_alignments', 'merging_sequences')
-def calculate_linkages(ifiles, ofiles, widths):
+def calculate_linkages(ifiles, ofiles, widths, done_file):
     """Calculate linkages based on a pair of input files.
     
     Arguments:
@@ -284,16 +299,22 @@ def calculate_linkages(ifiles, ofiles, widths):
     widths -- A list of widths to check ... traditionally this is [1,2,3,4,5]
     """
 
-
+    print 'here', ifiles
     if TOUCH_ONLY:
         touch_existing(ofiles)
         return
 
     print ifiles,  min(widths, WIDTHS, key = len)
-    PredictionAnalysis(ifiles[0], ifiles[1], ofiles[0], 
-                        same = ifiles[0] == ifiles[1],
-                        widths = min(widths, WIDTHS, key = len))
+    count = PredictionAnalysis(ifiles[0], ifiles[1], ofiles[0], 
+                                same = ifiles[0] == ifiles[1],
+                                widths = min(widths, WIDTHS, key = len),
+                                short_linkage_format = SHORT_LINKAGE)
     touch(ofiles[1])
+#    if count == 0:
+#        os.remove(ofiles[0])
+#        os.remove(ofiles[1])
+#        prots = ofiles[0].split(os.sep)[-1].split('.')[0].split('--')
+#        locked_file_handle.safe_write('%s\t%s\n' % (prots[0], prots[1]))
 
 
 
@@ -314,11 +335,11 @@ def fix_numbering(ifiles, ofiles, ref_genome):
     if TOUCH_ONLY:
         touch_existing(ofiles)
         return
-    
+    print 'converting', ifiles
     convert_numbering(ifiles[0], ifiles[1], ifiles[2], ofiles[0], ref_genome)
     touch(ofiles[1])
 
-
+@ruffus.jobs_limit(1)
 @ruffus.files(partial(FileGen, 'linkage_merge'))
 @ruffus.follows('fix_numbering')
 def merge_linkages(infiles, ofiles):
@@ -334,7 +355,8 @@ def merge_linkages(infiles, ofiles):
         touch_existing(ofiles)
         return
 
-    AggregateLinkageData(infiles, ofiles[0], ofiles[1])
+    AggregateLinkageData(infiles, ofiles[0], ofiles[1], mode = 'a')
+    touch(ofiles[2])
 
 def linkage_summarize():
     
