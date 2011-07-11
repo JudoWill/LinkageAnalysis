@@ -374,7 +374,6 @@ def get_mapping_pval(signal1, signal2, num_reps = 5000):
     
 
 
-@memorise()
 def prediction_mapping(signal1, signal2):
     """Calculates the mapping between any two signals.
 
@@ -397,21 +396,12 @@ def prediction_mapping(signal1, signal2):
     for s1, s2 in zip(signal1, signal2):
         counts[(s1, s2)] += 1
 
-    (s1, s2), val = max(counts.items(), key = itemgetter(1))
-    if val == 1:
-        return [(x, y, 1) for (x,y) in counts.keys()]
-    else:
-        mapping = (s1, s2, val)
-        sn1 = tuple()
-        sn2 = tuple()
-        for i1, i2 in zip(signal1, signal2):
-            if i1 != s1:
-                sn1 += (i1,)
-                sn2 += (i2,)
-        if sn1:
-            return [mapping] + prediction_mapping(sn1, sn2)
-        else:
-            return [mapping]
+    mapping = []
+    while counts:
+        (s1, s2), val = max(counts.items(), key = itemgetter(1))
+        mapping.append((s1,s2,val))
+        counts.pop((s1, s2))
+    return mapping
 
 
 def run_muscle(filename, out_align, MAX_MEM = 1500):
