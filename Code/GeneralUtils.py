@@ -7,6 +7,7 @@ from operator import itemgetter
 from functools import partial
 from multiprocessing import Lock
 
+from LinkFields import LINK_FIELDS
 import AlignUtils
 
 def AggregateLinkageData(files, full_file, short_file, mode = 'w', short_cut = 0.8):
@@ -30,25 +31,28 @@ def AggregateLinkageData(files, full_file, short_file, mode = 'w', short_cut = 0
                         yield row
     
     files.sort()
-    outfields = ('Source-Prot', 'Target-Prot','Source-Start','Source-End',
-                'Target-Start','Target-End','Source-Seq','Target-Seq',
-                'Correct-Num','Total-Num','This-Score','Total-Score')
+    outfields = LINK_FIELDS
     pred = itemgetter('Source-Prot', 'Target-Prot','Source-Start',
                      'Source-End', 'Target-Start','Target-End')
     
     if mode == 'w':
         item_iter = multi_file_iterator(files)
     elif mode == 'a':
-        with open(full_file) as handle:
-            reader = csv.DictReader(handle, delimiter='\t')
-            items = deque(reader, 1)
-            try:
+        try:
+            with open(full_file) as handle:
+                reader = csv.DictReader(handle, delimiter='\t')
+                items = deque(reader, 1)
                 last_item = items.pop()
                 lvals = pred(last_item)
                 item_iter = dropwhile(lambda x: pred(x) <= lvals, 
-                                        multi_file_iterator(files))
-            except IndexError:
-                item_iter = multi_file_iterator(files)
+                                            multi_file_iterator(files))
+
+
+        except IOError:
+            item_iter = multi_file_iterator(files)
+        except IndexError:
+            item_iter = multi_file_iterator(files)
+            
     
     total_getter = itemgetter('Total-Num')
     
@@ -63,6 +67,7 @@ def AggregateLinkageData(files, full_file, short_file, mode = 'w', short_cut = 0
             
             for key, group in groupby(item_iter, pred):
                 lgroup = list(group)
+
                 
                 if float(lgroup[0]['Total-Score']) >= short_cut:
                     fwriter.writerows(lgroup)
