@@ -4,13 +4,16 @@ from GeneralUtils import *
 from subprocess import call
 import shlex
 from itertools import groupby, product, dropwhile, imap, izip, count
-from math import log
+from math import log, sqrt
 from random import shuffle, sample, randint
 from operator import itemgetter, ne, eq
 import csv, tempfile, shutil
 from functools import partial
 import os.path, os
 from collections import defaultdict
+from LinkFields import LINK_FIELDS
+
+
 
 try:
     from memorised.decorators import memorise
@@ -263,6 +266,13 @@ class Alignment():
         return dest_nums, align_nums
 
 
+def prot_from_path(path):
+    """Returns the GI from a path."""
+
+    fname = path.split(os.sep)[-1]
+    gi = fname.split('.')[0]
+    return gi
+
 @memorise()
 def calculate_mutual_info(signal1, signal2):
     """Caluculates the Mutual Information shared by two signals.
@@ -301,6 +311,37 @@ def calculate_mutual_info(signal1, signal2):
         mut_info += overlap_prob[(s1, s2)]*log(overlap_prob[(s1, s2)]/(signal1_prob[s1]*signal2_prob[s2]))
         
     return mut_info
+
+def calculate_PNAS(signal1, signal2):
+    
+
+    snum = len(signal1)
+    s1_counts = defaultdict(int)
+    s2_counts = defaultdict(int)
+
+    for s1, s2 in zip(signal1, signal2):
+        s1_counts[s1] += 1
+        s2_counts[s2] += 1
+
+    s1_cons, _ = max(s1_counts.items(), key = itemgetter(1))
+    s2_cons, _ = max(s2_counts.items(), key = itemgetter(1))
+
+    s1_bin = [s1 != s1_cons for s1 in signal1] #True if MUTATION!!!
+    s2_bin = [s2 != s2_cons for s2 in signal2]
+
+    f1 = sum(s1_bin)
+    f2 = sum(s2_bin)
+    f12 = sum(1 for s1, s2 in zip(s1_bin, s2_bin) if s1 and s2)
+
+    f1m = f1/snum
+    f2m = f2/snum
+
+    V1 = sum((f1m-x)**2 for x in s1_bin)
+    V2 = sum((f2m-x)**2 for x in s2_bin)
+
+    return (f12/snum - f1m*f2m)/sqrt(V1*V2)
+
+    
 
 
 @memorise()
@@ -400,7 +441,9 @@ def prediction_mapping(signal1, signal2):
     while counts:
         (s1, s2), val = max(counts.items(), key = itemgetter(1))
         mapping.append((s1,s2,val))
-        counts.pop((s1, s2))
+        for ks1, ks2 in counts.keys():
+            if ks1 == s1:            
+                counts.pop((ks1, ks2))
     return mapping
 
 
@@ -506,7 +549,7 @@ def get_last(iterable):
     return (sw, tw, ss, ts)
     
 
-def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False, mode = 'a', cons_cut = 0.8, calc_pval = False, short_linkage_format = False):
+def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False, mode = 'a', cons_cut = 0.98, calc_pval = False, short_linkage_format = False):
     """Analyzes the linkages between 2 alignments.
     
     A controller function which calculates the Linkage between columns in 
@@ -571,9 +614,17 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
     a1 = Alignment.alignment_from_file(align1)
     a2 = Alignment.alignment_from_file(align2)
 
-    fields = ('Source-Start', 'Source-End', 'Target-Start', 'Target-End',
-                'Source-Seq', 'Target-Seq', 'Correct-Num', 'Total-Num', 
-                'This-Score', 'Total-Score', 'P-val')
+    sprot = prot_from_path(align1)
+    tprot = prot_from_path(align2)
+
+    defaults = dict(zip(LINK_FIELDS, [None]*len(LINK_FIELDS)))
+    defaults['Source-Prot']=sprot
+    defaults['Target-Prot']=tprot
+    defaults.pop('Source-Start')
+    defaults.pop('Source-End')
+    defaults.pop('Target-Start')
+    defaults.pop('Target-End')
+
     source_skip = set()
     target_skip = set()
     
@@ -585,17 +636,17 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
         last = None
 
     with open(outfile, mode) as handle:
-        handle.write('\t'.join(fields)+'\n')
-        writer = csv.DictWriter(handle, fieldnames = fields, 
+        handle.write('\t'.join(LINK_FIELDS)+'\n')
+        writer = csv.DictWriter(handle, fieldnames = LINK_FIELDS, 
                                 delimiter = '\t')
         for slice1, slice2, seqs, loc in get_signals(a1, a2, widths, same, last):
+            loc.update(defaults)            
             if slice1 is None:
                 loc.update({'Source-Seq':None,
                             'Target-Seq':None,
                             'Correct-Num':'too few',
                             'Total-Num':'too few',
-                            'This-Score': 0,
-                            'P-val':None})
+                            'This-Score': 0})
                 #print 'few %(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i' % loc
                 if not short_linkage_format:                
                     writer.writerow(loc)
@@ -611,42 +662,35 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
             #create count dictionary
             c1 = make_counts(s1)
             c2 = make_counts(s2)
+            
+            loc['Source-Cons'] = max([x/len(s1) for x in c1.values()])
+            loc['Target-Cons'] = max([x/len(s2) for x in c2.values()])
 
-            if any([x/len(s1) > cons_cut for x in c1.values()]) or any([x/len(s2) > cons_cut for x in c2.values()]):
-                loc.update({'Source-Seq':None,
-                                'Target-Seq':None,
-                                'Correct-Num':'too conserved',
-                                'Total-Num':'too conserved',
-                                'This-Score': 0,
-                                'P-val':None})
+            if loc['Source-Cons'] > cons_cut or loc['Target-Cons'] > cons_cut:
+                loc.update({'Correct-Num':'too conserved',
+                            'Total-Num':'too conserved'})
                 if not short_linkage_format:
                     writer.writerow(loc)
-                #print 'conserved %(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i' % loc
-                if any([x/len(s1) > cons_cut for x in c1.values()]):
+                if loc['Source-Cons'] > cons_cut:
                     source_skip.add((loc['Source-Start'], loc['Source-End']))
-                if any([x/len(s2) > cons_cut for x in c2.values()]):
+                if loc['Target-Cons'] > cons_cut:
                     target_skip.add((loc['Target-Start'], loc['Target-End']))
-                #print len(s1),c1.values()
-                #print len(s2),c2.values() 
                 continue
 
             
             mappings = prediction_mapping(tuple(s1), tuple(s2))
             score = sum([z for _, _, z in mappings])/len(s1)
+            loc['Mutual-Info'] = calculate_mutual_info(tuple(s1), tuple(s2))
             loc['Total-Score'] = score
-            if calc_pval:
-                pval = None if score < 0.8 else get_mapping_pval(tuple(s1), tuple(s2))
-            else:
-                pval = None
+            loc['PNAS-Dist'] = calculate_PNAS(tuple(s1), tuple(s2))
             #print '%(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i, %(Total-Score)f' % loc
             line_count += 1
-            for mapping in mappings:
-                loc.update({'Source-Seq':rm1[mapping[0]],
-                                'Target-Seq':rm2[mapping[1]],
-                                'Correct-Num':mapping[2],
-                                'Total-Num':c1[mapping[0]],
-                                'This-Score': mapping[2]/c1[mapping[0]],
-                                'P-val':pval})                
+            for source, target, val in mappings:
+                loc.update({'Source-Seq':rm1[source],
+                                'Target-Seq':rm2[target],
+                                'Correct-Num':val,
+                                'Total-Num':c1[source],
+                                'This-Score': val/c1[source]})                
                 writer.writerow(loc)
             handle.flush()
             os.fsync(handle.fileno())
