@@ -60,24 +60,23 @@ class BinaryLinkageResults(list):
         
         return self.tuple_class(**mapping)
         
-    def get_reverse_item(self, item):
+    def get_reverse_item(self, item, ind = 0):
         """Returns the pairwise item for the one provided.
 
         Raises ValueError if it cannot find it.
         """
         
         rev_item = self._generate_reverse_item(item)
-        print item, rev_item        
-        rev_index = self.index(rev_item)
+        rev_index = self.index(rev_item, lo = ind)
         return self[rev_index]
         
     def get_pairwise_records(self):
 
         seen = set()
         
-        for record in self.iterate_records():
+        for ind, record in enumerate(self.iterate_records()):
             try:
-                rev_item = self.get_reverse_item(record)
+                rev_item = self.get_reverse_item(record, ind = ind)
             except ValueError:
                 continue
             if rev_item in seen: #we've reached the middle
@@ -107,12 +106,12 @@ class BinaryLinkageResults(list):
 
         return Struct(fmtstr), mapping_list
 
-    def index(self, x, key = None):
+    def index(self, x, key = None, lo = 0, hi = None):
         """Locate the leftmost value exactly equal to x"""
         print x        
         if key is None:
             key = self.key
-        i = bisect_left(self, x, key = key)
+        i = bisect_left(self, x, key = key, lo = lo, hi = hi)
         print ',i', i
         if i != len(self) and key(self[i]) == key(x):
             return i
