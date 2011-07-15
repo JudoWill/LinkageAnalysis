@@ -25,6 +25,11 @@ class BinaryLinkageResults(list):
 
     def __len__(self):
         return self.len
+
+    def iterate_records(self):
+        
+        for recnum in xrange(self.len):
+            yield self[recnum]
     
     def _convert_item(self, unpacked_data):
         iterable = iter(unpacked_data)
@@ -33,7 +38,6 @@ class BinaryLinkageResults(list):
 
     
     def __getitem__(self,i):
-        print i
         if i >= 0 or i < self.len:
             self.f.seek(i*self.bsize)
             buf = self.f.read(self.bsize)
@@ -67,7 +71,21 @@ class BinaryLinkageResults(list):
         rev_index = self.index(rev_item)
         return self[rev_index]
         
-    
+    def get_pairwise_records(self):
+
+        seen = set()
+        
+        for record in self.iterate_records():
+            try:
+                rev_item = self.get_reverse_item(record)
+            except ValueError:
+                continue
+            if rev_item in seen: #we've reached the middle
+                break
+            yield record, rev_item
+            seen.add(rev_item)
+
+
 
     def generate_struct(self, fields):
     
