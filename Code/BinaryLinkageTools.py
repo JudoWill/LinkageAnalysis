@@ -75,14 +75,15 @@ class BinaryLinkageResults(list):
         seen = set()
         
         for ind, record in enumerate(self.iterate_records()):
+            if any(x == -1 for x in record) or record.Source_Start == record.Target_Start:
+                continue
             try:
                 rev_item = self.get_reverse_item(record, ind = ind)
             except ValueError:
                 continue
-            if rev_item in seen: #we've reached the middle
-                break
-            yield record, rev_item
-            seen.add(rev_item)
+            if rev_item not in seen: #we've reached the middle
+                yield record, rev_item
+                seen.add(rev_item)
 
 
 
@@ -107,12 +108,11 @@ class BinaryLinkageResults(list):
         return Struct(fmtstr), mapping_list
 
     def index(self, x, key = None, lo = 0, hi = None):
-        """Locate the leftmost value exactly equal to x"""
-        print x        
+        """Locate the leftmost value exactly equal to x"""      
         if key is None:
             key = self.key
         i = bisect_left(self, x, key = key, lo = lo, hi = hi)
-        print ',i', i
+        
         if i != len(self) and key(self[i]) == key(x):
             return i
         raise ValueError
