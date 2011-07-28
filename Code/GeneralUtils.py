@@ -2,10 +2,13 @@ import csv
 import os, os.path
 from collections import deque
 from types import ListType, TupleType, StringType
-from itertools import islice, groupby, imap, starmap, repeat, dropwhile
+from itertools import islice, groupby, imap, starmap, repeat, dropwhile, chain
 from operator import itemgetter
 from functools import partial
 from multiprocessing import Lock
+from struct import Struct
+from fileinput import FileInput
+
 
 from LinkFields import LINK_FIELDS
 import AlignUtils
@@ -124,6 +127,66 @@ def convert_numbering(afile1, afile2, link_file, out_file, ref_genome):
                         row[field] = fb
                 if not skip:
                     writer.writerow(row)
+
+def merge_to_binary(indirec, outfile):
+    
+
+    def safefloat(string):
+        try:
+            return float(string)
+        except ValueError:
+            if len(string) == 0:
+                return 0.0
+            else:
+                return None
+
+    def safeint(string):
+        try:
+            return int(string.strip())
+        except ValueError:
+            if len(string) == 0:
+                return 0
+            else:
+                return None
+
+
+    files = sorted([x for x in os.listdir(indirec) if x.endswith('.conv')])
+    max_len = max(len(x.split('--')[0]) for x in files)
+
+    mapping = (('Start','i', safeint), ('End','i', safeint), ('Num', 'i', safeint),
+                ('Prot', '%ic'%max_len, lambda x: x.ljust(max_len)),
+                ('Score', 'f', safefloat), ('Cons', 'f', safefloat), 
+                ('Info', 'f', safefloat), ('Dist', 'f', safefloat),
+                ('Seq', 'c', lambda x:x))
+
+    mapping_list = []
+    fmtstr = ''
+    for field in LINK_FIELDS:
+        for key, fmt, func in mapping:
+            if key in field:
+                print field, key, fmt
+                fmtstr += fmt
+                mapping_list.append(func)
+                break
+    StructClass = Struct(fmtstr)
+
+    
+    handle = FileInput([os.path.join(indirec, x) for x in files])
+    reader = csv.reader(handle, delimiter = '\t')
+    grouper = itemgetter(*range(6)) #group by source-prot through target-end
+    buf = open(outfile, 'wb')
+    count = 0
+    for ind, (key, rows) in enumerate(groupby(reader, key = grouper)):
+        trow = rows.next()
+        converted = [func(field) for func, field in zip(mapping_list, trow)]
+        #print zip(LINK_FIELDS, converted, trow)
+        if all(x is not None for x in converted):
+            arglist = list(chain(converted[0], converted[1], converted[2:]))
+            data = StructClass.pack(*arglist)
+            buf.write(data)
+            count += 1
+            if count % 10000 == 0:
+                print count, key
 
 
 def greatest_line(filename):
