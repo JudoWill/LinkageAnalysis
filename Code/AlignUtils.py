@@ -691,8 +691,8 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
             c1 = make_counts(s1)
             c2 = make_counts(s2)
             
-            loc['Source-Cons'] = max([x/len(s1) for x in c1.values()])
-            loc['Target-Cons'] = max([x/len(s2) for x in c2.values()])
+            loc['Source-Cons'] = max(x/len(s1) for x in c1.values())
+            loc['Target-Cons'] = max(x/len(s2) for x in c2.values())
 
             if loc['Source-Cons'] > cons_cut or loc['Target-Cons'] > cons_cut:
                 loc.update({'Correct-Num':'too conserved',
