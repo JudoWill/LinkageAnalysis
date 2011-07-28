@@ -466,7 +466,7 @@ if __name__ == '__main__':
     elif args.alignments:
         ruffus.pipeline_run([make_alignments], multiprocess = args.workers)        
     elif args.link:
-        ruffus.pipeline_run([merge_linkages], multiprocess = args.workers)
+        ruffus.pipeline_run([fix_numbering], multiprocess = args.workers)
     elif args.compare:
         ruffus.pipeline_run([compare_genomes], multiprocess = args.workers)
     elif args.tree:
