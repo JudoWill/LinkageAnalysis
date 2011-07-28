@@ -709,6 +709,8 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
             mappings = prediction_mapping(tuple(s1), tuple(s2))
             score = sum([z for _, _, z in mappings])/len(s1)
             loc['Mutual-Info'] = calculate_mutual_info(tuple(s1), tuple(s2))
+            loc['Null-Mutual-Info'] = get_null_mutual_info(tuple(s1), tuple(s2))
+            loc['Corrected-Mutaul-Info'] = loc['Mutual-Info'] - loc['Null-Mutual-Info']
             loc['Total-Score'] = score
             loc['PNAS-Dist'] = calculate_PNAS(tuple(s1), tuple(s2))
             #print '%(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i, %(Total-Score)f' % loc
