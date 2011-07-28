@@ -378,6 +378,34 @@ def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
     return num_greater / num_reps
 
 @memorise()
+def get_null_mutual_info(signal1, signal2, num_reps = 500):
+    """Calculates the mean of the mutual information of the null-model.
+
+      Uses a permutation test to generate a random set of uncorrelated signals
+      and determines the mutual information of each.
+      Arguements:
+      signal1 -- An iterable indicating the first signal
+      signal2 -- An iterable indicating the second signal
+
+      Kwargs:
+      num_reps -- The number of repititions to perform. Default: 500
+
+      Signals MUST be the same length! Items must be hashable!
+
+      Returns:
+      mean-value -- float
+
+    """
+
+    r=0.0
+    for i in xrange(num_reps):
+
+        r += calculate_mutual_info(signal1, sample(signal2, len(signal2)))
+
+    return float(r) / float(num_reps)
+
+
+@memorise()
 def get_mapping_pval(signal1, signal2, num_reps = 5000):
     """Caluculates the p-value associated with the observed linkage.
 
