@@ -274,7 +274,7 @@ def prot_from_path(path):
     return gi
 
 @memorise()
-def calculate_mutual_info(signal1, signal2):
+def calculate_mutual_info(signal1, signal2, **kwargs):
     """Caluculates the Mutual Information shared by two signals.
 
     Arguements:
@@ -312,7 +312,7 @@ def calculate_mutual_info(signal1, signal2):
         
     return mut_info
 
-def calculate_PNAS(signal1, signal2):
+def calculate_PNAS(signal1, signal2, **kwargs):
     
 
     snum = len(signal1)
@@ -345,7 +345,7 @@ def calculate_PNAS(signal1, signal2):
 
 
 @memorise()
-def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
+def get_mutual_info_pval(signal1, signal2, num_reps = 5000, **kwargs):
     """Caluculates the p-value associated with the mutual information.
 
     Uses a permutation test to determine the likelihood of getting a mutual
@@ -378,7 +378,7 @@ def get_mutual_info_pval(signal1, signal2, num_reps = 5000):
     return num_greater / num_reps
 
 @memorise()
-def get_null_mutual_info(signal1, signal2, num_reps = 500):
+def get_null_mutual_info(signal1, signal2, num_reps = 500, **kwargs):
     """Calculates the mean of the mutual information of the null-model.
 
       Uses a permutation test to generate a random set of uncorrelated signals
@@ -667,6 +667,12 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
 
     source_skip = set()
     target_skip = set()
+
+    calculate_fields = [('Mutual-Info', calculate_mutual_info),
+                            ('Null-Mutual-Info', get_null_mutual_info),
+                            ('Corrected-Mutaul-Info', get_corrected_mutual_info),
+                            ('PNAS-Dist', calculate_PNAS)]
+
     
     if mode == 'a' and os.path.exists(outfile):
         print 'trying to get last line!'
@@ -721,11 +727,10 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
             
             mappings = prediction_mapping(tuple(s1), tuple(s2))
             score = sum([z for _, _, z in mappings])/len(s1)
-            loc['Mutual-Info'] = calculate_mutual_info(tuple(s1), tuple(s2))
-            loc['Null-Mutual-Info'] = get_null_mutual_info(tuple(s1), tuple(s2))
-            loc['Corrected-Mutaul-Info'] = loc['Mutual-Info'] - loc['Null-Mutual-Info']
             loc['Total-Score'] = score
-            loc['PNAS-Dist'] = calculate_PNAS(tuple(s1), tuple(s2))
+            for field, func in calculate_fields:
+                loc[field] = func(tuple(s1), tuple(s2), **loc)
+
             #print '%(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i, %(Total-Score)f' % loc
             line_count += 1
             for source, target, val in mappings:
