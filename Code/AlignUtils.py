@@ -103,7 +103,7 @@ class Alignment():
         """Yields randomized bootstrap alignments"""
 
         for n in xrange(num_reps):
-            inds = [randint(0, self.width-1) for x in xrange(self.width)]
+            inds = [randint(0, self.width-1) for _ in xrange(self.width)]
             getter = itemgetter(*inds)
             nalign = Alignment()
             for key, seq in self.seqs.iteritems():
@@ -185,7 +185,6 @@ class Alignment():
         """
         
         signal = []
-        count = 0
         seq_dict = {}
         for name in seq_names:
             seq = self.seqs[name]
@@ -565,6 +564,38 @@ def get_last(iterable):
 def get_corrected_mutual_info(signal1, signal2, **kwargs):
     return kwargs['Mutual-Info'] - kwargs['Null-Mutual-Info']
 
+def calculate_OMES(signal1, signal2, **kwargs):
+    """Finds the Observed Minus Expected Squared score.
+
+    Calcualtes the score using the formula:
+    sum((Nobs-Nex)^2/Nvalid) for all pairs in S1,S2
+
+    Reference: Fodor et. al. 2004, PMID: 15211506
+    """
+
+    s1_counts = defaultdict(int)
+    s2_counts = defaultdict(int)
+    Nobs = defauldict(int)
+    Nvalid = 0
+
+    for s1, s2 in zip(signal1, signal2):
+        if s1 != '-' and s2 != '-':
+            s1_counts[s1] += 1
+            s2_counts[s2] += 1
+            Nobs[(s1,s2)] += 1
+            Nvalid += 1
+
+    omes = 0.0
+    for (s1, s2), obs in Nobs.items():
+        Nex = s1_counts[s1]*s2_counts[s2]/Nvalid
+        omes += ((obs-Nex)**2)/Nvalid
+
+    return OMES
+
+
+
+
+
 def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False, mode = 'a', cons_cut = 0.98, calc_pval = False, short_linkage_format = False):
     """Analyzes the linkages between 2 alignments.
     
@@ -647,7 +678,8 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
     calculate_fields = [('Mutual-Info', calculate_mutual_info),
                             ('Null-Mutual-Info', get_null_mutual_info),
                             ('Corrected-Mutaul-Info', get_corrected_mutual_info),
-                            ('PNAS-Dist', calculate_PNAS)]
+                            ('PNAS-Dist', calculate_PNAS),
+                            ('OMES', calculate_OMES)]
 
     
     if mode == 'a' and os.path.exists(outfile):
