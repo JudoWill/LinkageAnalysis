@@ -589,6 +589,9 @@ def get_last(iterable):
     return row
     
 
+def get_corrected_mutual_info(signal1, signal2, **kwargs):
+    return kwargs['Mutual-Info'] - kwargs['Null-Mutual-Info']
+
 def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False, mode = 'a', cons_cut = 0.98, calc_pval = False, short_linkage_format = False):
     """Analyzes the linkages between 2 alignments.
     
