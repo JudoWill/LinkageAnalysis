@@ -9,6 +9,7 @@ import hashlib, yaml
 from GeneralUtils import safe_mkdir, take, LockedFile, greatest_line
 from AlignUtils import Alignment
 from memorised.decorators import memorise
+import glob
 
 def hexhash(path):
     """Returns the md5 hexhash of the file at the path."""
@@ -150,9 +151,13 @@ def FileIter(species_file, funcname):
             break #this only needs to be run once for each file!
 
         elif funcname == 'alignments':
-            seqdir = partial(os.path.join, species['SequenceDir'])
+
+            if os.path.exists(os.path.join(species['SequenceDir'], 'filtered')):
+                seqdir = partial(os.path.join, species['SequenceDir'], 'filtered')
+            else:
+                seqdir = partial(os.path.join, species['SequenceDir'])
             aligndir = partial(os.path.join, species['AlignmentDir'])
-            for f in sorted(os.listdir(seqdir(''))):
+            for f in sorted(glob.glob(seqdir('*.fasta'))):
                 if not f.endswith('skip'):
                     name = f.split('.')[0]
                     ifile = seqdir(f)
@@ -165,7 +170,7 @@ def FileIter(species_file, funcname):
             mergedir = partial(os.path.join, species['MergedDir'])
             refgenome = species.get('RefGenome', None)
             tfile = os.path.join(species['TreeDir'], 'outtree')
-            files = sorted([x for x in os.listdir(aligndir('')) if x.endswith('.aln')])
+            files = sorted(glob.glob(aligndir('*.aln')))
             for f in files:
                 yield [aligndir(f), tfile], [mergedir(f), mergedir(f+'.fasta')], [refgenome]
 
@@ -176,7 +181,7 @@ def FileIter(species_file, funcname):
                 aligndir = partial(os.path.join, species['AlignmentDir'])
             linkdir = partial(os.path.join, species['LinkageDir'])
                     
-            aligns = sorted([x.split('.')[0] for x in os.listdir(aligndir('')) if x.endswith('.aln')])
+            aligns = sorted([x.split('.')[0] for x in glob.glob(aligndir('*.aln'))])
             align_iter = product(aligns, repeat = 2)
             done_file = linkdir('EmptyFile.list')
 
@@ -214,7 +219,7 @@ def FileIter(species_file, funcname):
             for ind in xrange(numstraps):
                 safe_mkdir(treedir('tree%i' % ind))
                 ofiles.append(treedir('tree%i' % ind, 'infile'))
-            ifiles = [aligndir(x) for x in os.listdir(aligndir('')) if x.endswith('.aln')]
+            ifiles = glob.glob(aligndir('*.aln'))
             
             yield ifiles, ofiles, numcols
 
