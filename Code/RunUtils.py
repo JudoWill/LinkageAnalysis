@@ -160,17 +160,16 @@ def FileIter(species_file, funcname):
             for f in sorted(glob.glob(seqdir('*.fasta'))):
                 if not f.endswith('skip'):
                     name = f.split('.')[0]
-                    ifile = seqdir(f)
                     ofiles = [aligndir(name+'.aln.fasta'),
                                 aligndir(name+'.aln')]
-                    yield ifile, ofiles
+                    yield f, ofiles
         
         elif funcname == 'merging_sequences':
             aligndir = partial(os.path.join, species['AlignmentDir'])
             mergedir = partial(os.path.join, species['MergedDir'])
             refgenome = species.get('RefGenome', None)
             tfile = os.path.join(species['TreeDir'], 'outtree')
-            files = sorted(glob.glob(aligndir('*.aln')))
+            files = sorted([x for x in os.listdir(aligndir('')) if x.endswith('.aln')])
             for f in files:
                 yield [aligndir(f), tfile], [mergedir(f), mergedir(f+'.fasta')], [refgenome]
 
