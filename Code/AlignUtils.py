@@ -14,29 +14,6 @@ from collections import defaultdict
 from LinkFields import LINK_FIELDS
 
 
-
-try:
-    from memorised.decorators import memorise
-except ImportError:
-    class memorise(object):
-        def __init__(self, func):
-            self.func = func
-            self.cache = {}
-        def __call__(self, *args, **kwargs):
-            try:
-                return self.cache[args]
-            except KeyError:
-                v = self.func(*args, **kwargs)
-                self.cache[args] = v
-                return v
-            except TypeError:
-                print 'unhash-able'
-                return self.func(*args, **kwargs)
-        def __repr__(self):
-            return self.func.__doc__
-        def __get__(self, obj, objtype):
-            return partial(self.__call__, obj)
-        
 def take(N, iterable):
     """Takes N items from an iterable."""
     return list(islice(iterable, N))
@@ -113,13 +90,13 @@ class Alignment():
             if sum([x == '-' for x in group]) <= allowed_gaps:
                 entropies.append((ind, calculate_entropy(group)))
         
-        scols = sorted(entropies, key = itemgetter(1), reverse = False)
+        scols = sorted(entropies, key = itemgetter(1))
         wanted_cols = sorted([x for x, _ in scols[:topN]])
         getter = itemgetter(*wanted_cols)
         
         for key, seq in self.seqs.items():
             self.seqs[key] = ''.join(getter(seq))
-        self.width = len(self.seqs[key])
+            self.width = len(self.seqs[key])
         self._process_seq_nums()
 
     def bootstrap_columns(self, num_reps):
@@ -273,7 +250,6 @@ def prot_from_path(path):
     gi = fname.split('.')[0]
     return gi
 
-@memorise()
 def calculate_mutual_info(signal1, signal2, **kwargs):
     """Caluculates the Mutual Information shared by two signals.
 
@@ -344,7 +320,6 @@ def calculate_PNAS(signal1, signal2, **kwargs):
     
 
 
-@memorise()
 def get_mutual_info_pval(signal1, signal2, num_reps = 5000, **kwargs):
     """Caluculates the p-value associated with the mutual information.
 
@@ -377,7 +352,6 @@ def get_mutual_info_pval(signal1, signal2, num_reps = 5000, **kwargs):
 
     return num_greater / num_reps
 
-@memorise()
 def get_null_mutual_info(signal1, signal2, num_reps = 500, **kwargs):
     """Calculates the mean of the mutual information of the null-model.
 
@@ -405,7 +379,6 @@ def get_null_mutual_info(signal1, signal2, num_reps = 500, **kwargs):
     return float(r) / float(num_reps)
 
 
-@memorise()
 def get_mapping_pval(signal1, signal2, num_reps = 5000):
     """Caluculates the p-value associated with the observed linkage.
 
@@ -570,7 +543,7 @@ def get_last(iterable):
             except StopIteration:
                 break
             except:
-                pass
+                continue
             try:
                 ss = int(row['Source-Start'])
                 ts = int(row['Target-Start'])
@@ -700,7 +673,7 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
                 if not short_linkage_format:                
                     writer.writerow(loc)
                 continue
-            if loc['Target-Start'] % 10 == 0:
+            if not loc['Target-Start'] % 10:
                 print '%(Source-Prot)s,%(Target-Prot)s,%(Source-Start)i,%(Target-Start)i' % loc
             s1, m1 = slice1.get_signal(seqs)
             s2, m2 = slice2.get_signal(seqs)
