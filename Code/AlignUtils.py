@@ -625,14 +625,15 @@ def calculate_SBASC(sub_mat, signal1, signal2, **kwargs):
 
     return McBASC
 
-def get_McLachlan():
-    pass
+def get_sub_mat(filename):
 
-def get_BLOSUM():
-    pass
+    submat = defaultdict(int)
+    with open(filename) as handle:
+        for line in handle:
+            parts = line.strip().split('\t')
+            submat[(parts[0], parts[1])] = float(parts[2])
+    return submat
 
-def get_PAM():
-    pass
 
 
 def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False, mode = 'a', cons_cut = 0.98, calc_pval = False, short_linkage_format = False):
@@ -719,9 +720,9 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
                             ('Corrected-Mutaul-Info', get_corrected_mutual_info),
                             ('PNAS-Dist', calculate_PNAS),
                             ('OMES', calculate_OMES),
-                            ('McBASC', partial(calculate_SBASC, get_McLachlan())),
-                            ('BBASC', partial(calculate_SBASC, get_BLOSUM())),
-                            ('PBASC', partial(calculate_SBASC, get_PAM()))]
+                            ('McBASC', partial(calculate_SBASC, get_sub_mat('Code/McBASC.mat'))),
+                            ('BBASC', partial(calculate_SBASC, get_sub_mat('Code/BLOSUM.mat'))),
+                            ('PBASC', partial(calculate_SBASC, get_sub_mat('Code/PAM.mat')))]
 
     
     if mode == 'a' and os.path.exists(outfile):
