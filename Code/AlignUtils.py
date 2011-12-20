@@ -592,8 +592,47 @@ def calculate_OMES(signal1, signal2, **kwargs):
 
     return OMES
 
+def calculate_SBASC(sub_mat, signal1, signal2, **kwargs):
+    """Calculates the Substitutions Based Correlation
 
+     Determines the correlation of mutations based on any substituion matrix.
 
+     Based on Olmea et. al. 1999 ... PMID: 10547297
+
+    """
+
+    def sub_score(signal, sub_mat):
+        scores = []
+        for i,j in product(xrange(len(signal)), repeat=2):
+            if i != j:
+                scores.append(sub_mat[(signal[i], signal[j])])
+        mscore = sum(scores)/len(scores)
+        stdscore =  sqrt(sum((s-mscore)**2 for s in scores)/len(scores))
+        cscore = [s - mscore for s in scores]
+        return cscore, stdscore
+
+    N2 = len(signal1)**2
+
+    s1scores, s1std = sub_score(signal1, sub_mat)
+    s2scores, s2std = sub_score(signal2, sub_mat)
+
+    denom = s2std*s2std
+    McBASC = 0.0
+
+    for s1, s2 in zip(s1scores, s2scores):
+        McBASC += s1*s2/denom
+    McBASC = McBASC/N2
+
+    return McBASC
+
+def get_McLachlan():
+    pass
+
+def get_BLOSUM():
+    pass
+
+def get_PAM():
+    pass
 
 
 def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False, mode = 'a', cons_cut = 0.98, calc_pval = False, short_linkage_format = False):
@@ -679,7 +718,10 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
                             ('Null-Mutual-Info', get_null_mutual_info),
                             ('Corrected-Mutaul-Info', get_corrected_mutual_info),
                             ('PNAS-Dist', calculate_PNAS),
-                            ('OMES', calculate_OMES)]
+                            ('OMES', calculate_OMES),
+                            ('McBASC', partial(calculate_SBASC, get_McLachlan())),
+                            ('BBASC', partial(calculate_SBASC, get_BLOSUM())),
+                            ('PBASC', partial(calculate_SBASC, get_PAM()))]
 
     
     if mode == 'a' and os.path.exists(outfile):
