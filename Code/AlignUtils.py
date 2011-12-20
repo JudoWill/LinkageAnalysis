@@ -720,7 +720,7 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
                             ('Corrected-Mutaul-Info', get_corrected_mutual_info),
                             ('PNAS-Dist', calculate_PNAS),
                             ('OMES', calculate_OMES),
-                            ('McBASC', partial(calculate_SBASC, get_sub_mat('Code/McBASC.mat'))),
+                            ('McBASC', partial(calculate_SBASC, get_sub_mat('Code/McLachlan.mat'))),
                             ('BBASC', partial(calculate_SBASC, get_sub_mat('Code/BLOSUM.mat'))),
                             ('PBASC', partial(calculate_SBASC, get_sub_mat('Code/PAM.mat')))]
 
