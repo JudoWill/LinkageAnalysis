@@ -1,15 +1,9 @@
 paver
 ruffus
 nose
-numpy
-argparse
-biopython
 memorised
 python-memcached
-mpmath
 pyyaml
 BeautifulSoup
 suds
-nwalign
-matplotlib
 dendropy

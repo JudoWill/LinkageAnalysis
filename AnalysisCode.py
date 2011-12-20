@@ -9,8 +9,8 @@ import argparse, yaml
 from Code.NCBIUtils import *
 from Code.GeneralUtils import *
 from Code.AlignUtils import *
-from Code.ThreeDUtils import *
-from Code.FigureTools import *
+#from Code.ThreeDUtils import *
+#from Code.FigureTools import *
 from Code.CrossCompUtils import *
 from Code.TreeUtils import *
 from Code.RunUtils import *

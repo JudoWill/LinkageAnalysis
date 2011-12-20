@@ -563,18 +563,30 @@ def get_last(iterable):
     Last completed tuple: 
     (source-width, target-width, source-start, target-start)"""
 
-    l = deque(iterable, maxlen = 1)
+    def process(iterable):
+        while True:        
+            try:
+                row = iterable.next()
+            except StopIteration:
+                break
+            except:
+                pass
+            try:
+                ss = int(row['Source-Start'])
+                ts = int(row['Target-Start'])
+                sw = int(row['Source-End'])-ss
+                tw = int(row['Target-End'])-ts
+                yield (sw, tw, ss, ts)
+            except:
+                pass
+
+    l = deque(process(iterable), maxlen = 1)
     try:
         row = l.pop()
     except IndexError:
         return None
 
-    ss = int(row['Source-Start'])
-    ts = int(row['Target-Start'])
-    sw = int(row['Source-End'])-ss
-    tw = int(row['Target-End'])-ts
-
-    return (sw, tw, ss, ts)
+    return row
     
 
 def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False, mode = 'a', cons_cut = 0.98, calc_pval = False, short_linkage_format = False):
@@ -679,7 +691,8 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
                 if not short_linkage_format:                
                     writer.writerow(loc)
                 continue
-                          
+            if loc['Target-Start'] % 10 == 0:
+                print '%(Source-Prot)s,%(Target-Prot)s,%(Source-Start)i,%(Target-Start)i' % loc
             s1, m1 = slice1.get_signal(seqs)
             s2, m2 = slice2.get_signal(seqs)
             
