@@ -635,7 +635,6 @@ def get_sub_mat(filename):
     return submat
 
 
-
 def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False, mode = 'a', cons_cut = 0.98, calc_pval = False, short_linkage_format = False):
     """Analyzes the linkages between 2 alignments.
     
@@ -752,7 +751,10 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
                 print '%(Source-Prot)s,%(Target-Prot)s,%(Source-Start)i,%(Target-Start)i' % loc
             s1, m1 = slice1.get_signal(seqs)
             s2, m2 = slice2.get_signal(seqs)
-            
+
+            seq1 = ''.join(m1[s].upper() for s in s1)
+            seq2 = ''.join(m2[s].upper() for s in s2)
+
             #create reverse mappings
             rm1 = dict([(y,x) for x,y in m1.items()])
             rm2 = dict([(y,x) for x,y in m2.items()])
@@ -780,7 +782,7 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
             score = sum([z for _, _, z in mappings])/len(s1)
             loc['Total-Score'] = score
             for field, func in calculate_fields:
-                loc[field] = func(tuple(s1), tuple(s2), **loc)
+                loc[field] = func(seq1, seq2, **loc)
 
             #print '%(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i, %(Total-Score)f' % loc
             line_count += 1
