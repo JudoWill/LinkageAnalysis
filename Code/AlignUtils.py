@@ -1,18 +1,17 @@
 from __future__ import division
-from collections import deque, defaultdict
 from GeneralUtils import *
 from subprocess import call
 import shlex
 from itertools import groupby, product, dropwhile, imap, izip, count
 from math import log, sqrt
-from random import shuffle, sample, randint
+from random import  sample, randint
 from operator import itemgetter, ne, eq
-import csv, tempfile, shutil
+import csv
 from functools import partial
-import os.path, os
+import  os
 from collections import defaultdict
 from LinkFields import LINK_FIELDS
-from LinkUtils import calculate_mutual_info
+from LinkUtils import calculate_mutual_info, calculate_PNAS
 
 def fasta_iter(filename):
     """Iterates over a fasta-file
@@ -265,36 +264,6 @@ def prot_from_path(path):
 
 
 
-def calculate_PNAS(signal1, signal2, **kwargs):
-    
-
-    snum = len(signal1)
-    s1_counts = defaultdict(int)
-    s2_counts = defaultdict(int)
-
-    for s1, s2 in zip(signal1, signal2):
-        s1_counts[s1] += 1
-        s2_counts[s2] += 1
-
-    s1_cons, _ = max(s1_counts.items(), key = itemgetter(1))
-    s2_cons, _ = max(s2_counts.items(), key = itemgetter(1))
-
-    s1_bin = [s1 != s1_cons for s1 in signal1] #True if MUTATION!!!
-    s2_bin = [s2 != s2_cons for s2 in signal2]
-
-    f1 = sum(s1_bin)
-    f2 = sum(s2_bin)
-    f12 = sum(1 for s1, s2 in zip(s1_bin, s2_bin) if s1 and s2)
-
-    f1m = f1/snum
-    f2m = f2/snum
-
-    V1 = sum((f1m-x)**2 for x in s1_bin)
-    V2 = sum((f2m-x)**2 for x in s2_bin)
-
-    return (f12/snum - f1m*f2m)/sqrt(V1*V2)
-
-    
 
 
 def get_mutual_info_pval(signal1, signal2, num_reps = 5000, **kwargs):
