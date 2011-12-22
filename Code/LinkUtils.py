@@ -1,4 +1,5 @@
 from __future__ import division
+from itertools import product
 from math import sqrt
 from operator import itemgetter
 
@@ -127,3 +128,76 @@ def prediction_mapping(signal1, signal2):
             if ks1 == s1:
                 counts.pop((ks1, ks2))
     return mapping
+
+
+def calculate_OMES(signal1, signal2, **kwargs):
+    """Finds the Observed Minus Expected Squared score.
+
+    Calcualtes the score using the formula:
+    sum((Nobs-Nex)^2/Nvalid) for all pairs in S1,S2
+
+    Reference: Fodor et. al. 2004, PMID: 15211506
+    """
+
+    s1_counts = defaultdict(int)
+    s2_counts = defaultdict(int)
+    Nobs = defaultdict(int)
+    Nvalid = 0
+
+    for s1, s2 in zip(signal1, signal2):
+        if s1 != '-' and s2 != '-':
+            s1_counts[s1] += 1
+            s2_counts[s2] += 1
+            Nobs[(s1,s2)] += 1
+            Nvalid += 1
+
+    omes = 0.0
+    for (s1, s2), obs in Nobs.items():
+        Nex = s1_counts[s1]*s2_counts[s2]/Nvalid
+        omes += ((obs-Nex)**2)/Nvalid
+
+    return omes
+
+
+def calculate_SBASC(sub_mat, signal1, signal2, **kwargs):
+    """Calculates the Substitutions Based Correlation
+
+     Determines the correlation of mutations based on any substituion matrix.
+
+     Based on Olmea et. al. 1999 ... PMID: 10547297
+
+    """
+
+    def sub_score(signal, sub_mat):
+        scores = []
+        for i,j in product(xrange(len(signal)), repeat=2):
+            if i != j:
+                scores.append(sub_mat[(signal[i], signal[j])])
+        mscore = sum(scores)/len(scores)
+        stdscore =  sqrt(sum((s-mscore)**2 for s in scores)/len(scores))
+        cscore = [s - mscore for s in scores]
+        return cscore, stdscore
+
+    N2 = len(signal1)**2
+
+    s1scores, s1std = sub_score(signal1, sub_mat)
+    s2scores, s2std = sub_score(signal2, sub_mat)
+
+    denom = s2std*s2std
+    McBASC = 0.0
+
+    for s1, s2 in zip(s1scores, s2scores):
+        McBASC += s1*s2/denom
+    McBASC = McBASC/N2
+
+    return McBASC
+
+
+def get_sub_mat(filename):
+
+    submat = defaultdict(int)
+    with open(filename) as handle:
+        for line in handle:
+            parts = line.strip().split('\t')
+            submat[(parts[0], parts[1])] = float(parts[2])
+    return submat
