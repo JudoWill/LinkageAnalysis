@@ -65,10 +65,8 @@ if __name__ == '__main__':
     TOUCH_ONLY = args.fresh
 
     if args.doall:
-        current_species_files = ('HIVData/HIVProcessing.yaml',
-                                'HCVSeqs/HCVProcessing.yaml',
-                                'BacterialData/BacterialProcessing.yaml',
-                                'HIVData/HIVProcessing_long.yaml')
+        current_species_files = ('HIVData/HIVProcessing_short.yaml',
+                                'HCVSeqs/HCVProcessing.yaml')
         
         for f in current_species_files:
             inargs = shlex.split('python '+' '.join(sys.argv) + ' --processing-file ' + f)
