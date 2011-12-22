@@ -752,12 +752,12 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
             s1, m1 = slice1.get_signal(seqs)
             s2, m2 = slice2.get_signal(seqs)
 
-            seq1 = ''.join(m1[s].upper() for s in s1)
-            seq2 = ''.join(m2[s].upper() for s in s2)
-
             #create reverse mappings
             rm1 = dict([(y,x) for x,y in m1.items()])
             rm2 = dict([(y,x) for x,y in m2.items()])
+
+            seq1 = ''.join(rm1[s].upper() for s in s1)
+            seq2 = ''.join(rm2[s].upper() for s in s2)
 
             #create count dictionary
             c1 = make_counts(s1)
