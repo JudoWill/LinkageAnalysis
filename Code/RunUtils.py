@@ -116,6 +116,15 @@ def check_fields(species, fields):
         if f not in species:
             return False
     return True
+    
+def get_file_parts(path):
+    
+    d = os.path.dirname(path)
+    fname = os.path.basename(path)
+    bname, ext = os.path.splitext(fname)
+    
+    return d, fname, bname, ext
+    
 
 def FileIter(species_file, funcname):
     """A large iterator for all functions in AnalysisCode"""
@@ -159,7 +168,7 @@ def FileIter(species_file, funcname):
             aligndir = partial(os.path.join, species['AlignmentDir'])
             for f in sorted(glob.glob(seqdir('*.fasta'))):
                 if not f.endswith('skip'):
-                    name = f.split('.')[0]
+                    _, _, name, _ = get_file_parts(f)
                     ofiles = [aligndir(name+'.aln.fasta'),
                                 aligndir(name+'.aln')]
                     yield f, ofiles
@@ -169,9 +178,10 @@ def FileIter(species_file, funcname):
             mergedir = partial(os.path.join, species['MergedDir'])
             refgenome = species.get('RefGenome', None)
             tfile = os.path.join(species['TreeDir'], 'outtree')
-            files = sorted([x for x in os.listdir(aligndir('')) if x.endswith('.aln')])
+            files = sorted(glob.glob(aligndir('*.aln')))
             for f in files:
-                yield [aligndir(f), tfile], [mergedir(f), mergedir(f+'.fasta')], [refgenome]
+                _, fname, _, _ = get_file_parts(f)
+                yield [f, tfile], [mergedir(fname), mergedir(fname+'.fasta')], [refgenome]
 
         elif funcname == 'align_pairs':
             if 'MergedDir' in species:
@@ -180,7 +190,7 @@ def FileIter(species_file, funcname):
                 aligndir = partial(os.path.join, species['AlignmentDir'])
             linkdir = partial(os.path.join, species['LinkageDir'])
                     
-            aligns = sorted([x.split('.')[0] for x in glob.glob(aligndir('*.aln'))])
+            aligns = sorted(glob.glob(aligndir('*.aln')))
             align_iter = product(aligns, repeat = 2)
             done_file = linkdir('EmptyFile.list')
 
@@ -189,6 +199,8 @@ def FileIter(species_file, funcname):
             widths = species.get('WIDTHS', range(1,5))
             for p1, p2 in align_iter:
                 #print p1, p2
+                _, _, p1, _ = get_file_parts(p1)
+                _, _, p2, _ = get_file_parts(p2)
                 a1 = aligndir(p1 + '.aln')
                 a2 = aligndir(p2 + '.aln')
                 d = linkdir(p1 + '--' + p2 + '.res')
@@ -204,9 +216,6 @@ def FileIter(species_file, funcname):
                 sen_file = link_file+'.conv.sen'
                 if os.path.exists(link_file):
                     yield (a1, a2, link_file), (out_file, sen_file), ref_genome
-
-
-
 
         elif funcname == 'tree_splitting':
             aligndir = partial(os.path.join, species['AlignmentDir'])
