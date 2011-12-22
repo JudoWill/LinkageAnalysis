@@ -11,7 +11,9 @@ from functools import partial
 import  os
 from collections import defaultdict
 from LinkFields import LINK_FIELDS
-from LinkUtils import calculate_mutual_info, calculate_PNAS, prediction_mapping, calculate_OMES, calculate_SBASC, get_sub_mat
+from LinkUtils import calculate_mutual_info, calculate_PNAS, prediction_mapping
+from LinkUtils import calculate_OMES, calculate_SBASC, get_sub_mat
+from LinkUtils import LinkCalculator
 
 def fasta_iter(filename):
     """Iterates over a fasta-file
@@ -565,15 +567,7 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
     source_skip = set()
     target_skip = set()
 
-    calculate_fields = [('Mutual-Info', calculate_mutual_info),
-                            ('Null-Mutual-Info', get_null_mutual_info),
-                            ('Corrected-Mutual-Info', get_corrected_mutual_info),
-                            ('PNAS-Dist', calculate_PNAS),
-                            ('OMES', calculate_OMES),
-                            ('McBASC', partial(calculate_SBASC, get_sub_mat('Code/McLachlan.mat'))),
-                            ('BBASC', partial(calculate_SBASC, get_sub_mat('Code/BLOSUM.mat'))),
-                            ('PBASC', partial(calculate_SBASC, get_sub_mat('Code/PAM.mat')))]
-
+    calculator = LinkCalculator()
     
     if mode == 'a' and os.path.exists(outfile):
         print 'trying to get last line!'
@@ -628,12 +622,12 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
                     target_skip.add((loc['Target-Start'], loc['Target-End']))
                 continue
 
-            
+
             mappings = prediction_mapping(tuple(s1), tuple(s2))
             score = sum([z for _, _, z in mappings])/len(s1)
             loc['Total-Score'] = score
-            for field, func in calculate_fields:
-                loc[field] = func(seq1, seq2, **loc)
+            for field, val in calculator.calculate_all(seq1, seq2):
+                loc[field] = val
 
             #print '%(Source-Start)i, %(Source-End)i, %(Target-Start)i, %(Target-Start)i, %(Total-Score)f' % loc
             line_count += 1
