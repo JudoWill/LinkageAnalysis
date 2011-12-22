@@ -1,14 +1,45 @@
 from __future__ import division
 from itertools import product
-from math import sqrt
+from math import sqrt, log
 from operator import itemgetter
-
+import glob, os, os.path
 __author__ = 'will'
 
-
+from functools import partial
 from operators import gt, lt
 from random import shuffle
 from collections import defaultdict
+
+
+class LinkCalculator(object):
+
+    def __init__(self):
+        sub_mats = glob.glob('Code/*.mat')
+        self.process_funcs = []
+        for f in sub_mats:
+            name = os.path.splitext(os.path.basename(f))[0]
+            self.process_funcs.append(('SBASC_'+name,
+                partial(calculate_SBASC, get_sub_mat(f))))
+
+        self.process_funcs.append(('Mutual_Info', calculate_mutual_info))
+        self.process_funcs.append(('PNAS', calculate_PNAS))
+        self.process_funcs.append(('OMES', calculate_OMES))
+        self.sufs = ['_raw', '_pval', '_null', '_count']
+
+    def calculate_all(self, seq1, seq2):
+
+        for bname, func in self.process_funcs:
+            results = calculate_vals(list(seq1), list(seq2))
+            for suffix, result in zip(self.sufs, results):
+                yield bname+suffix, result
+
+    def get_fields(self):
+
+        fields = []
+        for bname, _ in self.process_funcs:
+            for suffix in self.sufs:
+                fields.append(bname+suffix)
+
 
 
 def calculate_vals(s1, s2, testfun, key = gt, minreps = 500, maxreps = 1e6):
