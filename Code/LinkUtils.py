@@ -6,7 +6,7 @@ import glob, os, os.path
 __author__ = 'will'
 
 from functools import partial
-from operators import gt, lt
+from operator import gt, lt
 from random import shuffle
 from collections import defaultdict
 
@@ -24,12 +24,13 @@ class LinkCalculator(object):
         self.process_funcs.append(('Mutual_Info', calculate_mutual_info))
         self.process_funcs.append(('PNAS', calculate_PNAS))
         self.process_funcs.append(('OMES', calculate_OMES))
+        self.process_funcs.append(('Linkage', calculate_mapping))
         self.sufs = ['_raw', '_pval', '_null', '_count']
 
     def calculate_all(self, seq1, seq2):
 
         for bname, func in self.process_funcs:
-            results = calculate_vals(list(seq1), list(seq2))
+            results = calculate_vals(list(seq1), list(seq2), func)
             for suffix, result in zip(self.sufs, results):
                 yield bname+suffix, result
 
@@ -39,20 +40,26 @@ class LinkCalculator(object):
         for bname, _ in self.process_funcs:
             for suffix in self.sufs:
                 fields.append(bname+suffix)
-
+        return fields
 
 
 def calculate_vals(s1, s2, testfun, key = gt, minreps = 500, maxreps = 1e6):
 
+    ls1 = list(s1)
+    ls2 = list(s2)
     tcount = 0
     count = 0
     total = 0
     mcut = 0.01
-    trueval = testfun(s1, s2)
+    trueval = testfun(ls1, ls2)
 
-    while tcount < minreps or (tcount < maxreps and count/tcount > mcut):
+    while tcount < maxreps:
+        if tcount > minreps and -log(count+1/tcount,10) < log(tcount,10)-3:
+            break
         tcount += 1
-        res = testfun(shuffle(s1), shuffle(s2))
+        shuffle(ls1)
+        shuffle(ls2)
+        res = testfun(ls1, ls2)
         total += res
         if key(res, trueval):
             count += 1
@@ -160,6 +167,11 @@ def prediction_mapping(signal1, signal2):
                 counts.pop((ks1, ks2))
     return mapping
 
+def calculate_mapping(signal1, signal2):
+
+    res = prediction_mapping(signal1, signal2)
+    return sum(r[2] for r in res)/len(signal1)
+
 
 def calculate_OMES(signal1, signal2, **kwargs):
     """Finds the Observed Minus Expected Squared score.
@@ -214,7 +226,8 @@ def calculate_SBASC(sub_mat, signal1, signal2, **kwargs):
     s1scores, s1std = sub_score(signal1, sub_mat)
     s2scores, s2std = sub_score(signal2, sub_mat)
 
-    denom = s2std*s2std
+    #print s1scores, s1std, s2scores, s2std
+    denom = s1std*s2std
     McBASC = 0.0
 
     for s1, s2 in zip(s1scores, s2scores):
