@@ -716,7 +716,7 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
 
     calculate_fields = [('Mutual-Info', calculate_mutual_info),
                             ('Null-Mutual-Info', get_null_mutual_info),
-                            ('Corrected-Mutaul-Info', get_corrected_mutual_info),
+                            ('Corrected-Mutual-Info', get_corrected_mutual_info),
                             ('PNAS-Dist', calculate_PNAS),
                             ('OMES', calculate_OMES),
                             ('McBASC', partial(calculate_SBASC, get_sub_mat('Code/McLachlan.mat'))),
