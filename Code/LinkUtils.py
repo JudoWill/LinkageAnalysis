@@ -95,3 +95,35 @@ def calculate_PNAS(signal1, signal2, **kwargs):
     V2 = sum((f2m-x)**2 for x in s2_bin)
 
     return (f12/snum - f1m*f2m)/sqrt(V1*V2)
+
+
+def prediction_mapping(signal1, signal2):
+    """Calculates the mapping between any two signals.
+
+    Uses a depth-first search algorithm to match the most likely value in
+    signal2 for each value in signal1. Returns a nested list of the mappings
+    and thier occurance values.
+
+    Arguements:
+    signal1 -- An iterable indicating the first signal
+    signal2 -- An iterable indicating the second signal
+
+    Signals MUST be the same length! Items must be hashable!
+
+    Returns:
+    [(s1a, s2a, #occurance), (s1b, s2b, #occurance), ...]"""
+
+
+
+    counts = defaultdict(int)
+    for s1, s2 in zip(signal1, signal2):
+        counts[(s1, s2)] += 1
+
+    mapping = []
+    while counts:
+        (s1, s2), val = max(counts.items(), key = itemgetter(1))
+        mapping.append((s1,s2,val))
+        for ks1, ks2 in counts.keys():
+            if ks1 == s1:
+                counts.pop((ks1, ks2))
+    return mapping
