@@ -452,6 +452,9 @@ def get_last(iterable):
     Last completed tuple: 
     (source-width, target-width, source-start, target-start)"""
 
+    if tuple(iterable.fieldnames) != tuple(LINK_FIELDS):
+        return None
+
     def process(iterable):
         while True:        
             try:
