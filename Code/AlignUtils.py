@@ -575,7 +575,7 @@ def calculate_OMES(signal1, signal2, **kwargs):
 
     s1_counts = defaultdict(int)
     s2_counts = defaultdict(int)
-    Nobs = defauldict(int)
+    Nobs = defaultdict(int)
     Nvalid = 0
 
     for s1, s2 in zip(signal1, signal2):
