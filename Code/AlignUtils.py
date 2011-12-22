@@ -590,7 +590,7 @@ def calculate_OMES(signal1, signal2, **kwargs):
         Nex = s1_counts[s1]*s2_counts[s2]/Nvalid
         omes += ((obs-Nex)**2)/Nvalid
 
-    return OMES
+    return omes
 
 def calculate_SBASC(sub_mat, signal1, signal2, **kwargs):
     """Calculates the Substitutions Based Correlation
