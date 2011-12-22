@@ -13,6 +13,19 @@ import os.path, os
 from collections import defaultdict
 from LinkFields import LINK_FIELDS
 
+def fasta_iter(filename):
+    """Iterates over a fasta-file
+
+    Yields (name, seq) pairs."""
+
+    name = None
+    with open(filename) as handle:
+        for header, group in groupby(handle, lambda x: x.startswith('>')):
+            if header:
+                name = group.next().strip()[1:]
+            else:
+                seq = ''.join([x.strip() for x in group])
+                yield name, seq
 
 def take(N, iterable):
     """Takes N items from an iterable."""
