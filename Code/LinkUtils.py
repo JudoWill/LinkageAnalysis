@@ -9,7 +9,7 @@ from functools import partial
 from operator import gt, lt
 from random import shuffle
 from collections import defaultdict
-
+from pylru import lrudecorator
 
 class LinkCalculator(object):
 
@@ -66,8 +66,8 @@ def calculate_vals(s1, s2, testfun, key = gt, minreps = 500, maxreps = 1e6):
 
     return trueval, count/tcount, total/tcount, tcount
 
-
-def calculate_mutual_info(signal1, signal2, **kwargs):
+@lrudecorator(1000)
+def calculate_mutual_info(signal1, signal2):
     """Caluculates the Mutual Information shared by two signals.
 
     Arguements:
@@ -105,8 +105,8 @@ def calculate_mutual_info(signal1, signal2, **kwargs):
 
     return mut_info
 
-
-def calculate_PNAS(signal1, signal2, **kwargs):
+@lrudecorator(1000)
+def calculate_PNAS(signal1, signal2):
 
 
     snum = len(signal1)
@@ -167,13 +167,14 @@ def prediction_mapping(signal1, signal2):
                 counts.pop((ks1, ks2))
     return mapping
 
+@lrudecorator(1000)
 def calculate_mapping(signal1, signal2):
 
     res = prediction_mapping(signal1, signal2)
     return sum(r[2] for r in res)/len(signal1)
 
-
-def calculate_OMES(signal1, signal2, **kwargs):
+@lrudecorator(1000)
+def calculate_OMES(signal1, signal2):
     """Finds the Observed Minus Expected Squared score.
 
     Calcualtes the score using the formula:
@@ -202,7 +203,7 @@ def calculate_OMES(signal1, signal2, **kwargs):
     return omes
 
 
-def calculate_SBASC(sub_mat, signal1, signal2, **kwargs):
+def calculate_SBASC(sub_mat, signal1, signal2):
     """Calculates the Substitutions Based Correlation
 
      Determines the correlation of mutations based on any substituion matrix.
