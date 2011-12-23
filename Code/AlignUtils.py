@@ -280,103 +280,6 @@ def prot_from_path(path):
 
 
 
-
-def get_mutual_info_pval(signal1, signal2, num_reps = 5000, **kwargs):
-    """Caluculates the p-value associated with the mutual information.
-
-    Uses a permutation test to determine the likelihood of getting a mutual
-    information score greater than the observed score. Returns the fraction 
-    of permutations which have an MI greater than observed.
-    
-    Arguements:
-    signal1 -- An iterable indicating the first signal
-    signal2 -- An iterable indicating the second signal
-    
-    Kwargs:
-    num_reps -- The number of repititions to perform. Default: 5000
-
-    Signals MUST be the same length! Items must be hashable!
-    
-    Returns:
-    p-value -- float"""
-
-    rmut = calculate_mutual_info(signal1, signal2)
-
-    num_greater = 0
-    
-    for i in xrange(num_reps):
-        
-        r = calculate_mutual_info(signal1, sample(signal2, len(signal2)))
-        #print r, rmut
-        if r > rmut:
-            num_greater += 1
-
-    return num_greater / num_reps
-
-def get_null_mutual_info(signal1, signal2, num_reps = 500, **kwargs):
-    """Calculates the mean of the mutual information of the null-model.
-
-      Uses a permutation test to generate a random set of uncorrelated signals
-      and determines the mutual information of each.
-      Arguements:
-      signal1 -- An iterable indicating the first signal
-      signal2 -- An iterable indicating the second signal
-
-      Kwargs:
-      num_reps -- The number of repititions to perform. Default: 500
-
-      Signals MUST be the same length! Items must be hashable!
-
-      Returns:
-      mean-value -- float
-
-    """
-
-    r=0.0
-    for i in xrange(num_reps):
-
-        r += calculate_mutual_info(signal1, sample(signal2, len(signal2)))
-
-    return float(r) / float(num_reps)
-
-
-def get_mapping_pval(signal1, signal2, num_reps = 5000):
-    """Caluculates the p-value associated with the observed linkage.
-
-    Uses a permutation test to determine the likelihood of getting a linkage 
-    score greater than the observed score. Returns the fraction 
-    of permutations which have a linkage greater than observed.
-    
-    Arguements:
-    signal1 -- An iterable indicating the first signal
-    signal2 -- An iterable indicating the second signal
-    
-    Kwargs:
-    num_reps -- The number of repititions to perform. Default: 5000
-
-    Signals MUST be the same length! Items must be hashable!
-    
-    Returns:
-    p-value -- float"""
-
-    def calc_score(mappings, slen):
-        return sum([z for _, _, z in mappings])/slen
-
-    rmut = prediction_mapping(signal1, signal2)
-    true_score = calc_score(rmut, len(signal1))
-    num_greater = 0
-    
-    for i in xrange(num_reps):
-        r = prediction_mapping(signal1, sample(signal2, len(signal2)))
-        nscore = calc_score(r, len(signal1))
-        #print true_score, nscore
-        if nscore > true_score:
-            num_greater += 1
-    print 'pval', true_score, num_greater, num_greater / num_reps
-    return num_greater / num_reps
-
-
-
 def run_muscle(filename, out_align, MAX_MEM = 1500):
     """Runs MUSCLE command-line alignment program.
 
@@ -503,7 +406,7 @@ def get_corrected_mutual_info(signal1, signal2, **kwargs):
     return kwargs['Mutual-Info'] - kwargs['Null-Mutual-Info']
 
 
-def PredAnalysis(align1, align2, outfile, cons_cut = 0.99, **kwargs):
+def PredictionAnalysis(align1, align2, outfile, cons_cut = 0.99, **kwargs):
 
     if not os.path.exists(outfile):
         mode = 'w'
@@ -602,7 +505,7 @@ def PredAnalysis(align1, align2, outfile, cons_cut = 0.99, **kwargs):
         os.fsync(ohandle.fileno())
 
 
-def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False, mode = 'a', cons_cut = 0.98, calc_pval = False, short_linkage_format = False):
+def OldPredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False, mode = 'a', cons_cut = 0.98, calc_pval = False, short_linkage_format = False):
     """Analyzes the linkages between 2 alignments.
     
     A controller function which calculates the Linkage between columns in 
@@ -745,7 +648,7 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
                                 'Target-Seq':rm2[target],
                                 'Correct-Num':val,
                                 'Total-Num':c1[source],
-                                'This-Score': val/c1[source]})                
+                                'This-Score': val/c1[source]})
                 writer.writerow(loc)
             handle.flush()
             os.fsync(handle.fileno())
