@@ -14,6 +14,7 @@ from LinkFields import LINK_FIELDS
 from LinkUtils import calculate_mutual_info, calculate_PNAS, prediction_mapping
 from LinkUtils import calculate_OMES, calculate_SBASC, get_sub_mat
 from LinkUtils import LinkCalculator
+from pylru import lrudecorator
 
 def fasta_iter(filename):
     """Iterates over a fasta-file
@@ -33,7 +34,7 @@ def take(N, iterable):
     """Takes N items from an iterable."""
     return list(islice(iterable, N))
 
-
+@lrudecorator(1000)
 def calculate_entropy(seq):
     """Salculates the Shannon Entropy of any sequence.
     
