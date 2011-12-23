@@ -54,6 +54,12 @@ def calculate_entropy(seq):
 
     return ent
 
+def make_counts(signal):
+    cdict = defaultdict(int)
+    for s in signal:
+        cdict[s] += 1
+    return cdict
+
 class Alignment():
     """A container for holding multiple alignments."""
     
@@ -156,6 +162,12 @@ class Alignment():
         with open(fname, 'w') as handle:
             for key, seq in self.seqs.items():
                 handle.write('%s\t%s\n' % (key, seq))            
+
+    def iterate_columns(self, seq_names):
+
+        tseqs = [self.seqs[key] for key in seq_names]
+        for group in izip(*tseqs):
+            yield ''.join(group)
 
 
     def get_slice(self, start, stop, MIN_NUM = 2):
@@ -481,14 +493,112 @@ def get_last(iterable):
     return row
     
 
+def check_headers(filename):
+    with open(filename) as handle:
+        headers = handle.next().strip().split('\t')
+        return headers == LINK_FIELDS
+
 def get_corrected_mutual_info(signal1, signal2, **kwargs):
     return kwargs['Mutual-Info'] - kwargs['Null-Mutual-Info']
 
 
+def PredAnalysis(align1, align2, outfile, cons_cut = 0.99, **kwargs):
 
+    if not os.path.exists(outfile):
+        mode = 'w'
+        last = None
+    elif check_headers(outfile):
+        mode = 'w'
+        last = None
+    else:
+        mode = 'a'
+        with open(outfile) as handle:
+            iterable = csv.DictReader(handle, delimiter = '\t')
+            last = get_last(iterable)
 
+    a1 = Alignment.alignment_from_file(align1)
+    a2 = Alignment.alignment_from_file(align2)
 
+    sprot = prot_from_path(align1)
+    tprot = prot_from_path(align2)
 
+    defaults = dict(zip(LINK_FIELDS, [None]*len(LINK_FIELDS)))
+    defaults['Source-Prot']=sprot
+    defaults['Target-Prot']=tprot
+    defaults.pop('Source-Start')
+    defaults.pop('Source-End')
+    defaults.pop('Target-Start')
+    defaults.pop('Target-End')
+
+    calculator = LinkCalculator()
+    rmheaders = dict((head, None) for head in calculator.get_fields())
+
+    headers = sorted(set(a1.seqs.keys()) & set(a2.seqs.keys()))
+
+    iterable = product(izip(count(), a1.iterate_columns(headers)),
+                        izip(count(), a2.iterate_columns(headers)))
+    if last:
+        fiterable = dropwhile(iterable, lambda x:x[0][0]<last[2] and x[1][0]<last[3])
+    else:
+        fiterable = iterable
+
+    ohandle = open(outfile, mode)
+    writer = csv.DictWriter(ohandle, LINK_FIELDS, delimiter = '\t')
+    if mode == 'w':
+        writer.writeheader()
+
+    for (ind1, seq1), (ind2, seq2) in fiterable:
+
+        cseq1 = ''
+        cseq2 = ''
+        for s1, s2 in zip(seq1, seq2):
+            if s1 != '-' and s2 != '-':
+                cseq1 += s1
+                cseq2 += s2
+
+        c1 = make_counts(cseq1)
+        c2 = make_counts(cseq2)
+
+        row = dict()
+        row.update(defaults)
+        row['Source-Start'] = ind1
+        row['Source-End'] = ind1+1
+        row['Target-Start'] = ind2
+        row['Target-End'] = ind2+1
+
+        row['Source-Cons'] = max(x/len(cseq1) for x in c1.values())
+        row['Target-Cons'] = max(x/len(cseq2) for x in c2.values())
+        if row['Source-Cons'] == 1 or row['Target-Cons'] == 1:
+            writer.writerow(row)
+            continue
+
+        row['Source-Entropy'] = calculate_entropy(cseq1)
+        row['Target-Entropy'] = calculate_entropy(cseq2)
+
+        for field, val in calculator.calculate_all(cseq1, cseq2):
+            row[field] = val
+
+        mappings = prediction_mapping(cseq1, cseq2)
+        score = sum([z for _, _, z in mappings])/len(cseq1)
+        row['Total-Score'] = score
+        source, target, val = mappings[0]
+        row.update({'Source-Seq':source,
+                    'Target-Seq':target,
+                    'Correct-Num':val,
+                    'Total-Num':c1[source],
+                    'This-Score': val/c1[source]})
+        writer.writerow(row)
+        row.update(rmheaders)
+
+        for source, target, val in mappings[1:]:
+            row.update({'Source-Seq':source,
+                        'Target-Seq':target,
+                        'Correct-Num':val,
+                        'Total-Num':c1[source],
+                        'This-Score': val/c1[source]})
+            writer.writerow(row)
+        ohandle.flush()
+        os.fsync(ohandle.fileno())
 
 
 def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = False, mode = 'a', cons_cut = 0.98, calc_pval = False, short_linkage_format = False):
@@ -545,12 +655,7 @@ def PredictionAnalysis(align1, align2, outfile, widths = range(1,5), same = Fals
                     
                     
 
-    print 'widths!', widths    
-    def make_counts(signal):
-        cdict = defaultdict(int)
-        for s in signal:
-            cdict[s] += 1
-        return cdict
+    print 'widths!', widths
 
     line_count = 0
     a1 = Alignment.alignment_from_file(align1)
