@@ -449,7 +449,7 @@ def PredictionAnalysis(align1, align2, outfile, cons_cut = 0.99, **kwargs):
     ohandle = open(outfile, mode)
     writer = csv.DictWriter(ohandle, LINK_FIELDS, delimiter = '\t')
     if mode == 'w':
-        writer.writeheader()
+        writer.writerow(dict(zip(LINK_FIELDS, LINK_FIELDS)))
 
     for (ind1, seq1), (ind2, seq2) in fiterable:
 
