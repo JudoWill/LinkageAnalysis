@@ -59,7 +59,7 @@ def calculate_vals(s1, s2, testfun, key = gt, minreps = 500, maxreps = 1e6):
         tcount += 1
         shuffle(ls1)
         shuffle(ls2)
-        res = testfun(ls1, ls2)
+        res = testfun(tuple(ls1), tuple(ls2))
         total += res
         if key(res, trueval):
             count += 1
