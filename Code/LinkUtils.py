@@ -51,7 +51,7 @@ def calculate_vals(s1, s2, testfun, key = gt, minreps = 500, maxreps = 1e6):
     count = 0
     total = 0
     mcut = 0.01
-    trueval = testfun(ls1, ls2)
+    trueval = testfun(tuple(ls1), tuple(ls2))
 
     while tcount < maxreps:
         if tcount > minreps and -log(count+1/tcount,10) < log(tcount,10)-3:
