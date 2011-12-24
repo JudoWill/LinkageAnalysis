@@ -463,6 +463,9 @@ def PredictionAnalysis(align1, align2, outfile, cons_cut = 0.99, **kwargs):
                 cseq1 += s1
                 cseq2 += s2
 
+        if not cseq1 or not cseq2:
+            continue
+
         c1 = make_counts(cseq1)
         c2 = make_counts(cseq2)
 
