@@ -398,9 +398,12 @@ def get_last(iterable):
     
 
 def check_headers(filename):
-    with open(filename) as handle:
-        headers = handle.next().strip().split('\t')
-        return headers == LINK_FIELDS
+    try:
+        with open(filename) as handle:
+            headers = handle.next().strip().split('\t')
+            return headers == LINK_FIELDS
+    except StopIteration:
+        return False
 
 def get_corrected_mutual_info(signal1, signal2, **kwargs):
     return kwargs['Mutual-Info'] - kwargs['Null-Mutual-Info']
