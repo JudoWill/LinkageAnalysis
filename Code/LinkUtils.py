@@ -22,7 +22,6 @@ class LinkCalculator(object):
                 partial(calculate_SBASC, get_sub_mat(f))))
 
         self.process_funcs.append(('Mutual_Info', calculate_mutual_info))
-        self.process_funcs.append(('PNAS', calculate_PNAS))
         self.process_funcs.append(('OMES', calculate_OMES))
         self.process_funcs.append(('Linkage', calculate_mapping))
         self.sufs = ['_raw', '_pval', '_null', '_count']
