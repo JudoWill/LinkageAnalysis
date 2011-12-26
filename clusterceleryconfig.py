@@ -5,4 +5,4 @@ CELERY_REDIS_HOST = "master"
 CELERY_REDIS_PORT = 6379
 CELERY_REDIS_DB = 0
 CELERY_DISABLE_RATE_LIMITS = True
-CELERY_IMPORTS = ('testCelery','Code.CeleryProcessor')
+CELERY_IMPORTS = ('Code.CeleryProcessor')
