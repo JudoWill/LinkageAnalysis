@@ -16,7 +16,7 @@ import csv
 def link_calculator(row, submats, seq1, seq2, granular = False):
 
     c1 = AlignUtils.make_counts(seq1)
-    c2 = AlignUtils.make_counts(seq1)
+    c2 = AlignUtils.make_counts(seq2)
 
     row['S1-Entropy'] = AlignUtils.calculate_entropy(seq1)
     row['S2-Entropy'] = AlignUtils.calculate_entropy(seq2)
