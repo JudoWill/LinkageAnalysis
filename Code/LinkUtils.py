@@ -203,7 +203,7 @@ def calculate_PNAS(signal1, signal2, shuf = False, batch = False):
     return (f12/snum - f1m*f2m)/sqrt(V1*V2)
 
 @task()
-def prediction_mapping(signal1, signal2, shuf = False):
+def prediction_mapping(signal1, signal2):
     """Calculates the mapping between any two signals.
 
     Uses a depth-first search algorithm to match the most likely value in
@@ -219,10 +219,6 @@ def prediction_mapping(signal1, signal2, shuf = False):
     Returns:
     [(s1a, s2a, #occurance), (s1b, s2b, #occurance), ...]"""
 
-
-    if shuf:
-        shuffle(signal1)
-        shuffle(signal2)
 
     counts = defaultdict(int)
     for s1, s2 in zip(signal1, signal2):
@@ -247,7 +243,11 @@ def calculate_mapping(signal1, signal2, shuf = False, batch = False):
             res.append(calculate_mapping(signal1, signal2, shuf=True))
         return res
 
-    res = prediction_mapping(signal1, signal2, shuf = shuf)
+    if shuf:
+        shuffle(signal1)
+        shuffle(signal2)
+
+    res = prediction_mapping(signal1, signal2)
     return sum(r[2] for r in res)/len(signal1)
 
 @task()
@@ -290,7 +290,7 @@ def calculate_OMES(signal1, signal2, shuf = False, batch = False):
     return omes
 
 @task()
-def calculate_SBASC(sub_mat, signal1, signal2, shuf = False):
+def calculate_SBASC(sub_mat, signal1, signal2, shuf = False, batch = False):
     """Calculates the Substitutions Based Correlation
 
      Determines the correlation of mutations based on any substituion matrix.
