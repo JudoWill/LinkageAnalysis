@@ -25,7 +25,7 @@ def link_calculator(row, submats, seq1, seq2, granular = False):
     row['SeqLength'] = len(seq1)
     row['S1-Cons'] = max(x/len(seq1) for x in c1.values())
     row['S2-Cons'] = max(x/len(seq2) for x in c2.values())
-    if row['S1-Cons'] > 0.99 or row['S2-Cons'] > 0.99:
+    if row['S1-Cons'] > 0.99999 or row['S2-Cons'] > 0.99999:
         return row
 
     print seq1, row['S1-Cons'], seq2, row['S2-Cons']
