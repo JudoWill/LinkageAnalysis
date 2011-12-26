@@ -12,8 +12,8 @@ if __name__ == '__main__':
 
     for f1, f2 in product(ifiles, repeat=2):
         print 'Processing', f1, f2
-        p1 = prots_from_path(f1)
-        p2 = prots_from_path(f2)
+        p1 = f1.split(os.sep)[-1].split('.')[0]
+        p2 = f2.split(os.sep)[-1].split('.')[0]
 
         ofile = os.path.join(opath, '%s--%s.res' % (p1, p2))
         PredictionAnalysis(f1, f2, ofile)
@@ -24,8 +24,8 @@ if __name__ == '__main__':
 
     for f1, f2 in product(ifiles, repeat=2):
         print 'Processing', f1, f2
-        p1 = prots_from_path(f1)
-        p2 = prots_from_path(f2)
+        p1 = f1.split(os.sep)[-1].split('.')[0]
+        p2 = f2.split(os.sep)[-1].split('.')[0]
 
         ofile = os.path.join(opath, '%s--%s.res' % (p1, p2))
         PredictionAnalysis(f1, f2, ofile)
