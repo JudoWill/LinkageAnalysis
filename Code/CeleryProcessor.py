@@ -54,7 +54,7 @@ def task_loader(que, a1, a2, defaults, submats, minseqs, issame):
         iterable = combinations(range(len(s2cols)), 2)
     else:
         iterable = product(range(len(s1cols)), range(len(s2cols)))
-    for ind1, ind2 in islice(iterable, 10):
+    for ind1, ind2 in iterable:
         #print 'trying', ind1, ind2
         row = {}
         row.update(defaults)
@@ -75,7 +75,7 @@ def task_loader(que, a1, a2, defaults, submats, minseqs, issame):
                 cseq2 += s2
 
         if len(cseq1) > minseqs:
-            print 'loaded', ind1, ind2
+            #print 'loaded', ind1, ind2
             que.put(link_calculator.delay(row, submats, cseq1, cseq2))
     que.put(None)
 
@@ -137,7 +137,7 @@ def PredictionAnalysis(align1, align2, outfile, cons_cut = 0.99, **kwargs):
 
     process_que = Queue(1000)
     loader = Thread(target=task_loader,
-                    args= (process_que, a1, a2, defaults,submats, 50, False))
+                    args= (process_que, a1, a2, defaults,submats, 50, align1==align2))
     loader.start()
 
     ohandle = open(outfile, 'w')
