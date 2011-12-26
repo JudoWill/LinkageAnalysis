@@ -28,6 +28,8 @@ def link_calculator(row, submats, seq1, seq2, granular = False):
     if row['S1-Cons'] > 0.99 or row['S2-Cons'] > 0.99:
         return row
 
+    print seq1, row['S1-Cons'], seq2, row['S2-Cons']
+
     processfuns = []
     for name, mat in submats:
         if granular:

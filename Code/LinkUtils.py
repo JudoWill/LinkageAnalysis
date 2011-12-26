@@ -85,7 +85,6 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
     count = 0
     total = 0
     mcut = 0.01
-    print s1, s2
     try:
         if len(preargs) == 1:
             trueval = testfun(preargs[0], tuple(ls1), tuple(ls2))
