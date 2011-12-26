@@ -19,8 +19,15 @@ cd pip-1.0.2
 python setup.py install
 cd ~/
 
+wget http://redis.googlecode.com/files/redis-2.4.5.tar.gz
+tar xzf redis-2.4.5.tar.gz
+cd redis-2.4.5
+make
+cd ~/
+
 cd LinkageAnalysis
+redis-server redis.conf
 pip install -r requirements.pip
 
-nohup celeryd --config=cluterceleryconfig --autoscale=10,3 --logfile ~/celery.log &
+nohup celeryd --config=cluterceleryconfig --autoscale=10,3 --logfile ~/celery.log --loglevel INFO &
 
