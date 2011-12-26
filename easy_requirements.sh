@@ -18,3 +18,10 @@ tar xzf pip-1.0.2.tar.gz
 cd pip-1.0.2
 python setup.py install
 cd ~/
+
+git clone git://github.com/JudoWill/LinkageAnalysis.git
+cd LinkageAnalysis
+pip install -r requirements.pip
+
+nohup celeryd --config=cluterceleryconfig --autoscale=10,3 --logfile ~/celery.log &
+
