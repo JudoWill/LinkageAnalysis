@@ -35,7 +35,7 @@ def link_calculator(row, submats, seq1, seq2):
     suffs = ['_raw', '_pval', '_null', '_count']
 
     for name, func in processfuns:
-        res = LinkUtils.calculate_vals(seq1, seq2, func, minreps=20, maxreps = 100)
+        res = LinkUtils.calculate_vals(seq1, seq2, func)
         for val, suff in zip(res, suffs):
             row[name+suff] = val
 
