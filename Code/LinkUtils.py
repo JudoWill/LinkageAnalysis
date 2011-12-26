@@ -75,7 +75,8 @@ def calculate_vals(s1, s2, testfun, key = gt, minreps = 500, maxreps = 1e6):
 
 def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500, maxreps = 1e6):
 
-    batchsize = 5000
+    batchsize = 500
+    groupingsize = 50
     ls1 = list(s1)
     ls2 = list(s2)
     tcount = 0
@@ -93,18 +94,19 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
         if tcount > minreps and -log(count+1/tcount,10) < log(tcount,10)-3:
             break
         worklist = []
-        for _ in xrange(batchsize):
+        for _ in xrange(groupingsize):
             if len(preargs) == 1:
-                worklist.append(testfun.delay(preargs[0], ls1, ls2, shuf = True))
+                worklist.append(testfun.delay(preargs[0], ls1, ls2, shuf = True, batch = batchsize))
             else:
-                worklist.append(testfun.delay(ls1, ls2, shuf = True))
+                worklist.append(testfun.delay(ls1, ls2, shuf = True, batch=batchsize))
         for restmp in worklist:
             try:
-                res = restmp.get(timeout=30)
-                total += res
-                tcount += 1
-                if key(res, trueval):
-                    count += 1
+                reslist = restmp.get(timeout=30)
+                for res in reslist:
+                    total += res
+                    tcount += 1
+                    if key(res, trueval):
+                        count += 1
             except TimeoutError:
                 pass
 
@@ -113,7 +115,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
 
 
 @task()
-def calculate_mutual_info(signal1, signal2, shuf = False):
+def calculate_mutual_info(signal1, signal2, shuf = False, batch=False):
     """Caluculates the Mutual Information shared by two signals.
 
     Arguements:
@@ -133,6 +135,12 @@ def calculate_mutual_info(signal1, signal2, shuf = False):
     if shuf:
         shuffle(signal1)
         shuffle(signal2)
+
+    if batch:
+        res = []
+        for _ in xrange(batch):
+            res.append(calculate_mutual_info(signal1, signal2, shuf=True))
+        return res
 
     overlap = defaultdict(int)
     num_items = len(signal1)
@@ -155,11 +163,18 @@ def calculate_mutual_info(signal1, signal2, shuf = False):
     return mut_info
 
 @task()
-def calculate_PNAS(signal1, signal2, shuf = False):
+def calculate_PNAS(signal1, signal2, shuf = False, batch = False):
 
     if shuf:
         shuffle(signal1)
         shuffle(signal2)
+
+
+    if batch:
+        res = []
+        for _ in xrange(batch):
+            res.append(calculate_PNAS(signal1, signal2, shuf=True))
+        return res
 
     snum = len(signal1)
     s1_counts = defaultdict(int)
@@ -223,13 +238,20 @@ def prediction_mapping(signal1, signal2, shuf = False):
     return mapping
 
 @task()
-def calculate_mapping(signal1, signal2, shuf = False):
+def calculate_mapping(signal1, signal2, shuf = False, batch = False):
+
+
+    if batch:
+        res = []
+        for _ in xrange(batch):
+            res.append(calculate_mapping(signal1, signal2, shuf=True))
+        return res
 
     res = prediction_mapping(signal1, signal2, shuf = shuf)
     return sum(r[2] for r in res)/len(signal1)
 
 @task()
-def calculate_OMES(signal1, signal2, shuf = False):
+def calculate_OMES(signal1, signal2, shuf = False, batch = False):
     """Finds the Observed Minus Expected Squared score.
 
     Calcualtes the score using the formula:
@@ -241,6 +263,12 @@ def calculate_OMES(signal1, signal2, shuf = False):
     if shuf:
         shuffle(signal1)
         shuffle(signal2)
+
+    if batch:
+        res = []
+        for _ in xrange(batch):
+            res.append(calculate_OMES(signal1, signal2, shuf=True))
+        return res
 
     s1_counts = defaultdict(int)
     s2_counts = defaultdict(int)
@@ -274,6 +302,12 @@ def calculate_SBASC(sub_mat, signal1, signal2, shuf = False):
     if shuf:
         shuffle(signal1)
         shuffle(signal2)
+
+    if batch:
+        res = []
+        for _ in xrange(batch):
+            res.append(calculate_SBASC(sub_mat, signal1, signal2, shuf=True))
+        return res
 
     def sub_score(signal, sub_mat):
         scores = []
