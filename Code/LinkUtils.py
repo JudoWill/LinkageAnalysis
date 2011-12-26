@@ -75,7 +75,7 @@ def calculate_vals(s1, s2, testfun, key = gt, minreps = 500, maxreps = 1e6):
 
 def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500, maxreps = 1e6):
 
-    batchsize = 250
+    batchsize = 5000
     ls1 = list(s1)
     ls2 = list(s2)
     tcount = 0
