@@ -10,6 +10,7 @@ from operator import gt, lt
 from random import shuffle
 from collections import defaultdict
 from pylru import lrudecorator
+from celery.task import task
 
 class LinkCalculator(object):
 
@@ -71,7 +72,7 @@ def calculate_vals(s1, s2, testfun, key = gt, minreps = 500, maxreps = 1e6):
 
     return trueval, count/tcount, total/tcount, tcount
 
-@lrudecorator(1000)
+@task()
 def calculate_mutual_info(signal1, signal2):
     """Caluculates the Mutual Information shared by two signals.
 
@@ -110,7 +111,7 @@ def calculate_mutual_info(signal1, signal2):
 
     return mut_info
 
-@lrudecorator(1000)
+@task()
 def calculate_PNAS(signal1, signal2):
 
 
@@ -140,7 +141,7 @@ def calculate_PNAS(signal1, signal2):
 
     return (f12/snum - f1m*f2m)/sqrt(V1*V2)
 
-
+@task()
 def prediction_mapping(signal1, signal2):
     """Calculates the mapping between any two signals.
 
@@ -172,13 +173,13 @@ def prediction_mapping(signal1, signal2):
                 counts.pop((ks1, ks2))
     return mapping
 
-@lrudecorator(1000)
+@task()
 def calculate_mapping(signal1, signal2):
 
     res = prediction_mapping(signal1, signal2)
     return sum(r[2] for r in res)/len(signal1)
 
-@lrudecorator(1000)
+@task()
 def calculate_OMES(signal1, signal2):
     """Finds the Observed Minus Expected Squared score.
 
@@ -207,7 +208,7 @@ def calculate_OMES(signal1, signal2):
 
     return omes
 
-
+@task()
 def calculate_SBASC(sub_mat, signal1, signal2):
     """Calculates the Substitutions Based Correlation
 
