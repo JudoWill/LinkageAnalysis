@@ -13,7 +13,7 @@ import csv
 
 
 @task()
-def link_calculator(row, submats, seq1, seq2):
+def link_calculator(row, submats, seq1, seq2, granular = False):
 
     c1 = AlignUtils.make_counts(seq1)
     c2 = AlignUtils.make_counts(seq1)
@@ -28,15 +28,23 @@ def link_calculator(row, submats, seq1, seq2):
 
     processfuns = []
     for name, mat in submats:
-        processfuns.append(('SBASC_'+name,
-            partial(LinkUtils.calculate_SBASC, mat)))
+        if granular:
+            processfuns.append(('SBASC_'+name,
+                LinkUtils.calculate_SBASC, (mat,)))
+        else:
+            processfuns.append(('SBASC_'+name,
+                                partial(LinkUtils.calculate_SBASC, mat), ()))
 
-    processfuns.append(('Mutual_Info', LinkUtils.calculate_mutual_info))
-    processfuns.append(('OMES', LinkUtils.calculate_OMES))
+    processfuns.append(('Mutual_Info', LinkUtils.calculate_mutual_info, {}))
+    processfuns.append(('OMES', LinkUtils.calculate_OMES, ()))
     suffs = ['_raw', '_pval', '_null', '_count']
 
-    for name, func in processfuns:
-        res = LinkUtils.calculate_vals(seq1, seq2, func)
+    for name, func, evals in processfuns:
+        if granular:
+            print 'calculating', name, row['S1-Start'], row['S2-Start']
+            res = LinkUtils.celery_calculate_vals(seq1, seq2, func, preargs=evals)
+        else:
+            res = LinkUtils.calculate_vals(seq1, seq2, func)
         for val, suff in zip(res, suffs):
             row[name+suff] = val
 
@@ -77,8 +85,12 @@ def task_loader(que, a1, a2, defaults, submats, minseqs, issame):
 
         if len(cseq1) > minseqs:
             #print 'loaded', ind1, ind2
-            que.put(link_calculator.delay(row, submats, cseq1, cseq2))
-    que.put(None)
+            if que:
+                que.put(link_calculator.delay(row, submats, cseq1, cseq2))
+            else:
+                yield link_calculator(row, submats, cseq1, cseq2, granular=True)
+    if que:
+        que.put(None)
 
 
 def convert_row_to_writeable_rows(row, rmfields):
@@ -114,7 +126,7 @@ def convert_row_to_writeable_rows(row, rmfields):
 
 
 
-def PredictionAnalysis(align1, align2, outfile, cons_cut = 0.99, **kwargs):
+def PredictionAnalysis(align1, align2, outfile, granular = True, cons_cut = 0.99, **kwargs):
 
     a1 = Alignment.alignment_from_file(align1)
     a2 = Alignment.alignment_from_file(align2)
@@ -136,28 +148,36 @@ def PredictionAnalysis(align1, align2, outfile, cons_cut = 0.99, **kwargs):
 
     submats = LinkUtils.get_all_sub_mats()
 
-    process_que = Queue(1000)
-    loader = Thread(target=task_loader,
-                    args= (process_que, a1, a2, defaults,submats, 50, align1==align2))
-    loader.start()
-
     ohandle = open(outfile, 'w')
     owriter = csv.DictWriter(ohandle, LinkFields.LINK_FIELDS,
         delimiter = '\t', extrasaction='ignore')
     owriter.writerow(dict(zip(LinkFields.LINK_FIELDS,
         LinkFields.LINK_FIELDS)))
-    print 'waiting for first'
-    item = process_que.get()
-    while item is not None:
-        try:
-            row = item.get(timeout = 60*30, interval = 60*1)
-        except TimeoutError:
-            print 'no result for one!'
-            item = process_que.get()
-            continue
-        print row['S1-Start'], row['S2-End']
-        owriter.writerows(convert_row_to_writeable_rows(row, rmheaders))
+
+    if granular:
+        for row in task_loader(None, a1, a2, defaults,submats, 50, align1==align2):
+            owriter.writerows(convert_row_to_writeable_rows(row, rmheaders))
+
+
+    else:
+        process_que = Queue(1000)
+        loader = Thread(target=task_loader,
+                        args= (process_que, a1, a2, defaults,submats, 50, align1==align2))
+        loader.start()
+
+
+        print 'waiting for first'
         item = process_que.get()
+        while item is not None:
+            try:
+                row = item.get(timeout = 60*30, interval = 60*1)
+            except TimeoutError:
+                print 'no result for one!'
+                item = process_que.get()
+                continue
+            print row['S1-Start'], row['S2-End']
+            owriter.writerows(convert_row_to_writeable_rows(row, rmheaders))
+            item = process_que.get()
 
 
 

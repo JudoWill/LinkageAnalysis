@@ -7,8 +7,13 @@ from Code.GeneralUtils import prots_from_path
 
 if __name__ == '__main__':
 
-    ifiles = glob('/hivdata/curated/MergedDir/*.aln')
-    opath = '/hivdata/curated/LinkageResults'
+    if os.path.exists('/hivdata/curated/MergedDir/'):
+        ifiles = glob('/hivdata/curated/MergedDir/*.aln')
+        opath = '/hivdata/curated/LinkageResults'
+    else:
+        ifiles = glob('HIVData/curated/MergedDir/*.aln')
+        opath = 'HIVData/curated/LinkageResults'
+    print ifiles
     iterable = product(ifiles, repeat=2)
     iterable.next() #env-env seems to have an issue
 
@@ -18,11 +23,15 @@ if __name__ == '__main__':
         p2 = f2.split(os.sep)[-1].split('.')[0]
 
         ofile = os.path.join(opath, '%s--%s.res' % (p1, p2))
-        PredictionAnalysis(f1, f2, ofile)
+        PredictionAnalysis(f1, f2, ofile, granular=True)
 
 
-    ifiles = glob('/hivdata/SubtypeB/MergedDir/*.aln')
-    opath = '/hivdata/SubtypeB/LinkageResults'
+    if os.path.exists('/hivdata/SubtypeB/MergedDir/'):
+        ifiles = glob('/hivdata/SubtypeB/MergedDir/*.aln')
+        opath = '/hivdata/SubtypeB/LinkageResults'
+    else:
+        ifiles = glob('HIVData/SubtypeB/MergedDir/*.aln')
+        opath = 'HIVData/SubtypeB/LinkageResults'
 
     for f1, f2 in product(ifiles, repeat=2):
         print 'Processing', f1, f2
@@ -30,4 +39,4 @@ if __name__ == '__main__':
         p2 = f2.split(os.sep)[-1].split('.')[0]
 
         ofile = os.path.join(opath, '%s--%s.res' % (p1, p2))
-        PredictionAnalysis(f1, f2, ofile)
+        PredictionAnalysis(f1, f2, ofile, granular=True)

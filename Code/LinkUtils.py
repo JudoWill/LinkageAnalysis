@@ -11,6 +11,7 @@ from random import shuffle
 from collections import defaultdict
 from pylru import lrudecorator
 from celery.task import task
+from celery.exceptions import TimeoutError
 
 class LinkCalculator(object):
 
@@ -71,6 +72,47 @@ def calculate_vals(s1, s2, testfun, key = gt, minreps = 500, maxreps = 1e6):
             count += 1
 
     return trueval, count/tcount, total/tcount, tcount
+
+def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500, maxreps = 1e6):
+
+    batchsize = 250
+    ls1 = list(s1)
+    ls2 = list(s2)
+    tcount = 0
+    count = 0
+    total = 0
+    mcut = 0.01
+    try:
+        if len(preargs) == 1:
+            trueval = testfun(preargs[0], tuple(ls1), tuple(ls2))
+        else:
+            trueval = testfun(tuple(ls1), tuple(ls2))
+    except ZeroDivisionError:
+        return 0, 1.0, 0, 0
+    while tcount < maxreps:
+        if tcount > minreps and -log(count+1/tcount,10) < log(tcount,10)-3:
+            break
+        worklist = []
+        for _ in xrange(batchsize):
+            shuffle(ls1)
+            shuffle(ls2)
+            if len(preargs) == 1:
+                worklist.append(testfun.delay(preargs[0], tuple(ls1), tuple(ls2)))
+            else:
+                worklist.append(testfun.delay(tuple(ls1), tuple(ls2)))
+        for restmp in worklist:
+            try:
+                res = restmp.get(timeout=30)
+                total += res
+                tcount += 1
+                if key(res, trueval):
+                    count += 1
+            except TimeoutError:
+                pass
+
+    return trueval, count/tcount, total/tcount, tcount
+
+
 
 @task()
 def calculate_mutual_info(signal1, signal2):
