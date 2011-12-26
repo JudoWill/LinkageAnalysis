@@ -75,8 +75,10 @@ def calculate_vals(s1, s2, testfun, key = gt, minreps = 500, maxreps = 1e6):
 
 def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500, maxreps = 1e6):
 
-    batchsize = 500
-    groupingsize = 50
+    batchsize = 10
+    groupingsize = int(minreps/batchsize)+2
+    lgrouping = 100
+    lbatch = 100
     ls1 = list(s1)
     ls2 = list(s2)
     tcount = 0
@@ -99,6 +101,8 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
                 worklist.append(testfun.delay(preargs[0], ls1, ls2, shuf = True, batch = batchsize))
             else:
                 worklist.append(testfun.delay(ls1, ls2, shuf = True, batch=batchsize))
+        batchsize = lbatch
+        groupingsize = lgrouping
         for restmp in worklist:
             try:
                 reslist = restmp.get(timeout=30)
