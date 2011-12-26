@@ -8,3 +8,4 @@ BeautifulSoup
 suds
 dendropy
 pylru
+redis
