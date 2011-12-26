@@ -11,7 +11,7 @@ from random import shuffle
 from collections import defaultdict
 from pylru import lrudecorator
 from celery.task import task
-from celery.exceptions import TimeoutError
+from celery.exceptions import TimeoutError, WorkerLostError
 
 class LinkCalculator(object):
 
@@ -112,6 +112,10 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
                     if key(res, trueval):
                         count += 1
             except TimeoutError:
+                pass
+            except WorkerLostError:
+                pass
+            except:
                 pass
 
     return trueval, count/tcount, total/tcount, tcount
