@@ -22,12 +22,12 @@ cd ~/
 wget http://redis.googlecode.com/files/redis-2.4.5.tar.gz
 tar xzf redis-2.4.5.tar.gz
 cd redis-2.4.5
-make
+make install
 cd ~/
 
 cd LinkageAnalysis
-redis-server redis.conf
+redis-server ./redis.conf
 pip install -r requirements.pip
 
-nohup celeryd --config=cluterceleryconfig --autoscale=10,3 --logfile ~/celery.log --loglevel INFO &
+nohup celeryd --config=clusterceleryconfig --autoscale=10,3 --logfile ~/celery.log --loglevel INFO &
 
