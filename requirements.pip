@@ -9,3 +9,4 @@ suds
 dendropy
 pylru
 redis
+celery
