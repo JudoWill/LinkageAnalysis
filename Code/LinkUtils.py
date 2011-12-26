@@ -105,7 +105,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
         groupingsize = lgrouping
         for restmp in worklist:
             try:
-                reslist = restmp.get(timeout=30)
+                reslist = restmp.get(timeout=2000)
                 for res in reslist:
                     total += res
                     tcount += 1
