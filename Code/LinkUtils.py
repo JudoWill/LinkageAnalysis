@@ -110,6 +110,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
             asyncres = que.get()
 
             try:
+                print 'trying to get'
                 reslist = asyncres.get(timeout=60)
                 for res in reslist:
                     total += res
@@ -117,6 +118,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
                     if key(res, trueval):
                         count += 1
             except TimeoutError:
+                print 'putng back'
                 asyncres.put(asyncres)
             except WorkerLostError:
                 pass
@@ -124,6 +126,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
                 pass
 
     while not que.empty():
+        print 'emptying'
         asyncres = que.get()
         try:
             reslist = asyncres.get(timeout=1)
