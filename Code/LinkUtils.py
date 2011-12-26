@@ -50,7 +50,10 @@ def calculate_vals(s1, s2, testfun, key = gt, minreps = 500, maxreps = 1e6):
     count = 0
     total = 0
     mcut = 0.01
-    trueval = testfun(tuple(ls1), tuple(ls2))
+    try:
+        trueval = testfun(tuple(ls1), tuple(ls2))
+    except ZeroDivisionError:
+        return 0, 1.0, 0, 0
 
     while tcount < maxreps:
         if tcount > minreps and -log(count+1/tcount,10) < log(tcount,10)-3:
@@ -238,6 +241,16 @@ def calculate_SBASC(sub_mat, signal1, signal2):
     McBASC = McBASC/N2
 
     return McBASC
+
+def get_all_sub_mats():
+
+    sub_mats = glob.glob('Code/*.mat')
+    output = []
+    for f in sub_mats:
+        name = os.path.splitext(os.path.basename(f))[0]
+        mat = get_sub_mat(f)
+        output.append((name,mat))
+    return output
 
 
 def get_sub_mat(filename):
