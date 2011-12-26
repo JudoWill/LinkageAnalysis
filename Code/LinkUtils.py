@@ -78,13 +78,14 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
     batchsize = 10
     groupingsize = int(minreps/batchsize)+2
     lgrouping = 100
-    lbatch = 100
+    lbatch = 300
     ls1 = list(s1)
     ls2 = list(s2)
     tcount = 0
     count = 0
     total = 0
     mcut = 0.01
+    print s1, s2
     try:
         if len(preargs) == 1:
             trueval = testfun(preargs[0], tuple(ls1), tuple(ls2))
