@@ -1,5 +1,5 @@
 # Where to chdir at start.
-CELERYD_CHDIR="/home/root/LinkageAnalysis"
+CELERYD_CHDIR="/root/LinkageAnalysis"
 
 # Extra arguments to celeryd
 CELERYD_OPTS="--autoscale=10,3"
