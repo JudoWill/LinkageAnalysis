@@ -94,12 +94,10 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
             break
         worklist = []
         for _ in xrange(batchsize):
-            shuffle(ls1)
-            shuffle(ls2)
             if len(preargs) == 1:
-                worklist.append(testfun.delay(preargs[0], tuple(ls1), tuple(ls2)))
+                worklist.append(testfun.delay(preargs[0], ls1, ls2, shuf = True))
             else:
-                worklist.append(testfun.delay(tuple(ls1), tuple(ls2)))
+                worklist.append(testfun.delay(ls1, ls2, shuf = True))
         for restmp in worklist:
             try:
                 res = restmp.get(timeout=30)
@@ -115,7 +113,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
 
 
 @task()
-def calculate_mutual_info(signal1, signal2):
+def calculate_mutual_info(signal1, signal2, shuf = False):
     """Caluculates the Mutual Information shared by two signals.
 
     Arguements:
@@ -132,6 +130,9 @@ def calculate_mutual_info(signal1, signal2):
             d[key] = val/num
         return d
 
+    if shuf:
+        shuffle(signal1)
+        shuffle(signal2)
 
     overlap = defaultdict(int)
     num_items = len(signal1)
@@ -154,8 +155,11 @@ def calculate_mutual_info(signal1, signal2):
     return mut_info
 
 @task()
-def calculate_PNAS(signal1, signal2):
+def calculate_PNAS(signal1, signal2, shuf = False):
 
+    if shuf:
+        shuffle(signal1)
+        shuffle(signal2)
 
     snum = len(signal1)
     s1_counts = defaultdict(int)
@@ -184,7 +188,7 @@ def calculate_PNAS(signal1, signal2):
     return (f12/snum - f1m*f2m)/sqrt(V1*V2)
 
 @task()
-def prediction_mapping(signal1, signal2):
+def prediction_mapping(signal1, signal2, shuf = False):
     """Calculates the mapping between any two signals.
 
     Uses a depth-first search algorithm to match the most likely value in
@@ -201,6 +205,9 @@ def prediction_mapping(signal1, signal2):
     [(s1a, s2a, #occurance), (s1b, s2b, #occurance), ...]"""
 
 
+    if shuf:
+        shuffle(signal1)
+        shuffle(signal2)
 
     counts = defaultdict(int)
     for s1, s2 in zip(signal1, signal2):
@@ -216,13 +223,13 @@ def prediction_mapping(signal1, signal2):
     return mapping
 
 @task()
-def calculate_mapping(signal1, signal2):
+def calculate_mapping(signal1, signal2, shuf = False):
 
-    res = prediction_mapping(signal1, signal2)
+    res = prediction_mapping(signal1, signal2, shuf = shuf)
     return sum(r[2] for r in res)/len(signal1)
 
 @task()
-def calculate_OMES(signal1, signal2):
+def calculate_OMES(signal1, signal2, shuf = False):
     """Finds the Observed Minus Expected Squared score.
 
     Calcualtes the score using the formula:
@@ -230,6 +237,10 @@ def calculate_OMES(signal1, signal2):
 
     Reference: Fodor et. al. 2004, PMID: 15211506
     """
+
+    if shuf:
+        shuffle(signal1)
+        shuffle(signal2)
 
     s1_counts = defaultdict(int)
     s2_counts = defaultdict(int)
@@ -251,7 +262,7 @@ def calculate_OMES(signal1, signal2):
     return omes
 
 @task()
-def calculate_SBASC(sub_mat, signal1, signal2):
+def calculate_SBASC(sub_mat, signal1, signal2, shuf = False):
     """Calculates the Substitutions Based Correlation
 
      Determines the correlation of mutations based on any substituion matrix.
@@ -259,6 +270,10 @@ def calculate_SBASC(sub_mat, signal1, signal2):
      Based on Olmea et. al. 1999 ... PMID: 10547297
 
     """
+
+    if shuf:
+        shuffle(signal1)
+        shuffle(signal2)
 
     def sub_score(signal, sub_mat):
         scores = []
