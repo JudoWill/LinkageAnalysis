@@ -19,7 +19,6 @@ cd pip-1.0.2
 python setup.py install
 cd ~/
 
-git clone git://github.com/JudoWill/LinkageAnalysis.git
 cd LinkageAnalysis
 pip install -r requirements.pip
 
