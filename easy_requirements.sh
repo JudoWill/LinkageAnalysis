@@ -1,18 +1,20 @@
 #!/bin/bash
-easy_install paver
-easy_install ruffus
-easy_install nose
-easy_install memorised
-easy_install python-memcached
-easy_install pyyaml
-easy_install BeautifulSoup
-easy_install suds
-easy_install dendropy
-easy_install pylru
-easy_install redis
-easy_install celery
 
-cp LinkageAnalysis/celeryd 	/etc/init.d/
-cp LinkageAnalysis/celerydefaults /etc/default/celeryd
-chmod +x /etc/init.d/celeryd
-/etc/init.d/celeryd start
+wget http://www.python.org/ftp/python/2.7.2/Python-2.7.2.tgz
+tar xzf Python-2.7.2.tgz
+cd Python-2.7.2
+./configure
+make install
+cd ~/
+
+wget http://pypi.python.org/packages/source/d/distribute/distribute-0.6.24.tar.gz
+tar xzf distribute-0.6.24.tar.gz
+cd distribute-0.6.24
+python setup.py install
+cd ~/
+
+wget http://pypi.python.org/packages/source/p/pip/pip-1.0.2.tar.gz
+tar xzf pip-1.0.2.tar.gz
+cd pip-1.0.2
+python setup.py install
+cd ~/
