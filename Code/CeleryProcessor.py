@@ -25,6 +25,8 @@ def link_calculator(row, submats, seq1, seq2, granular = False):
     row['SeqLength'] = len(seq1)
     row['S1-Cons'] = max(x/len(seq1) for x in c1.values())
     row['S2-Cons'] = max(x/len(seq2) for x in c2.values())
+    if row['S1-Cons'] > 0.99 or row['S2-Cons'] > 0.99:
+        return row
 
     processfuns = []
     for name, mat in submats:
@@ -79,7 +81,7 @@ def task_loader(que, a1, a2, defaults, submats, minseqs, issame):
         cseq1 = ''
         cseq2 = ''
         for s1, s2 in zip(seq1, seq2):
-            if s1 != '-' and s2 != '-':
+            if s1.isalpha() and s2.isalpha():
                 cseq1 += s1
                 cseq2 += s2
 
