@@ -12,5 +12,7 @@ easy_install pylru
 easy_install redis
 easy_install celery
 
-cd LinkageAnalysis
-nohup celeryd --autoscale=10,3 --config=clusterceleryconfig &
+cp LinkageAnalysis/celeryd 	/etc/init.d/
+cp LinkageAnalysis/celerydefaults /etc/default/celeryd
+chmod +x /etc/init.d/celeryd
+/etc/init.d/celeryd start
