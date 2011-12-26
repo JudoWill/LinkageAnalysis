@@ -3,6 +3,7 @@ from celery.task import task
 import LinkUtils
 import LinkFields
 import AlignUtils
+from celery.exceptions import TimeoutError:
 from AlignUtils import Alignment, prot_from_path
 from itertools import product, izip, count, combinations, islice
 from Queue import Queue
@@ -148,7 +149,12 @@ def PredictionAnalysis(align1, align2, outfile, cons_cut = 0.99, **kwargs):
     print 'waiting for first'
     item = process_que.get()
     while item is not None:
-        row = item.get()
+        try:
+            row = item.get(timeout = 60*30, interval = 60*1)
+        except TimeoutError:
+            print 'no result for one!'
+            item = process_que.get()
+            continue
         print row['S1-Start'], row['S2-End']
         owriter.writerows(convert_row_to_writeable_rows(row, rmheaders))
         item = process_que.get()
