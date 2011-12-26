@@ -3,7 +3,7 @@ from celery.task import task
 import LinkUtils
 import LinkFields
 import AlignUtils
-from celery.exceptions import TimeoutError:
+from celery.exceptions import TimeoutError
 from AlignUtils import Alignment, prot_from_path
 from itertools import product, izip, count, combinations, islice
 from Queue import Queue

@@ -9,6 +9,8 @@ if __name__ == '__main__':
 
     ifiles = glob('/hivdata/curated/MergedDir/*.aln')
     opath = '/hivdata/curated/LinkageResults'
+    iterable = product(ifiles, repeat=2)
+    iterable.next() #env-env seems to have an issue
 
     for f1, f2 in product(ifiles, repeat=2):
         print 'Processing', f1, f2
