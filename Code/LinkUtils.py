@@ -12,6 +12,7 @@ from collections import defaultdict
 from pylru import lrudecorator
 from celery.task import task
 from celery.exceptions import TimeoutError, WorkerLostError
+from Queue import Queue
 
 class LinkCalculator(object):
 
@@ -85,6 +86,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
     count = 0
     total = 0
     mcut = 0.01
+    que = Queue()
     try:
         if len(preargs) == 1:
             trueval = testfun(preargs[0], tuple(ls1), tuple(ls2))
@@ -95,28 +97,47 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
     while tcount < maxreps:
         if tcount > minreps and -log(count+1/tcount,10) < log(tcount,10)-3:
             break
-        worklist = []
         for _ in xrange(groupingsize):
             if len(preargs) == 1:
-                worklist.append(testfun.delay(preargs[0], ls1, ls2, shuf = True, batch = batchsize))
+                que.put(testfun.delay(preargs[0], ls1, ls2, shuf = True, batch = batchsize))
             else:
-                worklist.append(testfun.delay(ls1, ls2, shuf = True, batch=batchsize))
+                que.put(testfun.delay(ls1, ls2, shuf = True, batch=batchsize))
         batchsize = lbatch
         groupingsize = lgrouping
-        for restmp in worklist:
+        c = 0
+        while not que.empty() or c < groupingsize:
+            c += 1
+            asyncres = que.get()
+
             try:
-                reslist = restmp.get(timeout=2000)
+                reslist = asyncres.get(timeout=60)
                 for res in reslist:
                     total += res
                     tcount += 1
                     if key(res, trueval):
                         count += 1
             except TimeoutError:
-                pass
+                asyncres.put(asyncres)
             except WorkerLostError:
                 pass
             except:
                 pass
+
+    while not que.empty():
+        asyncres = que.get()
+        try:
+            reslist = asyncres.get(timeout=1)
+            for res in reslist:
+                total += res
+                tcount += 1
+                if key(res, trueval):
+                    count += 1
+        except TimeoutError:
+            pass
+        except WorkerLostError:
+            pass
+        except:
+            pass
 
     return trueval, count/tcount, total/tcount, tcount
 
