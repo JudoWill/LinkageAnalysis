@@ -106,7 +106,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
         batchsize = lbatch
         groupingsize = lgrouping
         c = 0
-        while not que.empty() or c < groupingsize:
+        while not que.empty() and c < groupingsize:
             c += 1
             asyncres = que.get()
 
