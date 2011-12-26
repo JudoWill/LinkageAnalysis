@@ -1,7 +1,7 @@
 __author__ = 'will'
 from Code.CeleryProcessor import PredictionAnalysis
 from glob import glob
-from itertools import product
+from itertools import product, combinations, chain, izip
 import os, os.path
 from Code.GeneralUtils import prots_from_path
 
@@ -14,10 +14,9 @@ if __name__ == '__main__':
         ifiles = glob('HIVData/curated/MergedDir/*.aln')
         opath = 'HIVData/curated/LinkageResults'
     print ifiles
-    iterable = product(ifiles, repeat=2)
-    iterable.next() #env-env seems to have an issue
+    iterable = chain(combinations(ifiles,2), izip(ifiles, ifiles))
 
-    for f1, f2 in product(ifiles, repeat=2):
+    for f1, f2 in iterable:
         print 'Processing', f1, f2
         p1 = f1.split(os.sep)[-1].split('.')[0]
         p2 = f2.split(os.sep)[-1].split('.')[0]
@@ -33,7 +32,10 @@ if __name__ == '__main__':
         ifiles = glob('HIVData/SubtypeB/MergedDir/*.aln')
         opath = 'HIVData/SubtypeB/LinkageResults'
 
-    for f1, f2 in product(ifiles, repeat=2):
+    print ifiles
+    iterable = chain(combinations(ifiles,2), izip(ifiles, ifiles))
+
+    for f1, f2 in iterable:
         print 'Processing', f1, f2
         p1 = f1.split(os.sep)[-1].split('.')[0]
         p2 = f2.split(os.sep)[-1].split('.')[0]
