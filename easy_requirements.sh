@@ -12,5 +12,5 @@ easy_install pylru
 easy_install redis
 easy_install celery
 
-cd LinkageAnalysys
+cd LinkageAnalysis
 nohup celeryd --autoscale=10,3 --config=clusterceleryconfig &
