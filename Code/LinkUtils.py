@@ -100,10 +100,10 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
         for _ in xrange(groupingsize):
             #print 'putting in'
             if len(preargs) == 1:
-                que.put(testfun.delay(preargs[0], ls1, ls2, shuf = True, batch = batchsize))
+                que.put(testfun.delay(preargs[0], ls1, ls2, shuf = True, batch = int(batchsize)))
             else:
-                que.put(testfun.delay(ls1, ls2, shuf = True, batch=batchsize))
-        batchsize = lbatch
+                que.put(testfun.delay(ls1, ls2, shuf = True, batch=int(batchsize)))
+        batchsize *= 1.2
         groupingsize = lgrouping
         c = 0
         while not que.empty() and c < groupingsize:
