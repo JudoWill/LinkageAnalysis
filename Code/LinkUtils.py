@@ -105,8 +105,9 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
                 que.put(testfun.delay(ls1, ls2, shuf = True, batch=int(batchsize)))
         batchsize *= 1.2
         groupingsize = lgrouping
+        checknum = que.qsize()
         c = 0
-        while not que.empty() and c < groupingsize:
+        while not que.empty() and c < checknum:
             c += 1
             try:
                 asyncres = que.get_nowait()
