@@ -120,7 +120,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
                         count += 1
             except TimeoutError:
                 #print 'putng back'
-                asyncres.put(asyncres)
+                que.put(asyncres)
             except WorkerLostError:
                 pass
             except:
