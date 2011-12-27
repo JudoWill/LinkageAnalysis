@@ -12,7 +12,7 @@ from collections import defaultdict
 from pylru import lrudecorator
 from celery.task import task
 from celery.exceptions import TimeoutError, WorkerLostError
-from Queue import Queue
+from Queue import Queue, Empty
 
 class LinkCalculator(object):
 
@@ -108,11 +108,15 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
         c = 0
         while not que.empty() and c < groupingsize:
             c += 1
-            asyncres = que.get()
+            try:
+                asyncres = que.get_nowait()
+            except Empty:
+                break
+
 
             try:
                 print 'trying to get', que.qsize()
-                reslist = asyncres.get(timeout=60)
+                reslist = asyncres.get(timeout=60*(tcount<maxreps)+1)
                 for res in reslist:
                     total += res
                     tcount += 1
@@ -126,10 +130,15 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
                 pass
             except:
                 pass
+            if que.qsize() == 0:
+                break
 
     while not que.empty():
         print 'emptying'
-        asyncres = que.get()
+        try:
+            asyncres = que.get_nowait()
+        except Empty:
+            break
         try:
             reslist = asyncres.get(timeout=1)
             for res in reslist:
@@ -143,6 +152,8 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
             pass
         except:
             pass
+        if que.qsize() == 0:
+            break
 
     return trueval, count/tcount, total/tcount, tcount
 
