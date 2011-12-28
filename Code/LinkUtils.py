@@ -148,7 +148,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
                 if key(res, trueval):
                     count += 1
         except TimeoutError:
-            asyncres.revoke()
+            asyncres.forget()
         except WorkerLostError:
             pass
         except:
