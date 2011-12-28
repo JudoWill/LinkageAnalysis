@@ -22,7 +22,8 @@ if __name__ == '__main__':
         p2 = f2.split(os.sep)[-1].split('.')[0]
 
         ofile = os.path.join(opath, '%s--%s.res' % (p1, p2))
-        PredictionAnalysis(f1, f2, ofile, granular=True)
+        if not os.path.exists(ofile):
+            PredictionAnalysis(f1, f2, ofile, granular=True)
 
 
     if os.path.exists('/hivdata/SubtypeB/MergedDir/'):
@@ -41,4 +42,5 @@ if __name__ == '__main__':
         p2 = f2.split(os.sep)[-1].split('.')[0]
 
         ofile = os.path.join(opath, '%s--%s.res' % (p1, p2))
-        PredictionAnalysis(f1, f2, ofile, granular=True)
+        if not os.path.exists(ofile):
+            PredictionAnalysis(f1, f2, ofile, granular=True)
