@@ -103,7 +103,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
                 que.put(testfun.delay(preargs[0], ls1, ls2, shuf = True, batch = int(batchsize)))
             else:
                 que.put(testfun.delay(ls1, ls2, shuf = True, batch=int(batchsize)))
-        batchsize *= 1.2
+        batchsize *= 1.75
         groupingsize = lgrouping
         checknum = que.qsize()
         c = 0
