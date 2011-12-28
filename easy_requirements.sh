@@ -29,5 +29,5 @@ cd LinkageAnalysis
 redis-server ./redis.conf
 pip install -r requirements.pip
 
-nohup celeryd --config=clusterceleryconfig --autoscale=10,3 --logfile ~/celery.log --loglevel INFO &
+nohup celeryd --config=clusterceleryconfig --autoscale=10,5 --logfile ~/celery.log --loglevel INFO &
 
