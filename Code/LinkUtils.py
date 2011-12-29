@@ -95,7 +95,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
     except ZeroDivisionError:
         return 0, 1.0, 0, 0
     while tcount < maxreps:
-        if tcount > minreps and -log(count+1/tcount,10) < log(tcount,10)-3:
+        if tcount > minreps and -log(count+1/tcount,10) < log(tcount,10)-1:
             break
         print 'putting in', int(batchsize)
         for _ in xrange(groupingsize):
