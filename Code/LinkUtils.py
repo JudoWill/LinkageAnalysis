@@ -95,7 +95,8 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
     except ZeroDivisionError:
         return 0, 1.0, 0, 0
     while tcount < maxreps:
-        if tcount > minreps and -log(count+1/tcount,10) < log(tcount,10)-1:
+        batchsize = min(batchsize, 250)
+        if tcount > minreps and -log((count+1)/tcount,10) < log(tcount,10)-1:
             break
         print 'putting in', int(batchsize)
         for _ in xrange(groupingsize):
@@ -107,6 +108,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
         groupingsize = lgrouping
         checknum = que.qsize()
         c = 0
+        badgrab = 0
         while not que.empty() and c < checknum:
             c += 1
             try:
@@ -114,10 +116,12 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
             except Empty:
                 break
 
-
+            done = badgrab > 5
+            done |= tcount > maxreps
+            done |= -log((count+1)/tcount,10) < log(tcount,10)-1
             try:
                 print 'trying to get', que.qsize()
-                reslist = asyncres.get(timeout=5*(tcount<maxreps)+1)
+                reslist = asyncres.get(timeout=5*(not done)*+1)
                 for res in reslist:
                     total += res
                     tcount += 1
@@ -127,6 +131,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
             except TimeoutError:
                 #print 'putng back'
                 que.put(asyncres)
+                badgrab += 1
             except WorkerLostError:
                 pass
             except:
