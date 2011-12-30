@@ -31,6 +31,8 @@ def setup_env():
     run('tar xzf pip-1.0.2.tar.gz')
     with cd('pip-1.0.2'):
         run('python setup.py install')
+    with settings(warn_only = True):
+        run('git clone git://github.com/JudoWill/LinkageAnalysis.git')
     with cd('LinkageAnalysis'):
         run('pip install -r requirements.pip')
 
