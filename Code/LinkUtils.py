@@ -87,7 +87,7 @@ def check_precision(extreme_counts, total_counts, logprecision):
 def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500, maxreps = 1e6):
 
     def function_linker(func, ls1, ls2, preargs, distributed = True, **kwargs):
-        if len(preargs)>1:
+        if len(preargs)==1:
             args = (preargs[0], ls1, ls2)
         else:
             args = (ls1, ls2)
