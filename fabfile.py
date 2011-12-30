@@ -4,7 +4,7 @@ from fabric.api import *
 
 env.roledefs = {
     'master': ['master'],
-    'slaves': ['Node%03i' % x for x in range(1,19)]
+    'slaves': ['Node%03i' % x for x in range(1,20)]
 }
 
 @roles('master')
