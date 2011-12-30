@@ -16,7 +16,7 @@ def setup_master():
     with cd('LinkageAnalysis'):
         run('redis-server ./redis.conf')
 
-@roles('master', 'slave')
+@roles('master', 'slaves')
 def setup_env():
     run('wget http://www.python.org/ftp/python/2.7.2/Python-2.7.2.tgz')
     run('tar xzf Python-2.7.2.tgz')
