@@ -9,6 +9,7 @@ from itertools import product, izip, count, combinations, islice
 from Queue import Queue
 from threading import Thread
 from functools import partial
+import logging
 import csv
 
 
@@ -28,7 +29,7 @@ def link_calculator(row, submats, seq1, seq2, granular = False):
     if row['S1-Cons'] > 0.99999 or row['S2-Cons'] > 0.99999:
         return row
 
-    print seq1, row['S1-Cons'], seq2, row['S2-Cons']
+    logging.info('%s\t%f\t%s\t%f' % (seq1, row['S1-Cons'], seq2, row['S2-Cons']))
 
     processfuns = []
     for name, mat in submats:
@@ -45,7 +46,7 @@ def link_calculator(row, submats, seq1, seq2, granular = False):
 
     for name, func, evals in processfuns:
         if granular:
-            print 'calculating', name, row['S1-Start'], row['S2-Start']
+            logging.info('calculating %s %i %i' % (name, row['S1-Start'], row['S2-Start']))
             res = LinkUtils.celery_calculate_vals(seq1, seq2, func, preargs=evals)
         else:
             res = LinkUtils.calculate_vals(seq1, seq2, func)

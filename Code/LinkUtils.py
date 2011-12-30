@@ -13,6 +13,7 @@ from pylru import lrudecorator
 from celery.task import task
 from celery.exceptions import TimeoutError, WorkerLostError
 from Queue import Queue, Empty
+import logging
 
 class LinkCalculator(object):
 
@@ -102,7 +103,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
         true_count = 0
         total_sum = 0.0
         for num in xrange(qsize):
-            print 'getting', num
+            logging.info('getting que num %i' % num)
             try:
                 asyncres = que.get_nowait()
                 reslist = asyncres.get(timeout=timeout)
@@ -115,12 +116,12 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
                 #queue has nothing left
                 break
             except TimeoutError:
-                print 'putting back in'
+                logging.warning('putting back in')
                 que.put(asyncres)
             except WorkerLostError:
                 pass
             except:
-                print 'something else!'
+                logging.error('something else!')
         return true_count, total_sum, total_count
 
     batchsize = 200
@@ -135,16 +136,16 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
     except ZeroDivisionError:
         return 0, 1.0, 0, 0
 
-    print 'doing initial batch'
+    logging.warning('doing initial batch')
     for _ in xrange(groupingsize):
         que.put(function_linker(testfun, ls1, ls2, preargs, shuf = True, batch = ibatch))
     extreme_count, total_sum, total_count = process_que(que, trueval, 0.1)
 
     if total_count >= minreps and check_precision(extreme_count, total_count, 1):
-        print 'Initial batch was enough!'
+        logging.info('Initial batch was enough!')
     else:
         while total_count < maxreps and not check_precision(extreme_count, total_count, 1):
-            print 'putting in', int(batchsize)
+            logging.info('putting in %i' % int(batchsize))
             for _ in xrange(groupingsize):
                 que.put(function_linker(testfun, ls1, ls2, preargs, shuf = True, batch = int(batchsize)))
             e, s, t = process_que(que, trueval, 5)
@@ -154,7 +155,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
 
             print extreme_count/total_count, total_sum/total_count, total_count
 
-        print 'emptying que'
+        logging.info('emptying que')
         e, s, t = process_que(que, trueval, 0.1)
         extreme_count += e
         total_sum += s

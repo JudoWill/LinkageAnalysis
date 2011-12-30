@@ -4,8 +4,14 @@ from glob import glob
 from itertools import product, combinations, chain, izip
 import os, os.path
 from Code.GeneralUtils import prots_from_path
-
+import logging
 if __name__ == '__main__':
+
+    fname = 'processing%i.log'
+    c=1
+    while not os.path.exists(fname % c):
+        c+=1
+    logging.basicConfig(filename=fname % c,level=logging.DEBUG)
 
     if os.path.exists('/hivdata/curated/MergedDir/'):
         ifiles = glob('/hivdata/curated/MergedDir/*.aln')
