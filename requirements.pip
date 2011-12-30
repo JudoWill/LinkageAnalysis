@@ -10,3 +10,4 @@ dendropy
 pylru
 redis
 celery
+fabric
