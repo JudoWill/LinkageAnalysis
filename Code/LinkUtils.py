@@ -74,6 +74,16 @@ def calculate_vals(s1, s2, testfun, key = gt, minreps = 500, maxreps = 1e6):
 
     return trueval, count/tcount, total/tcount, tcount
 
+def check_precision(extreme_counts, total_counts, logprecision):
+    """ Returns True if there is enogh precision to accept the p-value
+    """
+    extreme_counts = max(extreme_counts, 1)
+    total_counts = max(total_counts, 1)
+    return (log(total_counts,10) + log(extreme_counts/total_counts,10)) > logprecision
+
+
+
+
 def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500, maxreps = 1e6):
 
     batchsize = 10
@@ -96,7 +106,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
         return 0, 1.0, 0, 0
     while tcount < maxreps:
         batchsize = min(batchsize, 250)
-        if tcount > minreps and -log((count+1)/tcount,10) < log(tcount,10)-1:
+        if tcount > minreps and check_precision(count, tcount, 1):
             break
         print 'putting in', int(batchsize)
         for _ in xrange(groupingsize):
@@ -118,7 +128,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
 
             done = badgrab > 5
             done |= tcount > maxreps
-            done |= -log((count+1)/tcount,10) < log(tcount,10)-1
+            done |= check_precision(count, tcount, 1)
             done &= tcount > minreps
             try:
                 print 'trying to get', que.qsize()
