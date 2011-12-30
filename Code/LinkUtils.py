@@ -100,6 +100,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
         qsize = que.qsize()
         total_count = 0
         true_count = 0
+        total_sum = 0.0
         for num in xrange(qsize):
             print 'getting', num
             try:
@@ -109,6 +110,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
                     if res > trueval:
                         true_count += 1
                     total_count += 1
+                    total_sum += res
             except Empty:
                 #queue has nothing left
                 break
@@ -119,53 +121,54 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
                 pass
             except:
                 print 'something else!'
-        return true_count, total_count
+        return true_count, total_sum, total_count
 
-
-
-
-
-    batchsize = 10
-    groupingsize = int(minreps/batchsize)+2
+    batchsize = 200
+    groupingsize = 150
     lgrouping = 300
-    lbatch = 150
     ls1 = list(s1)
     ls2 = list(s2)
-    tcount = 1
-    count = 0
-    total = 0
-    mcut = 0.01
+    total_count = 0
+    extreme_count = 0
+    total_sum = 0.0
     que = Queue()
+
     try:
         trueval = function_linker(testfun, ls1, ls2, preargs, distributed=False)
     except ZeroDivisionError:
         return 0, 1.0, 0, 0
 
     print 'doing initial batch'
+    for res in function_linker(testfun, ls1, ls2, preargs, distributed=False, batch = minreps):
+        if res > trueval:
+            extreme_count += 1
+        total_sum += res
+        total_count += 1
 
+    if not check_precision(extreme_count, total_count, 1):
+        while total_count < maxreps and not check_precision(extreme_count, total_count, 1):
+            batchsize = min(batchsize, 250)
+            print 'putting in', int(batchsize)
+            for _ in xrange(groupingsize):
+                que.put(function_linker(testfun, ls1, ls2, preargs, shuf = True, batch = int(batchsize)))
+            batchsize *= 1.75
+            groupingsize = lgrouping
+            e, s, t = process_que(que, trueval, 5)
+            extreme_count += e
+            total_sum += s
+            total_count += t
 
+            print extreme_count/total_count, total_sum/total_count, total_count
 
+        print 'emptying que'
+        e, s, t = process_que(que, trueval, 0.1)
+        extreme_count += e
+        total_sum += s
+        total_count += t
+    else:
+        print 'Initial batch was enough!'
 
-    while tcount < maxreps:
-        batchsize = min(batchsize, 250)
-        if tcount > minreps and check_precision(count, tcount, 1):
-            break
-        print 'putting in', int(batchsize)
-        for _ in xrange(groupingsize):
-            que.put(function_linker(testfun, ls1, ls2, preargs, shuf = True, batch = int(batchsize)))
-        batchsize *= 1.75
-        groupingsize = lgrouping
-        c, tc = process_que(que, trueval, 5)
-        count += c
-        tcount += tc
-        print count/tcount, total/tcount, tcount
-
-    print 'emptying que'
-    c, tc = process_que(que, trueval, 5)
-    count += c
-    tcount += tc
-
-    return trueval, count/tcount, total/tcount, tcount
+    return extreme_count/total_count, total_sum/total_count, total_count
 
 
 
