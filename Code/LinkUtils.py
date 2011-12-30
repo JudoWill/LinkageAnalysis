@@ -125,12 +125,9 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
 
     batchsize = 200
     groupingsize = 150
-    lgrouping = 300
+    ibatch = int((minreps*1.5)/groupingsize) #enough so if even HALF don't finish it will still pass minreps
     ls1 = list(s1)
     ls2 = list(s2)
-    total_count = 0
-    extreme_count = 0
-    total_sum = 0.0
     que = Queue()
 
     try:
@@ -139,20 +136,17 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
         return 0, 1.0, 0, 0
 
     print 'doing initial batch'
-    for res in function_linker(testfun, ls1, ls2, preargs, distributed=False, batch = minreps):
-        if res > trueval:
-            extreme_count += 1
-        total_sum += res
-        total_count += 1
+    for _ in xrange(groupingsize):
+        que.put(function_linker(testfun, ls1, ls2, preargs, shuf = True, batch = ibatch))
+    extreme_count, total_sum, total_count = process_que(que, trueval, 0.1)
 
-    if not check_precision(extreme_count, total_count, 1):
+    if total_count >= minreps and check_precision(extreme_count, total_count, 1):
+        print 'Initial batch was enough!'
+    else:
         while total_count < maxreps and not check_precision(extreme_count, total_count, 1):
-            batchsize = min(batchsize, 250)
             print 'putting in', int(batchsize)
             for _ in xrange(groupingsize):
                 que.put(function_linker(testfun, ls1, ls2, preargs, shuf = True, batch = int(batchsize)))
-            batchsize *= 1.75
-            groupingsize = lgrouping
             e, s, t = process_que(que, trueval, 5)
             extreme_count += e
             total_sum += s
@@ -165,8 +159,6 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
         extreme_count += e
         total_sum += s
         total_count += t
-    else:
-        print 'Initial batch was enough!'
 
     return extreme_count/total_count, total_sum/total_count, total_count
 
