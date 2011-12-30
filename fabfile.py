@@ -2,8 +2,12 @@ __author__ = 'will'
 
 from fabric.api import *
 
+env.roledefs = {
+    'master': ['master'],
+    'slaves': ['Node%03i' % x for x in range(1,19)]
+}
 
-
+@roles('master')
 def setup_master():
     run('wget http://redis.googlecode.com/files/redis-2.4.5.tar.gz')
     run('tar xzf redis-2.4.5.tar.gz')
@@ -12,7 +16,7 @@ def setup_master():
     with cd('LinkageAnalysis'):
         run('redis-server ./redis.conf')
 
-
+@roles('master', 'slave')
 def setup_env():
     run('wget http://www.python.org/ftp/python/2.7.2/Python-2.7.2.tgz')
     run('tar xzf Python-2.7.2.tgz')
@@ -30,12 +34,14 @@ def setup_env():
     with cd('LinkageAnalysis'):
         run('pip install -r requirements.pip')
 
+@roles('slaves')
 def start_celery_worker():
 
     with cd('LinkageAnalysis'):
         run('git reset HEAD --hard')
         run('git pull')
-        run("ps auxww | grep celeryd | awk '{print $2}' | xargs kill -9 ")
+        with settings(warn_only = True):
+            run("ps auxww | grep celeryd | awk '{print $2}' | xargs kill -9 ")
         run('nohup celeryd --config=clusterceleryconfig --autoscale=10,5 --logfile ~/celery.log --loglevel INFO &')
 
 
