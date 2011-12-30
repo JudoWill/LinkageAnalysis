@@ -86,6 +86,18 @@ def check_precision(extreme_counts, total_counts, logprecision):
 
 def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500, maxreps = 1e6):
 
+    def function_linker(func, ls1, ls2, preargs, distributed = True, **kwargs):
+        if len(preargs)>1:
+            args = (preargs[0], ls1, ls2)
+        else:
+            args = (ls1, ls2)
+        if distributed:
+            return func.delay(*args, **kwargs)
+        else:
+            return func(*args, **kwargs)
+
+
+
     batchsize = 10
     groupingsize = int(minreps/batchsize)+2
     lgrouping = 300
@@ -98,22 +110,22 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
     mcut = 0.01
     que = Queue()
     try:
-        if len(preargs) == 1:
-            trueval = testfun(preargs[0], tuple(ls1), tuple(ls2))
-        else:
-            trueval = testfun(tuple(ls1), tuple(ls2))
+        trueval = function_linker(testfun, ls1, ls2, preargs, distributed=False)
     except ZeroDivisionError:
         return 0, 1.0, 0, 0
+
+    print 'doing initial batch'
+
+
+
+
     while tcount < maxreps:
         batchsize = min(batchsize, 250)
         if tcount > minreps and check_precision(count, tcount, 1):
             break
         print 'putting in', int(batchsize)
         for _ in xrange(groupingsize):
-            if len(preargs) == 1:
-                que.put(testfun.delay(preargs[0], ls1, ls2, shuf = True, batch = int(batchsize)))
-            else:
-                que.put(testfun.delay(ls1, ls2, shuf = True, batch=int(batchsize)))
+            que.put(function_linker(testfun, ls1, ls2, preargs, shuf = True, batch = int(batchsize)))
         batchsize *= 1.75
         groupingsize = lgrouping
         checknum = que.qsize()
