@@ -82,7 +82,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
     lbatch = 150
     ls1 = list(s1)
     ls2 = list(s2)
-    tcount = 0
+    tcount = 1
     count = 0
     total = 0
     mcut = 0.01
