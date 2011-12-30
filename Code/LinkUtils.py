@@ -121,7 +121,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
             done |= -log((count+1)/tcount,10) < log(tcount,10)-1
             try:
                 print 'trying to get', que.qsize()
-                reslist = asyncres.get(timeout=5*(not done)*+1)
+                reslist = asyncres.get(timeout=5*(not done)+1)
                 for res in reslist:
                     total += res
                     tcount += 1
