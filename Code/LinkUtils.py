@@ -96,6 +96,33 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
         else:
             return func(*args, **kwargs)
 
+    def process_que(que, trueval, timeout):
+        qsize = que.qsize()
+        total_count = 0
+        true_count = 0
+        for num in xrange(qsize):
+            print 'getting', num
+            try:
+                asyncres = que.get_nowait()
+                reslist = asyncres.get(timeout=timeout)
+                for res in reslist:
+                    if res > trueval:
+                        true_count += 1
+                    total_count += 1
+            except Empty:
+                #queue has nothing left
+                break
+            except TimeoutError:
+                print 'putting back in'
+                que.put(asyncres)
+            except WorkerLostError:
+                pass
+            except:
+                print 'something else!'
+        return true_count, total_count
+
+
+
 
 
     batchsize = 10
@@ -128,61 +155,15 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
             que.put(function_linker(testfun, ls1, ls2, preargs, shuf = True, batch = int(batchsize)))
         batchsize *= 1.75
         groupingsize = lgrouping
-        checknum = que.qsize()
-        c = 0
-        badgrab = 0
-        while not que.empty() and c < checknum:
-            c += 1
-            try:
-                asyncres = que.get_nowait()
-            except Empty:
-                break
+        c, tc = process_que(que, trueval, 5)
+        count += c
+        tcount += tc
+        print count/tcount, total/tcount, tcount
 
-            done = badgrab > 5
-            done |= tcount > maxreps
-            done |= check_precision(count, tcount, 1)
-            done &= tcount > minreps
-            try:
-                print 'trying to get', que.qsize()
-                reslist = asyncres.get(timeout=10*(not done)+0.1)
-                for res in reslist:
-                    total += res
-                    tcount += 1
-                    if key(res, trueval):
-                        count += 1
-                print count/tcount, total/tcount, tcount
-            except TimeoutError:
-                #print 'putng back'
-                que.put(asyncres)
-                badgrab += 1
-            except WorkerLostError:
-                pass
-            except:
-                pass
-            if que.qsize() == 0:
-                break
-
-    while not que.empty():
-        print 'emptying'
-        try:
-            asyncres = que.get_nowait()
-        except Empty:
-            break
-        try:
-            reslist = asyncres.get(timeout=1)
-            for res in reslist:
-                total += res
-                tcount += 1
-                if key(res, trueval):
-                    count += 1
-        except TimeoutError:
-            asyncres.forget()
-        except WorkerLostError:
-            pass
-        except:
-            pass
-        if que.qsize() == 0:
-            break
+    print 'emptying que'
+    c, tc = process_que(que, trueval, 5)
+    count += c
+    tcount += tc
 
     return trueval, count/tcount, total/tcount, tcount
 
