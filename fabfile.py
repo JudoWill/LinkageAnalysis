@@ -43,7 +43,10 @@ def start_celery_worker():
         run('git reset HEAD --hard')
         run('git pull')
         with settings(warn_only = True):
-            run("ps auxww | grep celeryd | awk '{print $2}' | xargs kill -9 ")
+            lines = run("ps auxww | grep celeryd")
+            for line in lines.split('\n'):
+                pid = [x for x in line.split() if x.strip()][1]
+                run('kill -9 %s' % pid)
         run('nohup celeryd --config=clusterceleryconfig --logfile ~/celery.log --loglevel INFO &')
 
 
