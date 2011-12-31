@@ -44,6 +44,6 @@ def start_celery_worker():
         run('git pull')
         with settings(warn_only = True):
             run("ps auxww | grep celeryd | awk '{print $2}' | xargs kill -9 ")
-        run('nohup celeryd --config=clusterceleryconfig --autoscale=10,5 --logfile ~/celery.log --loglevel INFO &')
+        run('nohup celeryd --config=clusterceleryconfig --logfile ~/celery.log --loglevel INFO &')
 
 
