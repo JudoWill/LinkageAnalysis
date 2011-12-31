@@ -155,11 +155,11 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
 
             print extreme_count/total_count, total_sum/total_count, total_count
 
-        logging.info('emptying que')
-        e, s, t = process_que(que, trueval, 0.1)
-        extreme_count += e
-        total_sum += s
-        total_count += t
+    logging.info('emptying que')
+    e, s, t = process_que(que, trueval, 0.1)
+    extreme_count += e
+    total_sum += s
+    total_count += t
 
     return extreme_count/total_count, total_sum/total_count, total_count
 
