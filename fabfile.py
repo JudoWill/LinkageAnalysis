@@ -47,6 +47,6 @@ def start_celery_worker():
             for line in lines.split('\n'):
                 pid = [x for x in line.split() if x.strip()][1]
                 run('kill -9 %s' % pid)
-        run('nohup celeryd --config=clusterceleryconfig --logfile ~/celery.log --loglevel INFO &')
+        run('startcelerylinkers.sh')
 
 
