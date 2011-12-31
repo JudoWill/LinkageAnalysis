@@ -11,7 +11,7 @@ from random import shuffle
 from collections import defaultdict
 from pylru import lrudecorator
 from celery.task import task
-from celery.exceptions import TimeoutError, WorkerLostError
+from celery.exceptions import TimeoutError, WorkerLostError, SoftTimeLimitExceeded
 from Queue import Queue, Empty
 import logging
 
@@ -189,8 +189,11 @@ def calculate_mutual_info(signal1, signal2, shuf = False, batch=False):
 
     if batch:
         res = []
-        for _ in xrange(batch):
-            res.append(calculate_mutual_info(signal1, signal2, shuf=True))
+        try:
+            for _ in xrange(batch):
+                res.append(calculate_mutual_info(signal1, signal2, shuf=True))
+        except SoftTimeLimitExceeded:
+            pass
         return res
 
     overlap = defaultdict(int)
@@ -223,8 +226,11 @@ def calculate_PNAS(signal1, signal2, shuf = False, batch = False):
 
     if batch:
         res = []
-        for _ in xrange(batch):
-            res.append(calculate_PNAS(signal1, signal2, shuf=True))
+        try:
+            for _ in xrange(batch):
+                res.append(calculate_PNAS(signal1, signal2, shuf=True))
+        except SoftTimeLimitExceeded:
+            pass
         return res
 
     snum = len(signal1)
@@ -290,8 +296,11 @@ def calculate_mapping(signal1, signal2, shuf = False, batch = False):
 
     if batch:
         res = []
-        for _ in xrange(batch):
-            res.append(calculate_mapping(signal1, signal2, shuf=True))
+        try:
+            for _ in xrange(batch):
+                res.append(calculate_mapping(signal1, signal2, shuf=True))
+        except SoftTimeLimitExceeded:
+            pass
         return res
 
     if shuf:
@@ -317,8 +326,11 @@ def calculate_OMES(signal1, signal2, shuf = False, batch = False):
 
     if batch:
         res = []
-        for _ in xrange(batch):
-            res.append(calculate_OMES(signal1, signal2, shuf=True))
+        try:
+            for _ in xrange(batch):
+                res.append(calculate_OMES(signal1, signal2, shuf=True))
+        except SoftTimeLimitExceeded:
+            pass
         return res
 
     s1_counts = defaultdict(int)
@@ -356,8 +368,11 @@ def calculate_SBASC(sub_mat, signal1, signal2, shuf = False, batch = False):
 
     if batch:
         res = []
-        for _ in xrange(batch):
-            res.append(calculate_SBASC(sub_mat, signal1, signal2, shuf=True))
+        try:
+            for _ in xrange(batch):
+                res.append(calculate_SBASC(sub_mat, signal1, signal2, shuf=True))
+        except SoftTimeLimitExceeded:
+            pass
         return res
 
     def sub_score(signal, sub_mat):
