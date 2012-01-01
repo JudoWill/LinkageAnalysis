@@ -11,7 +11,7 @@ from random import shuffle
 from collections import defaultdict
 from pylru import lrudecorator
 from celery.task import task
-from celery.exceptions import TimeoutError, WorkerLostError, SoftTimeLimitExceeded
+from celery.exceptions import TimeoutError, WorkerLostError, SoftTimeLimitExceeded, TimeLimitExceeded
 from Queue import Queue, Empty
 import logging
 
@@ -158,7 +158,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
             total_sum += s
             total_count += t
 
-            print extreme_count/total_count, total_sum/total_count, total_count
+            logging.info('pval: %f, mean: %f, count: %i' % (extreme_count/total_count, total_sum/total_count, total_count))
 
     logging.info('emptying que')
     e, s, t, _ = process_que(que, trueval, 0.1)
