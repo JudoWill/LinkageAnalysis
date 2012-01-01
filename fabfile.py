@@ -37,7 +37,7 @@ def setup_env():
         run('pip install -r requirements.pip')
 
 @roles('slaves')
-def start_celery_worker():
+def kill_celery_worker():
 
     with cd('LinkageAnalysis'):
         run('git reset HEAD --hard')
@@ -47,6 +47,11 @@ def start_celery_worker():
             for line in lines.split('\n'):
                 pid = [x for x in line.split() if x.strip()][1]
                 run('kill -9 %s' % pid)
-        run('startcelerylinkers.sh')
 
+
+@roles('master')
+def start_celery_workers():
+
+    for slave in env.roledefs['slaves']:
+        local('ssh %s LinkageAnlysis\startcelerylinkers.sh' % slave)
 
