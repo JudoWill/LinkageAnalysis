@@ -23,7 +23,7 @@ if __name__ == '__main__':
     iterable = chain(combinations(ifiles,2), izip(ifiles, ifiles))
 
     for f1, f2 in iterable:
-        print 'Processing', f1, f2
+        logging.warning('Processing %s, %s' % (f1, f2))
         p1 = f1.split(os.sep)[-1].split('.')[0]
         p2 = f2.split(os.sep)[-1].split('.')[0]
 
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     iterable = chain(combinations(ifiles,2), izip(ifiles, ifiles))
 
     for f1, f2 in iterable:
-        print 'Processing', f1, f2
+        logging.warning('Processing %s, %s' % (f1, f2))
         p1 = f1.split(os.sep)[-1].split('.')[0]
         p2 = f2.split(os.sep)[-1].split('.')[0]
 
