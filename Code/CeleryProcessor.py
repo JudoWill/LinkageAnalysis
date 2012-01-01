@@ -52,6 +52,7 @@ def link_calculator(row, submats, seq1, seq2, granular = False):
             res = LinkUtils.calculate_vals(seq1, seq2, func)
         for val, suff in zip(res, suffs):
             row[name+suff] = val
+            logging.info(name+suff+':'+str(val))
 
     return row
 
