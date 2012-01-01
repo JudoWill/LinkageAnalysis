@@ -53,5 +53,6 @@ def kill_celery_worker():
 def start_celery_workers():
 
     for slave in env.roledefs['slaves']:
-        local('ssh %s LinkageAnlysis\startcelerylinkers.sh' % slave)
+        local("ssh %s 'chmod +x LinkageAnlysis/startcelerylinkers.sh'" % slave)
+        local("ssh %s 'LinkageAnlysis/startcelerylinkers.sh'" % slave)
 
