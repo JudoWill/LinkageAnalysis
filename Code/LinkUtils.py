@@ -153,7 +153,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
                 que.put(function_linker(testfun, ls1, ls2, preargs, shuf = True, batch = int(batchsize)))
             e, s, t, flag = process_que(que, trueval, 5)
             if flag:
-                batchsize = int(batchsize*0.5)
+                batchsize = max(int(batchsize*0.5), ibatch)
             extreme_count += e
             total_sum += s
             total_count += t
