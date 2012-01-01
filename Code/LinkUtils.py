@@ -102,6 +102,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
         total_count = 0
         true_count = 0
         total_sum = 0.0
+        flag = False
         for num in xrange(qsize):
             logging.info('getting que num %i' % num)
             try:
@@ -120,9 +121,11 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
                 que.put(asyncres)
             except WorkerLostError:
                 pass
+            except TimeLimitExceeded:
+                flag = True
             except:
                 logging.error('something else!')
-        return true_count, total_sum, total_count
+        return true_count, total_sum, total_count, flag
 
     batchsize = 200
     groupingsize = 150
@@ -139,7 +142,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
     logging.warning('doing initial batch')
     for _ in xrange(groupingsize):
         que.put(function_linker(testfun, ls1, ls2, preargs, shuf = True, batch = ibatch))
-    extreme_count, total_sum, total_count = process_que(que, trueval, 0.1)
+    extreme_count, total_sum, total_count, flag = process_que(que, trueval, 0.1)
 
     if total_count >= minreps and check_precision(extreme_count, total_count, 1):
         logging.info('Initial batch was enough!')
@@ -148,7 +151,9 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
             logging.info('putting in %i' % int(batchsize))
             for _ in xrange(groupingsize):
                 que.put(function_linker(testfun, ls1, ls2, preargs, shuf = True, batch = int(batchsize)))
-            e, s, t = process_que(que, trueval, 5)
+            e, s, t, flag = process_que(que, trueval, 5)
+            if flag:
+                batchsize = int(batchsize*0.5)
             extreme_count += e
             total_sum += s
             total_count += t
@@ -156,7 +161,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
             print extreme_count/total_count, total_sum/total_count, total_count
 
     logging.info('emptying que')
-    e, s, t = process_que(que, trueval, 0.1)
+    e, s, t, _ = process_que(que, trueval, 0.1)
     extreme_count += e
     total_sum += s
     total_count += t
