@@ -1,6 +1,7 @@
 __author__ = 'will'
 
 from fabric.api import *
+from fabric.utils import puts
 from datetime import datetime, timedelta
 import time
 
@@ -58,9 +59,9 @@ def check_workers():
         tstamp = lastline[1:].split(']')[0].split(',')[0]
         lasttime = datetime.fromtimestamp(time.mktime(time.strptime(tstamp, time_format)))
         tdelta = datetime.now() - lasttime
-        print tdelta.total_seconds(), 'seconds since the last process.'
+        puts('%f seconds since the last process.' % tdelta.total_seconds())
     except IndexError:
-        print lastline
+        pass
     
 
 
