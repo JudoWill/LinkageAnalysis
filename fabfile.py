@@ -58,7 +58,7 @@ def check_workers():
         tstamp = lastline[1:].split(']')[0].split(',')[0]
         lasttime = datetime.fromtimestamp(time.mktime(time.strptime(tstamp, time_format)))
         tdelta = datetime.now() - lasttime
-        print tdelta.total_seconds()
+        print tdelta.total_seconds(), 'seconds since the last process.'
     except IndexError:
         print lastline
     
