@@ -71,6 +71,6 @@ def start_celery_workers():
         run('git reset HEAD --hard')
         run('git pull')
         run('chmod +x startcelerylinkers.sh')
-        run('startcelerylinkers.sh')
+        run('./startcelerylinkers.sh')
 
 
