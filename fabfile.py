@@ -43,8 +43,7 @@ def setup_env():
 def kill_celery_worker():
 
     with cd('LinkageAnalysis'):
-        run('git reset HEAD --hard')
-        run('git pull')
+
         with settings(warn_only = True):
             lines = run("ps auxww | grep celeryd")
             for line in lines.split('\n'):
@@ -65,10 +64,13 @@ def check_workers():
     
 
 
-@roles('master')
+@roles('slaves')
 def start_celery_workers():
 
-    for slave in env.roledefs['slaves']:
-        local("ssh %s 'chmod +x LinkageAnlysis/startcelerylinkers.sh'" % slave)
-        local("ssh %s 'LinkageAnlysis/startcelerylinkers.sh'" % slave)
+    with cd('LinkageAnalysis'):
+        run('git reset HEAD --hard')
+        run('git pull')
+        run('chmod +x startcelerylinkers.sh')
+        run('startcelerylinkers.sh')
+
 
