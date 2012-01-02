@@ -1,6 +1,8 @@
 __author__ = 'will'
 
 from fabric.api import *
+from datetime import datetime, timedelta
+import time
 
 env.roledefs = {
     'master': ['master'],
@@ -47,6 +49,15 @@ def kill_celery_worker():
             for line in lines.split('\n'):
                 pid = [x for x in line.split() if x.strip()][1]
                 run('kill -9 %s' % pid)
+
+@roles('slaves')
+def check_workers():
+    lastline = run('tail -n 1 celery.log')
+    time_format = "%Y-%m-%d %H:%M:%S"
+    tstamp = lastline[1:].split(']')[0].split(',')[0]
+    lasttime = datetime.fromtimestamp(time.mktime(time.strptime(tstamp, time_format)))
+    tdelta = datetime.now() - lasttime
+    print tdelta.total_seconds()
 
 
 @roles('master')
