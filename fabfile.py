@@ -54,10 +54,14 @@ def kill_celery_worker():
 def check_workers():
     lastline = run('tail -n 1 celery.log')
     time_format = "%Y-%m-%d %H:%M:%S"
-    tstamp = lastline[1:].split(']')[0].split(',')[0]
-    lasttime = datetime.fromtimestamp(time.mktime(time.strptime(tstamp, time_format)))
-    tdelta = datetime.now() - lasttime
-    print tdelta.total_seconds()
+    try:
+        tstamp = lastline[1:].split(']')[0].split(',')[0]
+        lasttime = datetime.fromtimestamp(time.mktime(time.strptime(tstamp, time_format)))
+        tdelta = datetime.now() - lasttime
+        print tdelta.total_seconds()
+    except IndexError:
+        print lastline
+    
 
 
 @roles('master')
