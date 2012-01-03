@@ -7,46 +7,35 @@ from Code.GeneralUtils import prots_from_path
 import logging
 if __name__ == '__main__':
 
-    fname = 'processing%i.log'
+    testfuns = ['Mutual_Info', 'OMES', 'Linkage']#, 'SBASC_McLachlan']
+    fname = 'processing--%s--%s.%s.log'
     c=1
     while not os.path.exists(fname % c):
         c+=1
-    logging.basicConfig(filename=fname % c,level=logging.DEBUG)
-
-    if os.path.exists('/hivdata/curated/MergedDir/'):
-        ifiles = glob('/hivdata/curated/MergedDir/*.aln')
-        opath = '/hivdata/curated/LinkageResults'
-    else:
-        ifiles = glob('HIVData/curated/MergedDir/*.aln')
-        opath = 'HIVData/curated/LinkageResults'
-    print ifiles
-    iterable = chain(combinations(ifiles,2), izip(ifiles, ifiles))
-
-    for f1, f2 in iterable:
-        logging.warning('Processing %s, %s' % (f1, f2))
-        p1 = f1.split(os.sep)[-1].split('.')[0]
-        p2 = f2.split(os.sep)[-1].split('.')[0]
-
-        ofile = os.path.join(opath, '%s--%s.res' % (p1, p2))
-        if not os.path.exists(ofile):
-            PredictionAnalysis(f1, f2, ofile, granular=True)
 
 
-    if os.path.exists('/hivdata/SubtypeB/MergedDir/'):
-        ifiles = glob('/hivdata/SubtypeB/MergedDir/*.aln')
-        opath = '/hivdata/SubtypeB/LinkageResults'
-    else:
-        ifiles = glob('HIVData/SubtypeB/MergedDir/*.aln')
-        opath = 'HIVData/SubtypeB/LinkageResults'
+    curatedfiles = glob('/hivdata/curated/MergedDir/*.aln')
+    cureout = '/hivdata/curated/LinkageResults'
+    largefiles = glob('/hivdata/SubtypeB/MergedDir/*.aln')
+    largeout = '/hivdata/SubtypeB/LinkageResults'
 
-    print ifiles
-    iterable = chain(combinations(ifiles,2), izip(ifiles, ifiles))
+    iterable = chain(combinations(curatedfiles,2),
+        izip(curatedfiles, curatedfiles),
+        combinations(largefiles,2),
+        izip(largefiles, largefiles))
 
     for f1, f2 in iterable:
-        logging.warning('Processing %s, %s' % (f1, f2))
-        p1 = f1.split(os.sep)[-1].split('.')[0]
-        p2 = f2.split(os.sep)[-1].split('.')[0]
+        for fun in testfuns:
+            p1 = f1.split(os.sep)[-1].split('.')[0]
+            p2 = f2.split(os.sep)[-1].split('.')[0]
 
-        ofile = os.path.join(opath, '%s--%s.res' % (p1, p2))
-        if not os.path.exists(ofile):
-            PredictionAnalysis(f1, f2, ofile, granular=True)
+            if 'curated' in f1:
+                opath = cureout
+            else:
+                opath = largeout
+
+            ofile = os.path.join(opath, '%s--%s.%s.res' % (p1, p2, fun))
+            if not os.path.exists(ofile):
+                logging.warning('Processing %s, %s, %s' % (f1, f2, fun))
+                logging.basicConfig(filename=fname % (f1, f2, fun),level=logging.DEBUG)
+                PredictionAnalysis(f1, f2, ofile, granular=True, limit_functions=set([fun]))
