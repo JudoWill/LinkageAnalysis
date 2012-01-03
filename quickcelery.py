@@ -32,6 +32,6 @@ if __name__ == '__main__':
 
             ofile = os.path.join(opath, '%s--%s.%s.res' % (p1, p2, fun))
             if not os.path.exists(ofile):
-                logging.warning('Processing %s, %s, %s' % (f1, f2, fun))
                 logging.basicConfig(filename=fname % (f1, f2, fun),level=logging.DEBUG)
+                logging.warning('Processing %s, %s, %s' % (f1, f2, fun))
                 PredictionAnalysis(f1, f2, ofile, granular=True, limit_functions=set([fun]))
