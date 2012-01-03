@@ -9,10 +9,6 @@ if __name__ == '__main__':
 
     testfuns = ['Mutual_Info', 'OMES', 'Linkage']#, 'SBASC_McLachlan']
     fname = 'processing--%s--%s.%s.log'
-    c=1
-    while not os.path.exists(fname % c):
-        c+=1
-
 
     curatedfiles = glob('/hivdata/curated/MergedDir/*.aln')
     cureout = '/hivdata/curated/LinkageResults'
