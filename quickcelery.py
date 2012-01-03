@@ -35,3 +35,4 @@ if __name__ == '__main__':
                 logging.basicConfig(filename=fname % (p1, p2, fun),level=logging.DEBUG)
                 logging.warning('Processing %s, %s, %s' % (f1, f2, fun))
                 PredictionAnalysis(f1, f2, ofile, granular=True, limit_functions=set([fun]))
+                open(ofile+'.done', 'w').write('DONE!')
