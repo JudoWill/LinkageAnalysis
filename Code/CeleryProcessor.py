@@ -14,7 +14,7 @@ import csv
 
 
 @task()
-def link_calculator(row, submats, seq1, seq2, granular = False):
+def link_calculator(row, submats, seq1, seq2, granular = False,limit_functions = set()):
 
     c1 = AlignUtils.make_counts(seq1)
     c2 = AlignUtils.make_counts(seq2)
@@ -42,7 +42,10 @@ def link_calculator(row, submats, seq1, seq2, granular = False):
 
     processfuns.append(('Mutual_Info', LinkUtils.calculate_mutual_info, {}))
     processfuns.append(('OMES', LinkUtils.calculate_OMES, ()))
+    processfuns.append(('Linkage', LinkUtils.calculate_mapping, ()))
     suffs = ['_raw', '_pval', '_null', '_count']
+    if limit_functions:
+        processfuns = [x for x in processfuns if x[0] in limit_functions]
 
     for name, func, evals in processfuns:
         if granular:
@@ -57,7 +60,7 @@ def link_calculator(row, submats, seq1, seq2, granular = False):
     return row
 
 
-def task_loader(que, a1, a2, defaults, submats, minseqs, issame):
+def task_loader(que, a1, a2, defaults, submats, minseqs, issame, limit_functions = set()):
 
     calc = LinkUtils.LinkCalculator()
     headers = sorted(set(a1.seqs.keys()) & set(a2.seqs.keys()))
@@ -92,9 +95,9 @@ def task_loader(que, a1, a2, defaults, submats, minseqs, issame):
         if len(cseq1) > minseqs:
             #print 'loaded', ind1, ind2
             if que:
-                que.put(link_calculator.delay(row, submats, cseq1, cseq2))
+                que.put(link_calculator.delay(row, submats, cseq1, cseq2, limit_functions=limit_functions))
             else:
-                yield link_calculator(row, submats, cseq1, cseq2, granular=True)
+                yield link_calculator(row, submats, cseq1, cseq2, granular=True, limit_functions=limit_functions)
     if que:
         que.put(None)
 
@@ -132,7 +135,7 @@ def convert_row_to_writeable_rows(row, rmfields):
 
 
 
-def PredictionAnalysis(align1, align2, outfile, granular = True, cons_cut = 0.99, **kwargs):
+def PredictionAnalysis(align1, align2, outfile, granular = True, cons_cut = 0.99, limit_functions = set(), **kwargs):
 
     a1 = Alignment.alignment_from_file(align1)
     a2 = Alignment.alignment_from_file(align2)
@@ -161,7 +164,7 @@ def PredictionAnalysis(align1, align2, outfile, granular = True, cons_cut = 0.99
         LinkFields.LINK_FIELDS)))
 
     if granular:
-        for row in task_loader(None, a1, a2, defaults,submats, 50, align1==align2):
+        for row in task_loader(None, a1, a2, defaults,submats, 50, align1==align2, limit_functions=limit_functions):
             owriter.writerows(convert_row_to_writeable_rows(row, rmheaders))
 
 
