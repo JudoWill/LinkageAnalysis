@@ -60,7 +60,7 @@ def link_calculator(row, submats, seq1, seq2, granular = False,limit_functions =
     return row
 
 
-def task_loader(que, a1, a2, defaults, submats, minseqs, issame, limit_functions = set()):
+def task_loader(que, a1, a2, defaults, submats, minseqs, issame, limit_functions = set(), found_items = set()):
 
     calc = LinkUtils.LinkCalculator()
     headers = sorted(set(a1.seqs.keys()) & set(a2.seqs.keys()))
@@ -74,6 +74,8 @@ def task_loader(que, a1, a2, defaults, submats, minseqs, issame, limit_functions
         iterable = product(range(len(s1cols)), range(len(s2cols)))
     for ind1, ind2 in iterable:
         #print 'trying', ind1, ind2
+        if (ind1, ind2) in found_items:
+            continue
         row = {}
         row.update(defaults)
         try:
@@ -134,8 +136,28 @@ def convert_row_to_writeable_rows(row, rmfields):
 
 
 
+def get_done(fname):
 
-def PredictionAnalysis(align1, align2, outfile, granular = True, cons_cut = 0.99, limit_functions = set(), **kwargs):
+    done = set()
+    with open(fname) as handle:
+        reader = csv.reader(handle, delimiter = '\t')
+        reader.next() #get rid of headers
+        for row in reader:
+            try:
+                S1ind = int(row[2])
+                S2ind = int(row[4])
+                done.add((S1ind, S2ind))
+            except ValueError:
+                pass
+            except IndexError:
+                pass
+
+    return done
+
+
+
+
+def PredictionAnalysis(align1, align2, outfile, granular = True, open_mode = 'w', limit_functions = set(), **kwargs):
 
     a1 = Alignment.alignment_from_file(align1)
     a2 = Alignment.alignment_from_file(align2)
@@ -157,21 +179,28 @@ def PredictionAnalysis(align1, align2, outfile, granular = True, cons_cut = 0.99
 
     submats = LinkUtils.get_all_sub_mats()
 
-    ohandle = open(outfile, 'w')
+    ohandle = open(outfile, open_mode)
     owriter = csv.DictWriter(ohandle, LinkFields.LINK_FIELDS,
         delimiter = '\t', extrasaction='ignore')
-    owriter.writerow(dict(zip(LinkFields.LINK_FIELDS,
-        LinkFields.LINK_FIELDS)))
+    if open_mode == 'w':
+        owriter.writerow(dict(zip(LinkFields.LINK_FIELDS,
+            LinkFields.LINK_FIELDS)))
+        done = set()
+    else:
+        done = get_done(outfile)
+
+
 
     if granular:
-        for row in task_loader(None, a1, a2, defaults,submats, 50, align1==align2, limit_functions=limit_functions):
+        for row in task_loader(None, a1, a2, defaults,submats, 50, align1==align2, limit_functions=limit_functions, found_items = done):
             owriter.writerows(convert_row_to_writeable_rows(row, rmheaders))
 
 
     else:
         process_que = Queue(1000)
         loader = Thread(target=task_loader,
-                        args= (process_que, a1, a2, defaults,submats, 50, align1==align2))
+                        args= (process_que, a1, a2, defaults,submats, 50, align1==align2),
+                        kwargs={'limit_functions':limit_functions, 'found_items': done})
         loader.start()
 
 
@@ -181,10 +210,10 @@ def PredictionAnalysis(align1, align2, outfile, granular = True, cons_cut = 0.99
             try:
                 row = item.get(timeout = 60*30, interval = 60*1)
             except TimeoutError:
-                print 'no result for one!'
+                logging.warning('no result for one!')
                 item = process_que.get()
                 continue
-            print row['S1-Start'], row['S2-End']
+            logging.info('%i %i' % (row['S1-Start'], row['S2-End']))
             owriter.writerows(convert_row_to_writeable_rows(row, rmheaders))
             item = process_que.get()
 
