@@ -178,7 +178,7 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
 
 
 @task()
-def calculate_mutual_info(signal1, signal2, shuf = False, batch=False):
+def calculate_mutual_info(signal1, signal2, shuf = False, batch=False, **kwargs):
     """Caluculates the Mutual Information shared by two signals.
 
     Arguements:
@@ -190,10 +190,14 @@ def calculate_mutual_info(signal1, signal2, shuf = False, batch=False):
     Returns:
     Mutual Information -- float"""
 
-    def count2prob(d, num):
-        for key, val in d.items():
-            d[key] = val/num
-        return d
+    def signal2prob(signal):
+        counts = defaultdict(int)
+        for s in signal:
+            counts[s] += 1
+        num = len(signal)
+        for key, val in counts.items():
+            counts[key] = val/num
+        return counts
 
     if shuf:
         shuffle(signal1)
@@ -201,32 +205,30 @@ def calculate_mutual_info(signal1, signal2, shuf = False, batch=False):
 
     if batch:
         res = []
+        extra = {}
         try:
             for _ in xrange(batch):
-                res.append(calculate_mutual_info(signal1, signal2, shuf=True))
+                r, extra = calculate_mutual_info(signal1, signal2, shuf=True, want_extra=True, **extra)
+                res.append(r)
         except SoftTimeLimitExceeded:
             pass
         return res
 
-    overlap = defaultdict(int)
+    overlap_prob = signal2prob(zip(signal1, signal2))
+    signal1_prob = kwargs.get('S1prob',signal2prob(signal1))
+    signal2_prob = kwargs.get('S2prob',signal2prob(signal2))
+
     num_items = len(signal1)
-    signal1_hist = defaultdict(int)
-    signal2_hist = defaultdict(int)
-
-    for s1, s2 in zip(signal1, signal2):
-        overlap[(s1, s2)] += 1
-        signal1_hist[s1] += 1
-        signal2_hist[s2] += 1
-
     mut_info = float()
-    overlap_prob = count2prob(overlap, num_items)
-    signal1_prob = count2prob(signal1_hist, num_items)
-    signal2_prob = count2prob(signal2_hist, num_items)
 
-    for (s1, s2), count in overlap.items():
+
+    for (s1, s2), count in overlap_prob.items():
         mut_info += overlap_prob[(s1, s2)]*log(overlap_prob[(s1, s2)]/(signal1_prob[s1]*signal2_prob[s2]))
 
-    return mut_info
+    if kwargs.get('want_extra', False):
+        return mut_info, {'S1prob':signal1_prob, 'S2prob':signal2_prob}
+    else:
+        return mut_info
 
 @task()
 def calculate_PNAS(signal1, signal2, shuf = False, batch = False):
