@@ -134,9 +134,9 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
                 logging.error('something else!')
         return true_count, total_sum, total_count, flag
 
-    batchsize = 600
-    groupingsize = 50
-    ibatch = int((minreps*1.5)/groupingsize) #enough so if even HALF don't finish it will still pass minreps
+    batchsize = 1000
+    groupingsize = 20
+    ibatch = int((minreps*1.5)/groupingsize)+1 #enough so if even HALF don't finish it will still pass minreps
     ls1 = list(s1)
     ls2 = list(s2)
     que = Queue()

@@ -44,5 +44,5 @@ if __name__ == '__main__':
                     mode = 'a'
                 else:
                     mode = 'w'
-                PredictionAnalysis(f1, f2, ofile, granular = False, open_mode = mode, limit_functions=set([fun]))
+                PredictionAnalysis(f1, f2, ofile, open_mode = mode, limit_functions=set([fun]))
                 open(ofile+'.done', 'w').write('DONE!')
