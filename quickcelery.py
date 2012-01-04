@@ -7,8 +7,14 @@ from Code.GeneralUtils import prots_from_path
 import logging
 if __name__ == '__main__':
 
-    testfuns = ['Mutual_Info', 'OMES', 'Linkage']#, 'SBASC_McLachlan']
-    fname = 'processing--%s--%s.%s.log'
+    testfuns = ['Mutual_Info', 'OMES', 'Linkage', 'SBASC_McLachlan']
+    c=1
+    fname = 'processing--%i.log'
+    while not os.path.exists(fname % c):
+        c+=1
+
+
+    logging.basicConfig(filename=fname % c,level=logging.DEBUG)
 
     curatedfiles = glob('/hivdata/curated/MergedDir/*.aln')
     cureout = '/hivdata/curated/LinkageResults'
@@ -31,8 +37,12 @@ if __name__ == '__main__':
                 opath = largeout
 
             ofile = os.path.join(opath, '%s--%s.%s.res' % (p1, p2, fun))
-            if not os.path.exists(ofile):
-                logging.basicConfig(filename=fname % (p1, p2, fun),level=logging.DEBUG)
+            if not os.path.exists(ofile+'.p'):
+                open(ofile+'.p').write('checking!')
                 logging.warning('Processing %s, %s, %s' % (f1, f2, fun))
-                PredictionAnalysis(f1, f2, ofile, granular=True, limit_functions=set([fun]))
+                if os.path.exists(ofile):
+                    mode = 'a'
+                else:
+                    mode = 'w'
+                PredictionAnalysis(f1, f2, ofile, open_mode = mode, limit_functions=set([fun]))
                 open(ofile+'.done', 'w').write('DONE!')
