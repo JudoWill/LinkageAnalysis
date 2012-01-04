@@ -45,36 +45,6 @@ class LinkCalculator(object):
                 fields.append(bname+suffix)
         return fields
 
-
-def calculate_vals(s1, s2, testfun, key = gt, minreps = 500, maxreps = 1e6):
-
-    ls1 = list(s1)
-    ls2 = list(s2)
-    tcount = 0
-    count = 0
-    total = 0
-    mcut = 0.01
-    try:
-        trueval = testfun(tuple(ls1), tuple(ls2))
-    except ZeroDivisionError:
-        return 0, 1.0, 0, 0
-
-    while tcount < maxreps:
-        if tcount > minreps and -log(count+1/tcount,10) < log(tcount,10)-3:
-            break
-        tcount += 1
-        shuffle(ls1)
-        shuffle(ls2)
-        try:
-            res = testfun(tuple(ls1), tuple(ls2))
-        except:
-            continue
-        total += res
-        if key(res, trueval):
-            count += 1
-
-    return trueval, count/tcount, total/tcount, tcount
-
 def check_precision(extreme_counts, total_counts, logprecision):
     """ Returns True if there is enogh precision to accept the p-value
     """
@@ -82,20 +52,57 @@ def check_precision(extreme_counts, total_counts, logprecision):
     total_counts = max(total_counts, 1)
     return (log(total_counts,10) + log(extreme_counts/total_counts,10)) > logprecision
 
+def function_linker(func, ls1, ls2, preargs, distributed = True, **kwargs):
+    if len(preargs)==1:
+        args = (preargs[0], ls1, ls2)
+    else:
+        args = (ls1, ls2)
+    if distributed:
+        return func.delay(*args, **kwargs)
+    else:
+        return func(*args, **kwargs)
+
+
+def calculate_vals(s1, s2, testfun, key = gt, preargs = (), minreps = 500, maxreps = 1e6):
+
+    ls1 = list(s1)
+    ls2 = list(s2)
+    extreme_count = 0
+    total_sum = 0
+    total_count = 0
+
+    try:
+        trueval = function_linker(testfun, ls1, ls2, preargs, distributed=False)
+    except ZeroDivisionError:
+        return 0, 1.0, 0, 0
+
+    reslist = function_linker(testfun, ls1, ls2, preargs, distributed=False,
+        shuf = True, batch = minreps)
+    for res in reslist:
+        if res > trueval:
+            extreme_count += 1
+        total_count += 1
+        total_sum += res
+
+    while total_count < maxreps and not check_precision(extreme_count, total_count, 1):
+        reslist = function_linker(testfun, ls1, ls2, preargs, distributed=False,
+            shuf = True, batch = minreps)
+        for res in reslist:
+            if res > trueval:
+                extreme_count += 1
+            total_count += 1
+            total_sum += res
+        logging.info('pval: %f, mean: %f, count: %i' % (extreme_count/total_count, total_sum/total_count, total_count))
+
+
+    return trueval, extreme_count/total_count, total_sum/total_count, total_count
+
 
 
 
 def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500, maxreps = 1e6):
 
-    def function_linker(func, ls1, ls2, preargs, distributed = True, **kwargs):
-        if len(preargs)==1:
-            args = (preargs[0], ls1, ls2)
-        else:
-            args = (ls1, ls2)
-        if distributed:
-            return func.delay(*args, **kwargs)
-        else:
-            return func(*args, **kwargs)
+
 
     def process_que(que, trueval, timeout):
         qsize = que.qsize()
