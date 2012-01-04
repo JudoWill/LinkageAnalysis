@@ -177,13 +177,18 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
 
 
 def signal2prob(signal):
-    counts = defaultdict(int)
-    for s in signal:
-        counts[s] += 1
+    counts = signal2count(signal)
     num = len(signal)
     for key, val in counts.items():
         counts[key] = val/num
     return counts
+
+def signal2count(signal):
+    counts = defaultdict(int)
+    for s in signal:
+        counts[s] += 1
+    return counts
+
 
 
 @task()
@@ -293,12 +298,12 @@ def prediction_mapping(signal1, signal2):
     [(s1a, s2a, #occurance), (s1b, s2b, #occurance), ...]"""
 
 
-    counts = signal2prob(zip(signal1, signal2))
+    counts = signal2count(zip(signal1, signal2))
 
     mapping = []
     while counts:
         (s1, s2), val = max(counts.items(), key = itemgetter(1))
-        mapping.append((s1,s2,val*len(signal1)))
+        mapping.append((s1,s2,val))
         for ks1, ks2 in counts.keys():
             if ks1 == s1:
                 counts.pop((ks1, ks2))
