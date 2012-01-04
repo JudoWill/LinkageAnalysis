@@ -385,9 +385,11 @@ def calculate_SBASC(sub_mat, signal1, signal2, shuf = False, batch = False, **kw
 
     if batch:
         res = []
+        extra = {}
         try:
             for _ in xrange(batch):
-                res.append(calculate_SBASC(sub_mat, signal1, signal2, shuf=True))
+                r, extra = calculate_SBASC(sub_mat, signal1, signal2, shuf=True, want_extra=True, **extra)
+                res.append(r)
         except SoftTimeLimitExceeded:
             pass
         return res
@@ -404,8 +406,8 @@ def calculate_SBASC(sub_mat, signal1, signal2, shuf = False, batch = False, **kw
 
     N2 = len(signal1)**2
 
-    s1scores, s1std = sub_score(signal1, sub_mat)
-    s2scores, s2std = sub_score(signal2, sub_mat)
+    s1scores, s1std = kwargs.get('S1sub', sub_score(signal1, sub_mat))
+    s2scores, s2std = kwargs.get('S2sub', sub_score(signal2, sub_mat))
 
     #print s1scores, s1std, s2scores, s2std
     denom = s1std*s2std
@@ -413,9 +415,15 @@ def calculate_SBASC(sub_mat, signal1, signal2, shuf = False, batch = False, **kw
 
     for s1, s2 in zip(s1scores, s2scores):
         McBASC += s1*s2/denom
-    McBASC = McBASC/N2
+    McBASC /= N2
 
-    return McBASC
+    if kwargs.get('want_extra', False):
+        odict = {'S1sub': (s1scores, s1std),
+                 'S2sub': (s2scores, s2std)}
+        return McBASC, odict
+    else:
+
+        return McBASC
 
 def get_all_sub_mats():
 
