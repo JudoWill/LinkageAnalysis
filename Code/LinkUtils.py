@@ -176,6 +176,15 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
     return extreme_count/total_count, total_sum/total_count, total_count
 
 
+def signal2prob(signal):
+    counts = defaultdict(int)
+    for s in signal:
+        counts[s] += 1
+    num = len(signal)
+    for key, val in counts.items():
+        counts[key] = val/num
+    return counts
+
 
 @task()
 def calculate_mutual_info(signal1, signal2, shuf = False, batch=False, **kwargs):
@@ -190,14 +199,7 @@ def calculate_mutual_info(signal1, signal2, shuf = False, batch=False, **kwargs)
     Returns:
     Mutual Information -- float"""
 
-    def signal2prob(signal):
-        counts = defaultdict(int)
-        for s in signal:
-            counts[s] += 1
-        num = len(signal)
-        for key, val in counts.items():
-            counts[key] = val/num
-        return counts
+
 
     if shuf:
         shuffle(signal1)
