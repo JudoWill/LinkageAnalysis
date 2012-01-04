@@ -16,15 +16,15 @@ if __name__ == '__main__':
 
     logging.basicConfig(filename=fname % c,level=logging.DEBUG)
 
-    curatedfiles = glob('/hivdata/curated/MergedDir/*.aln')
+    curatedfiles = sorted(glob('/hivdata/curated/MergedDir/*.aln'))
     cureout = '/hivdata/curated/LinkageResults'
     largefiles = glob('/hivdata/SubtypeB/MergedDir/*.aln')
     largeout = '/hivdata/SubtypeB/LinkageResults'
 
-    iterable = chain(combinations(curatedfiles,2),
-        izip(curatedfiles, curatedfiles),
-        combinations(largefiles,2),
-        izip(largefiles, largefiles))
+    iterable = chain(izip(curatedfiles, curatedfiles),
+        combinations(curatedfiles,2),
+        izip(largefiles, largefiles),
+        combinations(largefiles,2))
 
     for f1, f2 in iterable:
         for fun in testfuns:
