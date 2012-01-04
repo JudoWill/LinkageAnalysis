@@ -151,10 +151,10 @@ def celery_calculate_vals(s1, s2, testfun, preargs = (), key = gt, minreps = 500
         que.put(function_linker(testfun, ls1, ls2, preargs, shuf = True, batch = ibatch))
     extreme_count, total_sum, total_count, flag = process_que(que, trueval, 0.1)
 
-    if total_count >= minreps and check_precision(extreme_count, total_count, 1):
+    if total_count >= minreps and check_precision(extreme_count, total_count, 2):
         logging.info('Initial batch was enough!')
     else:
-        while total_count < maxreps and not check_precision(extreme_count, total_count, 1):
+        while total_count < maxreps and not check_precision(extreme_count, total_count, 2):
             logging.info('putting in %i' % int(batchsize))
             for _ in xrange(groupingsize):
                 que.put(function_linker(testfun, ls1, ls2, preargs, shuf = True, batch = int(batchsize)))
