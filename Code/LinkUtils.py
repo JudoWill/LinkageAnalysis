@@ -293,14 +293,12 @@ def prediction_mapping(signal1, signal2):
     [(s1a, s2a, #occurance), (s1b, s2b, #occurance), ...]"""
 
 
-    counts = defaultdict(int)
-    for s1, s2 in zip(signal1, signal2):
-        counts[(s1, s2)] += 1
+    counts = signal2prob(zip(signal1, signal2))
 
     mapping = []
     while counts:
         (s1, s2), val = max(counts.items(), key = itemgetter(1))
-        mapping.append((s1,s2,val))
+        mapping.append((s1,s2,val*len(signal1)))
         for ks1, ks2 in counts.keys():
             if ks1 == s1:
                 counts.pop((ks1, ks2))
