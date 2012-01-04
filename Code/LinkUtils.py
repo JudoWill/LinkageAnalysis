@@ -330,7 +330,7 @@ def calculate_mapping(signal1, signal2, shuf = False, batch = False):
     return sum(r[2] for r in res)/len(signal1)
 
 @task()
-def calculate_OMES(signal1, signal2, shuf = False, batch = False):
+def calculate_OMES(signal1, signal2, shuf = False, batch = False, **kwargs):
     """Finds the Observed Minus Expected Squared score.
 
     Calcualtes the score using the formula:
@@ -345,34 +345,32 @@ def calculate_OMES(signal1, signal2, shuf = False, batch = False):
 
     if batch:
         res = []
+        extra = {}
         try:
             for _ in xrange(batch):
-                res.append(calculate_OMES(signal1, signal2, shuf=True))
+                r, extra = calculate_OMES(signal1, signal2, shuf=True, want_extra=True, **extra)
+                res.append(r)
         except SoftTimeLimitExceeded:
             pass
         return res
 
-    s1_counts = defaultdict(int)
-    s2_counts = defaultdict(int)
-    Nobs = defaultdict(int)
+    s1_counts = kwargs.get('S1counts', signal2count(signal1))
+    s2_counts = kwargs.get('S2counts', signal2count(signal2))
+    Nobs = signal2count(zip(signal1, signal2))
     Nvalid = 0
-
-    for s1, s2 in zip(signal1, signal2):
-        if s1 != '-' and s2 != '-':
-            s1_counts[s1] += 1
-            s2_counts[s2] += 1
-            Nobs[(s1,s2)] += 1
-            Nvalid += 1
 
     omes = 0.0
     for (s1, s2), obs in Nobs.items():
         Nex = s1_counts[s1]*s2_counts[s2]/Nvalid
         omes += ((obs-Nex)**2)/Nvalid
 
-    return omes
+    if kwargs.get('want_extra', False):
+        return omes, {'S1counts': s1_counts, 'S2counts':s2_counts}
+    else:
+        return omes
 
 @task()
-def calculate_SBASC(sub_mat, signal1, signal2, shuf = False, batch = False):
+def calculate_SBASC(sub_mat, signal1, signal2, shuf = False, batch = False, **kwargs):
     """Calculates the Substitutions Based Correlation
 
      Determines the correlation of mutations based on any substituion matrix.
