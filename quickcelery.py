@@ -10,7 +10,7 @@ if __name__ == '__main__':
     testfuns = ['Mutual_Info', 'OMES', 'Linkage', 'SBASC_McLachlan']
     c=1
     fname = 'processing--%i.log'
-    while not os.path.exists(fname % c):
+    while os.path.exists(fname % c):
         c+=1
 
 
