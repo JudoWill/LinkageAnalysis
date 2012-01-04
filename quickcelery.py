@@ -37,7 +37,7 @@ if __name__ == '__main__':
                 opath = largeout
 
             ofile = os.path.join(opath, '%s--%s.%s.res' % (p1, p2, fun))
-            if not os.path.exists(ofile+'.p'):
+            if not (os.path.exists(ofile+'.p') or os.path.exists(ofile+'.done')):
                 open(ofile+'.p', 'w').write('checking!')
                 logging.warning('Processing %s, %s, %s' % (f1, f2, fun))
                 if os.path.exists(ofile):
