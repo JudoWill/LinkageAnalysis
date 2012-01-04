@@ -65,12 +65,12 @@ def check_workers():
 
 
 @roles('slaves')
-def start_celery_workers():
+def update_celery_workers():
 
     with cd('LinkageAnalysis'):
         run('git reset HEAD --hard')
         run('git pull')
         run('chmod +x startcelerylinkers.sh')
-    run('LinkageAnalysis/startcelerylinkers.sh')
+
 
 
