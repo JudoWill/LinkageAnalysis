@@ -10,7 +10,7 @@ if __name__ == '__main__':
     testfuns = ['Mutual_Info', 'OMES', 'Linkage', 'SBASC_McLachlan']
     c=1
     fname = 'processing--%i.log'
-    while not os.path.exists(fname % c):
+    while os.path.exists(fname % c):
         c+=1
 
 
@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
             ofile = os.path.join(opath, '%s--%s.%s.res' % (p1, p2, fun))
             if not os.path.exists(ofile+'.p'):
-                open(ofile+'.p').write('checking!')
+                open(ofile+'.p', 'w').write('checking!')
                 logging.warning('Processing %s, %s, %s' % (f1, f2, fun))
                 if os.path.exists(ofile):
                     mode = 'a'
