@@ -5,7 +5,15 @@ from itertools import product, combinations, chain, izip
 import os, os.path
 from Code.GeneralUtils import prots_from_path
 import logging
+import argparse
+
 if __name__ == '__main__':
+
+
+    parser = argparse.ArgumentParser(description='Linkage Analysis Distributed')
+    parser.add_argument('--start-dirty', dest = 'dirty', action = 'store_true',
+        default = False)
+    args = parser.parse_args()
 
     testfuns = ['Mutual_Info', 'OMES', 'Linkage', 'SBASC_McLachlan']
     c=1
@@ -21,10 +29,17 @@ if __name__ == '__main__':
     largefiles = glob('/hivdata/SubtypeB/MergedDir/*.aln')
     largeout = '/hivdata/SubtypeB/LinkageResults'
 
-    iterable = chain(izip(curatedfiles, curatedfiles),
-        combinations(curatedfiles,2),
-        izip(largefiles, largefiles),
-        combinations(largefiles,2))
+    if args.dirty:
+        iterable = chain(izip(largefiles, largefiles),
+            combinations(largefiles,2),
+            izip(curatedfiles, curatedfiles),
+            combinations(curatedfiles,2))
+    else:
+
+        iterable = chain(izip(curatedfiles, curatedfiles),
+            combinations(curatedfiles,2),
+            izip(largefiles, largefiles),
+            combinations(largefiles,2))
 
     for f1, f2 in iterable:
         for fun in testfuns:
