@@ -3,6 +3,8 @@ __author__ = 'will'
 from fabric.api import *
 from fabric.utils import puts
 from datetime import datetime, timedelta
+from collections import defaultdict
+import glob
 import time
 
 env.roledefs = {
@@ -72,5 +74,20 @@ def update_celery_workers():
         run('git pull')
         run('chmod +x startcelerylinkers.sh')
 
+
+@roles('master'):
+def check_done():
+
+    donefiles = glob.glob('/hivdata/*/LinkageResults/*.done')
+    workingfiles = glob.glob('/hivdata/*/LinkageResults/*.p')
+
+    donegroup = set(x.rsplit('.')[0] for x in donefiles)
+    workinggroup = set(x.rsplit('.')[0] for x in workingfiles)-donegroup
+
+    for done in sorted(donegroup):
+        puts('Finished-'+done)
+
+    for processing in sorted(workinggroup):
+        puts('Processing-' + processing)
 
 
