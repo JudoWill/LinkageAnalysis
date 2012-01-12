@@ -13,9 +13,26 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Linkage Analysis Distributed')
     parser.add_argument('--start-dirty', dest = 'dirty', action = 'store_true',
         default = False)
+    parser.add_argument('--do-MI', dest = 'MI', action = 'store_true',
+        default = False)
+    parser.add_argument('--do-OMES', dest = 'OMES', action = 'store_true',
+        default = False)
+    parser.add_argument('--do-link', dest = 'link', action = 'store_true',
+        default = False)
+    parser.add_argument('--do-SBASC', dest = 'SBASC', action = 'store_true',
+        default = False)
     args = parser.parse_args()
 
-    testfuns = ['Mutual_Info', 'OMES', 'Linkage', 'SBASC_McLachlan']
+    testfuns = []
+    if args.MI:
+        testfuns += ['Mutual_Info']
+    if args.OMES:
+        testfuns += ['OMES']
+    if args.link:
+        testfuns += ['Linkage']
+    if args.SBASC:
+        testfuns += ['SBASC_McLachlan']
+
     c=1
     fname = 'processing--%i.log'
     while os.path.exists(fname % c):
@@ -26,7 +43,7 @@ if __name__ == '__main__':
 
     curatedfiles = sorted(glob('/hivdata/curated/MergedDir/*.aln'))
     cureout = '/hivdata/curated/LinkageResults'
-    largefiles = glob('/hivdata/SubtypeB/MergedDir/*.aln')
+    largefiles = sorted(glob('/hivdata/SubtypeB/MergedDir/*.aln'))
     largeout = '/hivdata/SubtypeB/LinkageResults'
 
     if args.dirty:
