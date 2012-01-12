@@ -75,14 +75,14 @@ def update_celery_workers():
         run('chmod +x startcelerylinkers.sh')
 
 
-@roles('master'):
+@roles('master')
 def check_done():
 
     donefiles = glob.glob('/hivdata/*/LinkageResults/*.done')
     workingfiles = glob.glob('/hivdata/*/LinkageResults/*.p')
 
-    donegroup = set(x.rsplit('.')[0] for x in donefiles)
-    workinggroup = set(x.rsplit('.')[0] for x in workingfiles)-donegroup
+    donegroup = set(x.rsplit('.', 1)[0] for x in donefiles)
+    workinggroup = set(x.rsplit('.',1)[0] for x in workingfiles)-donegroup
 
     for done in sorted(donegroup):
         puts('Finished-'+done)
